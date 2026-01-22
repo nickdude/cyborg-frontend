@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CyborgLogo from "@/components/CyborgLogo";
 import Image from "next/image";
-import { Bell } from "lucide-react";
+import { Bell, ClipboardList } from "lucide-react";
 import { notificationAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -143,7 +143,7 @@ export default function Navbar({ backHref = "/", showBack = true }) {
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="text-2xl">📋</div>
+                        <ClipboardList className="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900">
                             {notification.type === "actionPlan:ready"
