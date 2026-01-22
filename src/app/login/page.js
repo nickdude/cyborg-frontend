@@ -9,6 +9,7 @@ import Button from "@/components/Button";
 import Input from "@/components/Input";
 import SocialButton from "@/components/SocialButton";
 import CyborgLogo from "@/components/CyborgLogo";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [step, setStep] = useState(1); // 1: email, 2: phone, 3: password, 4: otp
@@ -22,6 +23,7 @@ export default function Login() {
   const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
 
@@ -190,15 +192,24 @@ export default function Login() {
               className="mb-4"
             />
 
-            <Input
-              label="Password"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="Enter your password"
-              required
-            />
+            <div className="relative">
+              <Input
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Enter your password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-[42px] text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
 
             <Link href="/forgot-password" className="text-primary text-sm font-semibold hover:underline block mb-6">
               Forgot password?
