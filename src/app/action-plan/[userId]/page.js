@@ -84,7 +84,7 @@ export default function ActionPlan() {
   if (loading) {
     return (
       <div className="min-h-screen bg-pageBackground flex flex-col">
-        <Navbar backHref="/blood-reports/me" />
+        <Navbar backHref={`/blood-reports/${userId}`} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-xl font-semibold text-gray-600">Loading...</div>
         </div>
@@ -95,7 +95,7 @@ export default function ActionPlan() {
   if (!reportId && !planId) {
     return (
       <div className="min-h-screen bg-pageBackground flex flex-col">
-        <Navbar backHref="/blood-reports/me" />
+        <Navbar backHref={`/blood-reports/${userId}`} />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-xl font-semibold text-red-600">No plan selected</div>
         </div>
@@ -106,7 +106,7 @@ export default function ActionPlan() {
   if (error && !actionPlan) {
     return (
       <div className="min-h-screen bg-pageBackground flex flex-col">
-        <Navbar backHref="/blood-reports/me" />
+        <Navbar backHref={`/blood-reports/${userId}`} />
         <div className="flex-1 flex items-center justify-center">
           <div className="max-w-md text-center space-y-4">
             <div className="text-lg font-semibold text-red-600">{error}</div>
@@ -124,7 +124,7 @@ export default function ActionPlan() {
 
   return (
     <div className="min-h-screen bg-pageBackground flex flex-col">
-      <Navbar backHref="/blood-reports/me" />
+      <Navbar backHref={`/blood-reports/${userId}`} />
 
       {/* Toast */}
       {toast && (

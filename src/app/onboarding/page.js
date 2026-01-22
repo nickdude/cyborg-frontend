@@ -320,7 +320,7 @@ const SECTIONS = [
 
 export default function Onboarding() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [sectionIndex, setSectionIndex] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState({});
