@@ -16,7 +16,8 @@ module.exports = {
         blue: "#1F2937",
         lightGray: "#D8D8D8",
         gray: "#7D7D7D",
-        pageBackground: "#F2F2F2"
+        pageBackground: "#F2F2F2",
+        borderColor: "#E6E6E8"
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

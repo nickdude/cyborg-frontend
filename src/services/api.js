@@ -53,9 +53,22 @@ export const userAPI = {
   getBloodReports: (userId) => API.get(`/api/users/${userId}/blood-reports`),
   deleteBloodReport: (userId, reportId) =>
     API.delete(`/api/users/${userId}/blood-reports/${reportId}`),
-  generateActionPlan: (reportId) =>
-    API.post(`/api/users/blood-reports/${reportId}/generate-action-plan`),
-  getActionPlan: (reportId) => API.get(`/api/users/blood-reports/${reportId}/action-plan`),
+};
+
+// Action Plan endpoints (new async flow)
+export const actionPlanAPI = {
+  create: (reportId) => API.post("/api/action-plans", { reportId }),
+  get: (planId) => API.get(`/api/action-plans/${planId}`),
+  retry: (planId) => API.post(`/api/action-plans/${planId}/retry`),
+  exportPDF: (planId) => API.get(`/api/action-plans/${planId}/pdf`, {
+    responseType: "blob",
+  }),
+};
+
+// Notification endpoints
+export const notificationAPI = {
+  list: () => API.get("/api/notifications"),
+  markRead: (notificationId) => API.patch(`/api/notifications/${notificationId}/read`),
 };
 
 // Payment endpoints

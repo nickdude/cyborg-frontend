@@ -2,6 +2,8 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 const quickPrompts = [
@@ -36,17 +38,17 @@ function Card({ title, subtitle, meta, highlight, onClick, disabled }) {
       className={`w-full text-left rounded-2xl border p-4 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-purple-500 ${
         highlight
           ? "border-purple-500 bg-white/70"
-          : "border-gray-200 bg-white hover:border-purple-200"
+          : "border-borderColor bg-white hover:border-purple-200"
       }`}
     >
       <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full border border-gray-300 bg-gray-100" />
-          <span className="w-3 h-3 rounded-full border border-gray-300 bg-gray-100" />
-          <span className="w-3 h-3 rounded-full border border-gray-300 bg-gray-100" />
+          <span className="w-3 h-3 rounded-full border border-borderColor bg-gray-100" />
+          <span className="w-3 h-3 rounded-full border border-borderColor bg-gray-100" />
+          <span className="w-3 h-3 rounded-full border border-borderColor bg-gray-100" />
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-lg">⏱️</span>
+          <Image src="/assets/icons/clock-five.svg" alt="timer" width={14} height={14} />
           <span>{meta}</span>
         </div>
       </div>
@@ -62,7 +64,7 @@ function MessageBubble({ sender, text }) {
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-          isUser ? "bg-black text-white" : "bg-white text-gray-800 border border-gray-200"
+          isUser ? "bg-black text-white" : "bg-white text-gray-800 border border-borderColor"
         }`}
       >
         {text}
@@ -115,7 +117,7 @@ function Sidebar({ open, onClose }) {
             </Link>
           </div>
 
-          <div className="pt-4 border-t border-gray-200 space-y-3">
+          <div className="pt-4 border-t border-borderColor space-y-3">
             <div className="text-sm font-semibold text-gray-900">Today</div>
             <Link
               href="#"
@@ -131,7 +133,7 @@ function Sidebar({ open, onClose }) {
             </Link>
           </div>
 
-          <div className="pt-4 border-t border-gray-200 space-y-3">
+          <div className="pt-4 border-t border-borderColor space-y-3">
             <div className="text-sm font-semibold text-gray-900">Older</div>
             <Link
               href="#"
@@ -148,9 +150,12 @@ function Sidebar({ open, onClose }) {
 
 export default function ConciergePage() {
   const { user } = useAuth();
+  const pathname = usePathname();
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const isActive = (path) => pathname === path;
 
   const name = useMemo(() => {
     if (!user) return "there";
@@ -178,13 +183,12 @@ export default function ConciergePage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition"
+              className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition"
             >
-              <span className="text-lg">≡</span>
+              <Image src="/assets/icons/sidebar.svg" alt="menu" width={20} height={20} />
             </button>
             <div>
-              <div className="text-2xl font-semibold">Concierge</div>
-              <div className="text-xs text-gray-500">Your personal help desk</div>
+              <div className="text-xl font-medium">Concierge</div>
             </div>
           </div>
           <Badge>BETA</Badge>
@@ -199,7 +203,7 @@ export default function ConciergePage() {
             title="Ask your Superpower AI"
             subtitle="Simple questions, advice and analysis"
             meta="Immediate"
-            highlight
+            disabled
             onClick={() => setInput("Ask your Superpower AI")}
           />
           <Card
@@ -211,7 +215,7 @@ export default function ConciergePage() {
           />
         </div>
 
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 space-y-3">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-borderColor space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-sm font-semibold text-gray-700">Recent</div>
             <Link href="#" className="text-xs text-purple-600 hover:underline">
@@ -227,7 +231,7 @@ export default function ConciergePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-3 flex items-center gap-3">
+        <div className="bg-white rounded-2xl shadow-sm border border-borderColor p-3 flex items-center gap-3">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -236,7 +240,7 @@ export default function ConciergePage() {
           />
           <button
             type="button"
-            className="w-9 h-9 rounded-full border border-gray-300 flex items-center justify-center text-xl text-gray-600 hover:bg-gray-50"
+            className="w-9 h-9 rounded-full border border-borderColor flex items-center justify-center text-xl text-gray-600 hover:bg-gray-50"
             onClick={() => setInput((prev) => (prev ? prev + " " : "") + "+")}
           >
             +
@@ -255,34 +259,37 @@ export default function ConciergePage() {
             <button
               key={prompt}
               onClick={() => setInput(prompt)}
-              className="px-4 py-2 rounded-full bg-white border border-gray-200 text-sm text-gray-700 shadow-sm hover:border-purple-300"
+              className="px-4 py-2 rounded-full bg-white border border-borderColor text-sm text-gray-700 shadow-sm hover:border-purple-300"
             >
               {prompt}
             </button>
           ))}
         </div>
 
-        <div className="text-xs text-gray-500 leading-relaxed text-center px-4">
+        <div className="text-xs text-secondary leading-relaxed text-center px-4">
           Your Superpower AI is not intended to replace medical advice, and is solely provided to offer suggestions and education. Always seek the advice of a licensed human healthcare provider for any medical questions and call emergency services if you are experiencing an emergent medical issue.
         </div>
       </div>
 
-      <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 shadow-lg">
-        <div className="max-w-md mx-auto px-6 py-3 flex items-center justify-between text-sm font-medium">
-          <Link href="/" className="flex flex-col items-center gap-1 text-gray-500">
-            <span className="text-xl">🏠</span>
+      <nav className="fixed bottom-0 inset-x-0 bg-white shadow-lg">
+        <div className="max-w-md mx-auto py-3 flex items-center justify-center text-[10px] font-bold">
+          <Link href="/concierge" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/") ? "text-black" : "text-secondary"}`}>
+            <Image src="/assets/icons/house.svg" alt="home" width={24} height={24} className={isActive("/") ? "" : "opacity-60"} />
             <span>Home</span>
           </Link>
-          <Link href="/data" className="flex flex-col items-center gap-1 text-gray-500">
-            <span className="text-xl">📊</span>
+          <Link href="/concierge" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/data") ? "text-black" : "text-secondary"}`}>
+            <Image src="/assets/icons/chart.svg" alt="data" width={24} height={24} className={isActive("/data") ? "" : "opacity-60"} />
             <span>Data</span>
           </Link>
-          <Link href="/" className="flex flex-col items-center gap-1 text-black">
-            <span className="text-2xl">＋</span>
-            <span className="text-black">Concierge</span>
+          <Link href="/concierge" className="flex-1 flex flex-col items-center gap-1 text-black">
+            <span className="text-2xl flex justify-center items-center bg-black text-white rounded-full w-20 h-20 border-8 border-gray-50">＋</span>
           </Link>
-          <Link href="/marketplace" className="flex flex-col items-center gap-1 text-gray-500">
-            <span className="text-xl">🛍️</span>
+          <Link href="/concierge" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/chat") ? "text-black" : "text-secondary"}`}>
+            <Image src="/assets/icons/text.svg" alt="chat" width={24} height={24} className={isActive("/chat") ? "" : "opacity-60"} />
+            <span>Concierge</span>
+          </Link>
+          <Link href="/concierge" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/marketplace") ? "text-black" : "text-secondary"}`}>
+            <Image src="/assets/icons/store.svg" alt="marketplace" width={24} height={24} className={isActive("/marketplace") ? "" : "opacity-60"} />
             <span>Marketplace</span>
           </Link>
         </div>

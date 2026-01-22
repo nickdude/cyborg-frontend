@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { userAPI } from "@/services/api";
+import { userAPI, actionPlanAPI } from "@/services/api";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Button from "@/components/Button";
@@ -19,6 +19,8 @@ export default function BloodReports() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [file, setFile] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [generatingReportId, setGeneratingReportId] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -89,6 +91,28 @@ export default function BloodReports() {
     }
   };
 
+  const handleGeneratePlan = async (reportId) => {
+    setGeneratingReportId(reportId);
+    setToast({
+      type: "info",
+      message: "Generating action plan... You'll be notified when it's ready.",
+    });
+
+    try {
+      await actionPlanAPI.create(reportId);
+      // Plan is now generating in the background
+      // User will get notification when ready
+    } catch (err) {
+      setToast({
+        type: "error",
+        message: err.message || "Failed to start plan generation",
+      });
+    } finally {
+      setGeneratingReportId(null);
+      setTimeout(() => setToast(null), 4000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -100,6 +124,21 @@ export default function BloodReports() {
   return (
     <div className="min-h-screen bg-pageBackground text-gray-900">
       <Navbar backHref="/dashboard" />
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg text-white z-50 animate-in fade-in slide-in-from-top-5 max-w-xs ${
+            toast.type === "success"
+              ? "bg-green-500"
+              : toast.type === "error"
+              ? "bg-red-500"
+              : "bg-blue-500"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
         {/* Title */}
@@ -205,11 +244,18 @@ export default function BloodReports() {
                         fullWidth
                         size="md"
                         className="bg-black hover:bg-gray-900 text-white"
+                        disabled={generatingReportId === report._id}
                         onClick={() =>
-                          router.push(`/action-plan/${userId}?reportId=${report._id}`)
+                          hasPlan
+                            ? router.push(`/action-plan/${userId}?planId=${report.actionPlanId}`)
+                            : handleGeneratePlan(report._id)
                         }
                       >
-                        {hasPlan ? "View plan" : "Generate plan"}
+                        {generatingReportId === report._id
+                          ? "Generating..."
+                          : hasPlan
+                          ? "View plan"
+                          : "Generate plan"}
                       </Button>
                       <Button
                         fullWidth

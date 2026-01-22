@@ -3,131 +3,222 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { userAPI } from "@/services/api";
+import { actionPlanAPI } from "@/services/api";
+import Navbar from "@/components/Navbar";
 
 export default function ActionPlan() {
   const params = useParams();
   const searchParams = useSearchParams();
   const userId = params.userId;
   const reportId = searchParams.get("reportId");
+  const planId = searchParams.get("planId");
   const router = useRouter();
   const { token } = useAuth();
 
   const [actionPlan, setActionPlan] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     if (!token) {
       router.push("/login");
-    } else if (reportId) {
-      fetchActionPlan();
+    } else if (reportId || planId) {
+      fetchPlan();
     }
-  }, [token, reportId]);
+  }, [token, reportId, planId]);
 
-  const fetchActionPlan = async () => {
+  const fetchPlan = async () => {
     try {
-      const response = await userAPI.getActionPlan(reportId);
-      setActionPlan(response.data?.actionPlan);
+      // We expect planId from notification
+      if (!planId) {
+        setError("Plan not found. Please click the notification from the bell icon.");
+        setLoading(false);
+        return;
+      }
+
+      const response = await actionPlanAPI.get(planId);
+      
+      if (response.data) {
+        const { status, planJson, errorMessage } = response.data;
+        
+        if (status === "ready" && planJson) {
+          setActionPlan(planJson);
+          setError("");
+        } else if (status === "pending") {
+          setError("Plan is still generating. You'll be notified when ready.");
+        } else if (status === "failed") {
+          setError(errorMessage || "Failed to generate plan");
+        } else {
+          setError("Plan not found");
+        }
+      }
     } catch (err) {
-      setError("Failed to load action plan");
+      setError("Failed to load plan: " + (err.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGenerate = async () => {
-    setGenerating(true);
-    setError("");
-
+  const handleDownloadPDF = async () => {
+    if (!planId) return;
+    
     try {
-      const response = await userAPI.generateActionPlan(reportId);
-      setActionPlan(response.data.actionPlan);
+      const blob = await actionPlanAPI.exportPDF(planId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `action-plan-${planId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setToast({ type: "success", message: "PDF downloaded successfully!" });
+      setTimeout(() => setToast(null), 3000);
     } catch (err) {
-      setError(err.message || "Failed to generate action plan");
-    } finally {
-      setGenerating(false);
+      setToast({ type: "error", message: "Failed to download PDF" });
+      console.error("PDF download error:", err);
     }
-  };
-
-  const handleDownloadPDF = () => {
-    // Placeholder for PDF download functionality
-    alert("PDF download functionality will be implemented");
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-2xl font-bold">Loading...</div>
+      <div className="min-h-screen bg-pageBackground flex flex-col">
+        <Navbar backHref="/blood-reports/me" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-xl font-semibold text-gray-600">Loading...</div>
+        </div>
       </div>
     );
   }
 
-  if (!reportId) {
+  if (!reportId && !planId) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-2xl font-bold text-red-600">No report selected</div>
+      <div className="min-h-screen bg-pageBackground flex flex-col">
+        <Navbar backHref="/blood-reports/me" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-xl font-semibold text-red-600">No plan selected</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !actionPlan) {
+    return (
+      <div className="min-h-screen bg-pageBackground flex flex-col">
+        <Navbar backHref="/blood-reports/me" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="max-w-md text-center space-y-4">
+            <div className="text-lg font-semibold text-red-600">{error}</div>
+            <button
+              onClick={() => router.back()}
+              className="bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-900"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold mb-8">Action Plan</h1>
+    <div className="min-h-screen bg-pageBackground flex flex-col">
+      <Navbar backHref="/blood-reports/me" />
 
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg text-white z-50 animate-in fade-in slide-in-from-top-5 max-w-xs ${
+            toast.type === "success"
+              ? "bg-green-500"
+              : toast.type === "error"
+              ? "bg-red-500"
+              : "bg-blue-500"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8 space-y-6">
+        {actionPlan && (
+          <>
+            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              ✓ Your action plan is ready!
             </div>
-          )}
 
-          {!actionPlan ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600 mb-6">
-                No action plan generated yet. Click below to generate one based on
-                your blood report.
-              </p>
+            <div className="border border-gray-200 rounded-lg p-6 bg-gray-50 space-y-4">
+              <div className="prose max-w-none">
+                {typeof actionPlan === "string" ? (
+                  <div className="whitespace-pre-wrap text-gray-800">{actionPlan}</div>
+                ) : actionPlan.summary ? (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {actionPlan.summary}
+                      </h2>
+                    </div>
+
+                    {actionPlan.recommendations && (
+                      <div className="space-y-4">
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          Recommendations
+                        </h3>
+                        <div className="grid gap-4">
+                          {actionPlan.recommendations.map((section, idx) => (
+                            <div key={idx} className="bg-white p-4 rounded-lg border border-gray-200">
+                              <h4 className="font-bold text-lg text-gray-800 mb-3">
+                                {section.title}
+                              </h4>
+                              <ul className="space-y-2">
+                                {section.items.map((item, i) => (
+                                  <li key={i} className="flex gap-3 text-gray-700">
+                                    <span className="text-green-600 font-bold">•</span>
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {actionPlan.labsReviewed && (
+                      <div className="bg-white p-4 rounded-lg border border-gray-200">
+                        <p className="text-sm text-gray-600">
+                          <span className="font-semibold">Report:</span> {actionPlan.labsReviewed.fileName}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Uploaded: {new Date(actionPlan.labsReviewed.uploadedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>{JSON.stringify(actionPlan, null, 2)}</div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
               <button
-                onClick={handleGenerate}
-                disabled={generating}
-                className="bg-blue-600 text-white px-8 py-3 rounded font-semibold hover:bg-blue-700 disabled:opacity-50"
+                onClick={handleDownloadPDF}
+                className="flex-1 bg-black text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-900"
               >
-                {generating ? "Generating..." : "Generate Action Plan"}
+                Download as PDF
+              </button>
+              <button
+                onClick={() => router.back()}
+                className="flex-1 border border-gray-300 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50"
+              >
+                Back
               </button>
             </div>
-          ) : (
-            <div>
-              <div className="bg-blue-50 p-6 rounded-lg mb-6">
-                <div className="prose max-w-none">
-                  {typeof actionPlan === "string" ? (
-                    <div className="whitespace-pre-wrap">{actionPlan}</div>
-                  ) : (
-                    <div>{JSON.stringify(actionPlan, null, 2)}</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  onClick={handleDownloadPDF}
-                  className="bg-green-600 text-white px-6 py-2 rounded font-semibold hover:bg-green-700"
-                >
-                  Download as PDF
-                </button>
-                <button
-                  onClick={() => router.back()}
-                  className="bg-gray-600 text-white px-6 py-2 rounded font-semibold hover:bg-gray-700"
-                >
-                  Back
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          </>
+        )}
+      </main>
     </div>
   );
 }

@@ -4,7 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI } from "@/services/api";
-import Link from "next/link";
+import Image from "next/image";
+import CyborgLogo from "@/components/CyborgLogo";
 
 export default function HearAboutUsPage() {
   const { user, token } = useAuth();
@@ -13,7 +14,7 @@ export default function HearAboutUsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [expanded, setExpanded] = useState({
-    socialMediaOrAd: true,
+    socialMediaOrAd: false,
     wordOfMouth: false,
     podcast: false,
     creator: false,
@@ -58,7 +59,7 @@ export default function HearAboutUsPage() {
     }
   };
 
-  const toggleExpand = (key) =>
+  const toggleExpand = (key) => {
     setExpanded((prev) => {
       const allClosed = {
         socialMediaOrAd: false,
@@ -72,6 +73,7 @@ export default function HearAboutUsPage() {
       const isCurrentlyOpen = !!prev[key];
       return { ...allClosed, [key]: !isCurrentlyOpen };
     });
+  };
 
   const toggleOption = (path, value) => {
     setForm((prev) => {
@@ -106,37 +108,69 @@ export default function HearAboutUsPage() {
   };
 
   // UI helpers
-  const Checkbox = ({ checked, onChange }) => (
-    <span
+  const OptionItem = ({ icon, label, checked, onChange }) => (
+    <button
       onClick={onChange}
-      className={`w-4 h-4 inline-block border rounded cursor-pointer ${checked ? "bg-blue-600 border-blue-600" : "border-gray-300"}`}
-    />
+      className={`w-full flex items-center border-t-[1px] border-borderColor gap-3 py-3 transition hover:bg-gray-50 ${
+        checked ? "bg-gray-50" : ""
+      }`}
+    >
+      {icon && (
+        <Image src={icon} alt={label} width={20} height={20} className="flex-shrink-0" />
+      )}
+      <span className="text-black text-sm text-left flex-1">{label}</span>
+      <div className={`w-5 h-5 rounded-full border-[1px] flex items-center justify-center ${
+        checked ? "border-borderColor" : "border-borderColor"
+      }`}>
+        {checked && <div className="w-3 h-3 rounded-full bg-borderColor"></div>}
+      </div>
+    </button>
   );
 
-  const Section = ({ title, children, expanded, onToggle }) => (
-    <div className="bg-white rounded-lg shadow mb-6">
-      <div className="flex items-center justify-between p-4 border-b">
-        <h3 className="font-semibold">{title}</h3>
-        <button onClick={onToggle} className="text-gray-600">{expanded ? "▾" : "▸"}</button>
-      </div>
-      {expanded && <div className="p-4 space-y-2">{children}</div>}
+  const Section = ({ title, children, expanded, onToggle, icon }) => (
+    <div className="bg-white mb-4 border border-borderColor rounded-xl shadow-sm font-inter font-normal">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-4"
+      >
+        <div className="flex items-center gap-3">
+          {icon && <Image src={icon} alt="" width={20} height={20} />}
+          <span className="text-base text-black">{title}</span>
+        </div>
+        <Image
+          src="/assets/icons/arrow-down.svg"
+          alt="Toggle"
+          width={16}
+          height={16}
+          className={`transition-transform ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      {expanded && <div className="px-4 pb-4 pt-2">{children}</div>}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-6">
-          <Link href="/dashboard" className="text-gray-600 hover:underline">← Back</Link>
+    <div className="min-h-screen bg-pageBackground py-8 px-4 font-inter">
+      <div className="max-w-md mx-auto">
+        {/* Logo */}
+        <div className="mb-8">
+          <CyborgLogo width={120} height={48} />
         </div>
-        <h1 className="text-3xl font-bold mb-6">CYBORG</h1>
-        <p className="text-gray-700 mb-6">How did you hear about us?</p>
+
+        {/* Heading */}
+        <h1 className="text-xl font-medium text-black mb-8">
+          How did you hear about us?
+        </h1>
 
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+            {error}
+          </div>
         )}
         {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{success}</div>
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">
+            {success}
+          </div>
         )}
 
         {/* Social Media or Ad */}
@@ -145,32 +179,42 @@ export default function HearAboutUsPage() {
           expanded={expanded.socialMediaOrAd}
           onToggle={() => toggleExpand("socialMediaOrAd")}
         >
-          {[
-            "TikTok",
-            "Instagram",
-            "Facebook",
-            "YouTube",
-            "LinkedIn",
-            "Other",
-          ].map((opt) => (
-            <div key={opt} className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  checked={form.socialMediaOrAd.platforms.includes(opt)}
-                  onChange={() => toggleOption("socialMediaOrAd.platforms", opt)}
-                />
-                <span>{opt}</span>
-              </div>
-            </div>
-          ))}
-          {form.socialMediaOrAd.platforms.includes("Other") && (
-            <textarea
-              className="w-full border rounded p-2 text-sm"
-              placeholder="Please tell us more..."
-              value={form.socialMediaOrAd.otherText}
-              onChange={(e) => handleChange("socialMediaOrAd.otherText", e.target.value)}
-            />
-          )}
+          <OptionItem
+            icon="/assets/icons/tiktok-icon.svg"
+            label="TikTok"
+            checked={form.socialMediaOrAd.platforms.includes("TikTok")}
+            onChange={() => toggleOption("socialMediaOrAd.platforms", "TikTok")}
+          />
+          <OptionItem
+            icon="/assets/icons/instagram.svg"
+            label="Instagram"
+            checked={form.socialMediaOrAd.platforms.includes("Instagram")}
+            onChange={() => toggleOption("socialMediaOrAd.platforms", "Instagram")}
+          />
+          <OptionItem
+            icon="/assets/icons/facebook.svg"
+            label="Facebook"
+            checked={form.socialMediaOrAd.platforms.includes("Facebook")}
+            onChange={() => toggleOption("socialMediaOrAd.platforms", "Facebook")}
+          />
+          <OptionItem
+            icon="/assets/icons/youtube.svg"
+            label="YouTube"
+            checked={form.socialMediaOrAd.platforms.includes("YouTube")}
+            onChange={() => toggleOption("socialMediaOrAd.platforms", "YouTube")}
+          />
+          <OptionItem
+            icon="/assets/icons/linkedin.svg"
+            label="LinkedIn"
+            checked={form.socialMediaOrAd.platforms.includes("LinkedIn")}
+            onChange={() => toggleOption("socialMediaOrAd.platforms", "LinkedIn")}
+          />
+          <OptionItem
+            icon="/assets/icons/ellipsis.svg"
+            label="Other"
+            checked={form.socialMediaOrAd.platforms.includes("Other")}
+            onChange={() => toggleOption("socialMediaOrAd.platforms", "Other")}
+          />
         </Section>
 
         {/* Word of Mouth */}
@@ -179,91 +223,143 @@ export default function HearAboutUsPage() {
           expanded={expanded.wordOfMouth}
           onToggle={() => toggleExpand("wordOfMouth")}
         >
-          {["Friend", "Family", "Colleague", "Clinician", "Other"].map((opt) => (
-            <div key={opt} className="flex items-center gap-3 py-2">
-              <Checkbox
-                checked={form.wordOfMouth.sources.includes(opt)}
-                onChange={() => toggleOption("wordOfMouth.sources", opt)}
-              />
-              <span>{opt}</span>
-            </div>
-          ))}
-          {form.wordOfMouth.sources.includes("Other") && (
-            <textarea
-              className="w-full border rounded p-2 text-sm"
-              placeholder="Please tell us more..."
-              value={form.wordOfMouth.otherText}
-              onChange={(e) => handleChange("wordOfMouth.otherText", e.target.value)}
-            />
-          )}
+          <OptionItem
+            icon="/assets/icons/user.svg"
+            label="Friend"
+            checked={form.wordOfMouth.sources.includes("Friend")}
+            onChange={() => toggleOption("wordOfMouth.sources", "Friend")}
+          />
+          <OptionItem
+            icon="/assets/icons/user-group.svg"
+            label="Family"
+            checked={form.wordOfMouth.sources.includes("Family")}
+            onChange={() => toggleOption("wordOfMouth.sources", "Family")}
+          />
+          <OptionItem
+            icon="/assets/icons/briefcase.svg"
+            label="Colleague"
+            checked={form.wordOfMouth.sources.includes("Colleague")}
+            onChange={() => toggleOption("wordOfMouth.sources", "Colleague")}
+          />
+          <OptionItem
+            icon="/assets/icons/heart-pulse.svg"
+            label="Clinician"
+            checked={form.wordOfMouth.sources.includes("Clinician")}
+            onChange={() => toggleOption("wordOfMouth.sources", "Clinician")}
+          />
+          <OptionItem
+            icon="/assets/icons/ellipsis.svg"
+            label="Other"
+            checked={form.wordOfMouth.sources.includes("Other")}
+            onChange={() => toggleOption("wordOfMouth.sources", "Other")}
+          />
         </Section>
 
         {/* Podcast */}
-        <Section title="Podcast" expanded={expanded.podcast} onToggle={() => toggleExpand("podcast")}>
+        <Section
+          title="Podcast"
+          expanded={expanded.podcast}
+          onToggle={() => toggleExpand("podcast")}
+        >
           <textarea
-            className="w-full border rounded p-2 text-sm"
+            className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Please tell us more..."
+            rows={3}
             value={form.podcast.note}
             onChange={(e) => handleChange("podcast.note", e.target.value)}
           />
         </Section>
 
         {/* Creator */}
-        <Section title="Creator" expanded={expanded.creator} onToggle={() => toggleExpand("creator")}>
+        <Section
+          title="Creator"
+          expanded={expanded.creator}
+          onToggle={() => toggleExpand("creator")}
+        >
           <textarea
-            className="w-full border rounded p-2 text-sm"
+            className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Please tell us more..."
+            rows={3}
             value={form.creator.note}
             onChange={(e) => handleChange("creator.note", e.target.value)}
           />
         </Section>
 
         {/* Web Search */}
-        <Section title="Web Search" expanded={expanded.webSearch} onToggle={() => toggleExpand("webSearch")}>
-          {["Google", "Bing", "ChatGPT", "Perplexity", "Claude", "Other"].map((opt) => (
-            <div key={opt} className="flex items-center gap-3 py-2">
-              <Checkbox
-                checked={form.webSearch.engines.includes(opt)}
-                onChange={() => toggleOption("webSearch.engines", opt)}
-              />
-              <span>{opt}</span>
-            </div>
-          ))}
-          {form.webSearch.engines.includes("Other") && (
-            <textarea
-              className="w-full border rounded p-2 text-sm"
-              placeholder="Please tell us more..."
-              value={form.webSearch.otherText}
-              onChange={(e) => handleChange("webSearch.otherText", e.target.value)}
-            />
-          )}
+        <Section
+          title="Web Search"
+          expanded={expanded.webSearch}
+          onToggle={() => toggleExpand("webSearch")}
+        >
+          <OptionItem
+            icon="/assets/icons/google.svg"
+            label="Google"
+            checked={form.webSearch.engines.includes("Google")}
+            onChange={() => toggleOption("webSearch.engines", "Google")}
+          />
+          <OptionItem
+            icon="/assets/icons/bing.svg"
+            label="Bing"
+            checked={form.webSearch.engines.includes("Bing")}
+            onChange={() => toggleOption("webSearch.engines", "Bing")}
+          />
+          <OptionItem
+            icon="/assets/icons/ChatGPT-Logo.svg"
+            label="ChatGPT"
+            checked={form.webSearch.engines.includes("ChatGPT")}
+            onChange={() => toggleOption("webSearch.engines", "ChatGPT")}
+          />
+          <OptionItem
+            icon="/assets/icons/perplexity-icon.svg"
+            label="Perplexity"
+            checked={form.webSearch.engines.includes("Perplexity")}
+            onChange={() => toggleOption("webSearch.engines", "Perplexity")}
+          />
+          <OptionItem
+            icon="/assets/icons/claude-icon.svg"
+            label="Claude"
+            checked={form.webSearch.engines.includes("Claude")}
+            onChange={() => toggleOption("webSearch.engines", "Claude")}
+          />
+          <OptionItem
+            icon="/assets/icons/ellipsis.svg"
+            label="Other"
+            checked={form.webSearch.engines.includes("Other")}
+            onChange={() => toggleOption("webSearch.engines", "Other")}
+          />
         </Section>
 
         {/* Email */}
-        <Section title="Email" expanded={expanded.email} onToggle={() => toggleExpand("email")}>
-          {["Newsletter", "Superpower Journal", "Other"].map((opt) => (
-            <div key={opt} className="flex items-center gap-3 py-2">
-              <Checkbox
-                checked={form.email.sources.includes(opt)}
-                onChange={() => toggleOption("email.sources", opt)}
-              />
-              <span>{opt}</span>
-            </div>
-          ))}
-          {form.email.sources.includes("Other") && (
-            <textarea
-              className="w-full border rounded p-2 text-sm"
-              placeholder="Please tell us more..."
-              value={form.email.otherText}
-              onChange={(e) => handleChange("email.otherText", e.target.value)}
-            />
-          )}
+        <Section
+          title="Email"
+          expanded={expanded.email}
+          onToggle={() => toggleExpand("email")}
+        >
+          <OptionItem
+            icon="/assets/icons/envelope.svg"
+            label="Newsletter"
+            checked={form.email.sources.includes("Newsletter")}
+            onChange={() => toggleOption("email.sources", "Newsletter")}
+          />
+          <OptionItem
+            icon="/assets/icons/envelope.svg"
+            label="Superpower Journal"
+            checked={form.email.sources.includes("Superpower Journal")}
+            onChange={() => toggleOption("email.sources", "Superpower Journal")}
+          />
+          <OptionItem
+            icon="/assets/icons/ellipsis.svg"
+            label="Other"
+            checked={form.email.sources.includes("Other")}
+            onChange={() => toggleOption("email.sources", "Other")}
+          />
         </Section>
 
+        {/* Next Button */}
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full bg-black text-white py-3 rounded font-semibold hover:bg-gray-800 disabled:opacity-50"
+          className="w-full bg-black text-white py-4 rounded-xl font-semibold hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition mt-6"
         >
           {loading ? "Saving..." : "Next"}
         </button>
