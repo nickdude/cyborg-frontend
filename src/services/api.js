@@ -46,6 +46,7 @@ export const userAPI = {
   saveOnboarding: (userId, data) => API.post(`/api/users/${userId}/onboarding`, data),
   getHearAboutUs: (userId) => API.get(`/api/users/${userId}/hear-about-us`),
   saveHearAboutUs: (userId, data) => API.post(`/api/users/${userId}/hear-about-us`, data),
+  markWelcomeSeen: (userId) => API.post(`/api/users/${userId}/welcome-seen`),
   uploadBloodReport: (userId, formData) =>
     API.post(`/api/users/${userId}/blood-reports`, formData, {
       headers: { "Content-Type": "multipart/form-data" },

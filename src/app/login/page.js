@@ -10,6 +10,7 @@ import Input from "@/components/Input";
 import SocialButton from "@/components/SocialButton";
 import CyborgLogo from "@/components/CyborgLogo";
 import { Eye, EyeOff } from "lucide-react";
+import { getNextRoute } from "@/utils/navigationFlow";
 
 export default function Login() {
   const [step, setStep] = useState(1); // 1: email, 2: phone, 3: password, 4: otp
@@ -58,7 +59,8 @@ export default function Login() {
       if (response?.data?.token) {
         // Login successful with password
         login(response.data.user, response.data.token);
-        router.push("/dashboard");
+        const nextRoute = getNextRoute(response.data.user);
+        router.push(nextRoute);
       } else if (response?.data?.userId) {
         // OTP needed (email or phone)
         setUserId(response.data.userId);
@@ -98,7 +100,8 @@ export default function Login() {
       });
 
       login(response.data.user, response.data.token);
-      router.push("/dashboard");
+      const nextRoute = getNextRoute(response.data.user);
+      router.push(nextRoute);
     } catch (err) {
       setError(err.message || "OTP verification failed");
     } finally {

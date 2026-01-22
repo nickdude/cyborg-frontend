@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI } from "@/services/api";
 import Link from "next/link";
+import { getNextRoute } from "@/utils/navigationFlow";
 
 const SECTIONS = [
   {
@@ -396,7 +397,11 @@ export default function Onboarding() {
         answers,
         questionsVersion: "2.0",
       });
-      router.push("/dashboard");
+      // Update user context
+      updateUser({ ...user, onboardingCompleted: true });
+      // Navigate to next step
+      const nextRoute = getNextRoute({ ...user, onboardingCompleted: true });
+      router.push(nextRoute);
     } catch (e) {
       setError(e.message || "Failed to save onboarding");
     } finally {

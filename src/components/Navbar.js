@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CyborgLogo from "@/components/CyborgLogo";
 import Image from "next/image";
+import { Bell } from "lucide-react";
 import { notificationAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -77,7 +78,7 @@ export default function Navbar({ backHref = "/", showBack = true }) {
   };
 
   return (
-    <header className="w-full bg-pageBackground backdrop-blur px-4 pt-10 flex items-center justify-between">
+    <header className="w-full bg-pageBackground backdrop-blur px-4 pt-10 flex items-center justify-between font-inter">
       <div className="">
         {showBack && (
           <Link
@@ -102,7 +103,7 @@ export default function Navbar({ backHref = "/", showBack = true }) {
             className="relative p-2 hover:bg-gray-200 rounded-full transition"
             aria-label="Notifications"
           >
-            <span className="text-2xl">🔔</span>
+            <Bell className="w-6 h-6" />
             {unreadCount > 0 && (
               <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -112,8 +113,8 @@ export default function Navbar({ backHref = "/", showBack = true }) {
 
           {/* Notification Dropdown */}
           {showDropdown && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="absolute right-0 mt-2 w-80 bg-white border border-borderColor rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+              <div className="p-4 border-b border-borderColor flex items-center justify-between">
                 <h3 className="font-semibold text-gray-900">Notifications</h3>
                 <button
                   onClick={() => setShowDropdown(false)}
@@ -132,7 +133,7 @@ export default function Navbar({ backHref = "/", showBack = true }) {
                   No notifications yet
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-borderColor">
                   {notifications.map((notification) => (
                     <button
                       key={notification._id}

@@ -6,9 +6,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { userAPI } from "@/services/api";
 import Image from "next/image";
 import CyborgLogo from "@/components/CyborgLogo";
+import { getNextRoute } from "@/utils/navigationFlow";
 
 export default function HearAboutUsPage() {
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -97,9 +98,25 @@ export default function HearAboutUsPage() {
     setError("");
     setSuccess("");
     try {
-      await userAPI.saveHearAboutUs(user.id, form);
+      const response = await userAPI.saveHearAboutUs(user.id, form);
       setSuccess("Saved successfully");
-      setTimeout(() => router.push("/welcome"), 800);
+      // Determine which source was selected
+      let whereYouHeardAboutUs = "Other";
+      if (form.socialMediaOrAd && Object.keys(form.socialMediaOrAd).length > 0) {
+        whereYouHeardAboutUs = "Social Media";
+      } else if (form.wordOfMouth && Object.keys(form.wordOfMouth).length > 0) {
+        whereYouHeardAboutUs = "Friend Recommendation";
+      } else if (form.webSearch && Object.keys(form.webSearch).length > 0) {
+        whereYouHeardAboutUs = "Search Engine";
+      } else if (form.podcast || form.creator || form.email) {
+        whereYouHeardAboutUs = "Advertisement";
+      }
+      // Update user context with the value
+      updateUser({ ...user, whereYouHeardAboutUs });
+      setTimeout(() => {
+        const nextRoute = getNextRoute({ ...user, whereYouHeardAboutUs });
+        router.push(nextRoute);
+      }, 800);
     } catch (e) {
       setError(e.message || "Failed to save");
     } finally {

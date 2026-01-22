@@ -2,6 +2,10 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { userAPI } from "@/services/api";
+import { getNextRoute } from "@/utils/navigationFlow";
 
 export default function WelcomeFlow() {
   const [step, setStep] = useState(1);
@@ -203,6 +207,30 @@ function SlideTwo({ onNext, onPrev }) {
 }
 
 function SlideThree({ onPrev }) {
+  const router = useRouter();
+  const { user, updateUser } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  const handleContinue = async () => {
+    setLoading(true);
+    try {
+      // Mark welcome as seen in backend
+      await userAPI.markWelcomeSeen(user.id);
+      // Update user context
+      updateUser({ ...user, hasSeenWelcome: true });
+      // Navigate to next step
+      const nextRoute = getNextRoute({ ...user, hasSeenWelcome: true });
+      router.push(nextRoute);
+    } catch (e) {
+      console.error("Failed to mark welcome seen", e);
+      // Still navigate even if marking fails
+      const nextRoute = getNextRoute({ ...user, hasSeenWelcome: true });
+      router.push(nextRoute);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter">
         <div className="flex flex-col justify-center items-center gap-5">
@@ -220,12 +248,13 @@ function SlideThree({ onPrev }) {
             </div>
         </div>
       <div className="w-full px-2">
-        <Link
-          href="/onboarding"
-          className="flex-1 py-3 px-20 w-full rounded-lg bg-black text-white font-semibold hover:bg-gray-900 text-center"
+        <button
+          onClick={handleContinue}
+          disabled={loading}
+          className="flex-1 py-3 px-20 w-full rounded-lg bg-black text-white font-semibold hover:bg-gray-900 text-center disabled:opacity-50"
         >
-          Complete Intake
-        </Link>
+          {loading ? "Loading..." : "Complete Intake"}
+        </button>
       </div>
     </div>
   );

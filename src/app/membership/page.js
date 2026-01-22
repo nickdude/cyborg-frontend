@@ -7,10 +7,11 @@ import { paymentAPI } from "@/services/api";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 import Navbar from "@/components/Navbar";
+import { getNextRoute } from "@/utils/navigationFlow";
 
 export default function MembershipPage() {
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -142,7 +143,12 @@ export default function MembershipPage() {
 
             if (verifyResponse.data) {
               setSubscription(verifyResponse.data.subscription);
+              // Update user context with subscription status
+              updateUser({ ...user, hasActiveSubscription: true });
               setLoading(false);
+              // Navigate to next step in flow
+              const nextRoute = getNextRoute({ ...user, hasActiveSubscription: true });
+              router.push(nextRoute);
             }
           } catch (err) {
             setError("Payment verification failed. Please contact support.");
