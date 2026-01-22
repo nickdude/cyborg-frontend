@@ -12,6 +12,28 @@ import CyborgLogo from "@/components/CyborgLogo";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 
+function DoctorToggle({ value, onChange, className = "" }) {
+  const isDoctor = value === "doctor";
+  return (
+    <div className={`flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm ${className}`}>
+      <span className="text-gray-800 font-medium">Register as a doctor</span>
+      <button
+        type="button"
+        onClick={() => onChange(isDoctor ? "user" : "doctor")}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          isDoctor ? "bg-primary" : "bg-borderColor"
+        }`}
+      >
+        <span
+          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow ${
+            isDoctor ? "translate-x-5" : "translate-x-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
 export default function Register() {
   const [step, setStep] = useState(1); // 1: email, 2: otp, 3: phone, 4: email-password, 5: phone-password
   const [registrationMethod, setRegistrationMethod] = useState("email-otp"); // email-otp, email-password, phone-otp, phone-password
@@ -37,6 +59,10 @@ export default function Register() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
+  };
+
+  const handleUserTypeChange = (userType) => {
+    setFormData((prev) => ({ ...prev, userType }));
   };
 
   const handleRegister = async (e) => {
@@ -263,6 +289,12 @@ export default function Register() {
               onChange={handleInputChange}
             />
 
+            <DoctorToggle
+              value={formData.userType}
+              onChange={handleUserTypeChange}
+              className="mt-4 mb-3"
+            />
+
             <Button fullWidth variant="primary" disabled={loading || !formData.phone}>
               {loading ? "Sending OTP..." : "Get Started"}
             </Button>
@@ -358,6 +390,12 @@ export default function Register() {
               </button>
             </div>
 
+            <DoctorToggle
+              value={formData.userType}
+              onChange={handleUserTypeChange}
+              className="mt-4 mb-3"
+            />
+
             <Button fullWidth variant="primary" disabled={loading || !formData.email || !formData.password}>
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
@@ -444,6 +482,12 @@ export default function Register() {
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+
+            <DoctorToggle
+              value={formData.userType}
+              onChange={handleUserTypeChange}
+              className="mt-4 mb-3"
+            />
 
             <Button fullWidth variant="primary" disabled={loading || !formData.phone || !formData.password}>
               {loading ? "Creating Account..." : "Create Account"}
@@ -549,6 +593,12 @@ export default function Register() {
               {useOTP ? "Use password instead" : "Use OTP instead"}
             </button>
           </div>
+
+          <DoctorToggle
+            value={formData.userType}
+            onChange={handleUserTypeChange}
+            className="mb-3"
+          />
 
           <Button
             type="submit"

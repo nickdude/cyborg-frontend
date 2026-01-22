@@ -42,7 +42,6 @@ export default function Login() {
     const activeMethod = step === 3 ? "password" : loginMethod;
 
     try {
-      console.log("[login] step:", step, "loginMethod:", loginMethod, "activeMethod:", activeMethod);
       const loginPayload = {};
 
       if (activeMethod === "email-otp") {
@@ -54,9 +53,7 @@ export default function Login() {
         loginPayload.password = formData.password;
       }
 
-      console.log("[login] payload:", loginPayload);
       const response = await authAPI.login(loginPayload); // interceptor returns { success, data }
-      console.log("[login] response:", response);
 
       if (response?.data?.token) {
         // Login successful with password
@@ -100,7 +97,6 @@ export default function Login() {
         otp,
       });
 
-      console.log("[verify-login-otp] response:", response);
       login(response.data.user, response.data.token);
       router.push("/dashboard");
     } catch (err) {
@@ -215,7 +211,7 @@ export default function Login() {
               Forgot password?
             </Link>
 
-            <Button fullWidth variant="primary" disabled={loading || !formData.email || !formData.password} className="mb-4">
+            <Button type="submit" fullWidth variant="primary" disabled={loading || !formData.email || !formData.password} className="mb-4">
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
