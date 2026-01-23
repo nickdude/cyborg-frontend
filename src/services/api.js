@@ -52,6 +52,7 @@ export const userAPI = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
   getBloodReports: (userId) => API.get(`/api/users/${userId}/blood-reports`),
+  getBloodReport: (reportId) => API.get(`/api/users/blood-reports/${reportId}`),
   deleteBloodReport: (userId, reportId) =>
     API.delete(`/api/users/${userId}/blood-reports/${reportId}`),
 };
@@ -84,6 +85,14 @@ export const paymentAPI = {
 export const questionnaireAPI = {
   get: () => API.get("/api/questionnaire"),
   update: (data) => API.put("/api/questionnaire", data),
+};
+
+export const conciergeAPI = {
+  ask: (query, userId) => API.post("/api/concierge/ask", { query, userId }),
+};
+
+export const doctorAPI = {
+  ask: (query, userId) => API.post("/api/doctor/ask", { query, userId }),
 };
 
 export default API;

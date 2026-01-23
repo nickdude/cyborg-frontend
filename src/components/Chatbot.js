@@ -1,13 +1,16 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader } from "lucide-react";
+import { Send, Loader, FileText } from "lucide-react";
+import { doctorAPI } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Chatbot({ patientId, patientName }) {
+  const { user } = useAuth();
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: `Hello! I'm your AI assistant. I can help you with insights about ${patientName}'s health profile, biomarkers, and recommendations. What would you like to know?`,
+      text: `Hello! I'm your AI medical assistant. I can help you with insights about ${patientName}'s health profile, biomarkers, treatment protocols, and clinical recommendations. What would you like to know?`,
       sender: "ai",
       timestamp: new Date(),
     },
@@ -40,43 +43,22 @@ export default function Chatbot({ patientId, patientName }) {
     setLoading(true);
 
     try {
-      // Call API endpoint
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: input,
-          patientId: patientId,
-          patientName: patientName,
-        }),
-      });
+      // Call doctor AI API
+      const response = await doctorAPI.ask(input, user?._id || "");
 
-      const data = await response.json();
-
-      if (response.ok) {
-        const aiMessage = {
-          id: messages.length + 2,
-          text: data.reply,
-          sender: "ai",
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-      } else {
-        const errorMessage = {
-          id: messages.length + 2,
-          text: "Sorry, I encountered an error. Please try again.",
-          sender: "ai",
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
-      }
+      const aiMessage = {
+        id: messages.length + 2,
+        text: response.data.answer || response.data.message || "I received your question.",
+        sender: "ai",
+        timestamp: new Date(),
+        citations: response.data.citations || null,
+      };
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage = {
         id: messages.length + 2,
-        text: "Connection error. Please try again.",
+        text: "Sorry, I encountered an error processing your request. Please try again.",
         sender: "ai",
         timestamp: new Date(),
       };
@@ -109,31 +91,67 @@ export default function Chatbot({ patientId, patientName }) {
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.sender === "doctor" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={msg.id} className="space-y-2">
             <div
-              className={`max-w-[85%] rounded-lg px-4 py-3 ${
-                msg.sender === "doctor"
-                  ? "bg-primary text-white rounded-br-none"
-                  : "bg-white border border-borderColor text-black rounded-bl-none shadow-sm"
-              }`}
+              className={`flex ${msg.sender === "doctor" ? "justify-end" : "justify-start"}`}
             >
-              <p className="text-sm leading-relaxed">{msg.text}</p>
-              <p
-                className={`text-xs mt-1 ${
+              <div
+                className={`max-w-[85%] rounded-lg px-4 py-3 ${
                   msg.sender === "doctor"
-                    ? "text-primary/70"
-                    : "text-gray-500"
+                    ? "bg-primary text-white rounded-br-none"
+                    : "bg-white border border-borderColor text-black rounded-bl-none shadow-sm"
                 }`}
               >
-                {msg.timestamp.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                <p
+                  className={`text-xs mt-1 ${
+                    msg.sender === "doctor"
+                      ? "text-primary/70"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {msg.timestamp.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
             </div>
+
+            {/* Citations */}
+            {msg.citations && msg.citations.length > 0 && (
+              <div className="ml-4 space-y-2">
+                <div className="text-xs font-semibold text-gray-600 flex items-center gap-1">
+                  <FileText className="w-3 h-3" />
+                  Clinical References:
+                </div>
+                {msg.citations.map((citation, index) => (
+                  <div
+                    key={citation.chunk_id || index}
+                    className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      {citation.url && (
+                        <div className="font-medium text-blue-700 truncate flex-1">
+                          {citation.url.split("/").pop()}
+                        </div>
+                      )}
+                      {citation.page && (
+                        <div className="text-gray-600 shrink-0 text-[10px] bg-white px-2 py-0.5 rounded">
+                          Page {citation.page}
+                        </div>
+                      )}
+                    </div>
+                    {citation.section && (
+                      <div className="text-blue-800 font-medium mb-1">{citation.section}</div>
+                    )}
+                    {citation.text && (
+                      <div className="text-gray-700 leading-relaxed">{citation.text}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
 

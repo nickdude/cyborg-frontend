@@ -243,6 +243,14 @@ export default function BloodReports() {
                       <Button
                         fullWidth
                         size="md"
+                        className="bg-primary hover:bg-purple-800 text-white"
+                        onClick={() => router.push(`/blood-reports/analysis/${report._id}`)}
+                      >
+                        View AI Analysis
+                      </Button>
+                      <Button
+                        fullWidth
+                        size="md"
                         className="bg-black hover:bg-gray-900 text-white"
                         disabled={generatingReportId === report._id}
                         onClick={() =>

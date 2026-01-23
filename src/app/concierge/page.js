@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import UserActions from "@/components/UserActions";
+import { conciergeAPI } from "@/services/api";
 
 const quickPrompts = [
   "How does the feature work?",
@@ -59,17 +60,47 @@ function Card({ title, subtitle, meta, highlight, onClick, disabled }) {
   );
 }
 
-function MessageBubble({ sender, text }) {
+function MessageBubble({ sender, text, citations }) {
   const isUser = sender === "user";
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
-          isUser ? "bg-black text-white" : "bg-white text-gray-800 border border-borderColor"
-        }`}
-      >
-        {text}
+    <div className="space-y-2">
+      <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+        <div
+          className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
+            isUser ? "bg-black text-white" : "bg-white text-gray-800 border border-borderColor"
+          }`}
+        >
+          <div className="whitespace-pre-wrap">{text}</div>
+        </div>
       </div>
+      {citations && citations.length > 0 && (
+        <div className="ml-4 space-y-2">
+          <div className="text-xs font-semibold text-gray-600">Sources:</div>
+          {citations.map((citation, index) => (
+            <div
+              key={citation.chunk_id || index}
+              className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs"
+            >
+              <div className="flex items-start justify-between gap-2 mb-1">
+                {citation.url && (
+                  <div className="font-medium text-purple-600 truncate flex-1">
+                    {citation.url.split("/").pop()}
+                  </div>
+                )}
+                {citation.page && (
+                  <div className="text-gray-500 shrink-0">Page {citation.page}</div>
+                )}
+              </div>
+              {citation.section && (
+                <div className="text-gray-600 font-medium mb-1">{citation.section}</div>
+              )}
+              {citation.text && (
+                <div className="text-gray-700 leading-relaxed">{citation.text}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -155,6 +186,7 @@ export default function ConciergePage() {
   const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const isActive = (path) => pathname === path;
 
@@ -163,17 +195,42 @@ export default function ConciergePage() {
     return user.name || user.fullName || user.email?.split("@")[0] || "there";
   }, [user]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const value = input.trim();
-    if (!value) return;
-    const userMsg = { id: crypto.randomUUID(), sender: "user", text: value };
-    const aiMsg = {
-      id: crypto.randomUUID(),
-      sender: "ai",
-      text: "Thanks for your question. A member of the team or the AI will get back to you shortly.",
+    if (!value || isLoading) return;
+
+    const userMsg = { 
+      id: crypto.randomUUID(), 
+      sender: "user", 
+      text: value 
     };
-    setMessages((prev) => [...prev, userMsg, aiMsg]);
+    
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setIsLoading(true);
+
+    try {
+      const response = await conciergeAPI.ask(value, user?._id || "");
+      
+      const aiMsg = {
+        id: crypto.randomUUID(),
+        sender: "ai",
+        text: response.data.answer || response.data.message || "I received your question. Let me help you with that.",
+        citations: response.data.citations || null,
+      };
+      
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      const errorMsg = {
+        id: crypto.randomUUID(),
+        sender: "ai",
+        text: "I'm sorry, I encountered an error processing your request. Please try again.",
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -230,8 +287,27 @@ export default function ConciergePage() {
             {messages
               .filter((m) => m.text && m.sender !== "system")
               .map((msg) => (
-                <MessageBubble key={msg.id} sender={msg.sender} text={msg.text} />
+                <MessageBubble 
+                  key={msg.id} 
+                  sender={msg.sender} 
+                  text={msg.text}
+                  citations={msg.citations}
+                />
               ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white text-gray-800 border border-borderColor rounded-2xl px-4 py-3 text-sm shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                      <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                      <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                    </div>
+                    <span>Thinking...</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -239,20 +315,29 @@ export default function ConciergePage() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
             placeholder="Ask anything..."
             className="flex-1 bg-transparent outline-none text-base"
+            disabled={isLoading}
           />
           <button
             type="button"
             className="w-9 h-9 rounded-full border border-borderColor flex items-center justify-center text-xl text-gray-600 hover:bg-gray-50"
             onClick={() => setInput((prev) => (prev ? prev + " " : "") + "+")}
+            disabled={isLoading}
           >
             +
           </button>
           <button
             type="button"
             onClick={handleSend}
-            className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center text-lg hover:bg-gray-900"
+            disabled={isLoading}
+            className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center text-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             ↑
           </button>
