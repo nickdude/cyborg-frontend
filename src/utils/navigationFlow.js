@@ -6,9 +6,9 @@
 export function getNextRoute(user) {
   if (!user) return "/login";
 
-  // Doctors go directly to concierge
+  // Doctors go directly to doctor dashboard
   if (user.userType === "doctor") {
-    return "/concierge";
+    return "/doctor-dashboard";
   }
 
   // For regular users, check completion status in order
