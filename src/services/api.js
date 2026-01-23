@@ -80,4 +80,10 @@ export const paymentAPI = {
   getUserSubscription: (userId) => API.get(`/api/payments/${userId}/subscription`),
 };
 
+// Questionnaire endpoints
+export const questionnaireAPI = {
+  get: () => API.get("/api/questionnaire"),
+  update: (data) => API.put("/api/questionnaire", data),
+};
+
 export default API;

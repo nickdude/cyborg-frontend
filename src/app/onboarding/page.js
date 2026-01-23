@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { userAPI } from "@/services/api";
+import { userAPI, questionnaireAPI } from "@/services/api";
 import Link from "next/link";
 import { getNextRoute } from "@/utils/navigationFlow";
+import { Loader2 } from "lucide-react";
 
 const SECTIONS = [
   {
@@ -320,22 +321,46 @@ const SECTIONS = [
 
 export default function Onboarding() {
   const router = useRouter();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, token } = useAuth();
+  const [sections, setSections] = useState([]);
+  const [loadingQuestionnaire, setLoadingQuestionnaire] = useState(true);
   const [sectionIndex, setSectionIndex] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const section = SECTIONS[sectionIndex];
-  const step = section.questions[stepIndex];
-  const sectionTotal = section.questions.length;
-  const sectionProgress = Math.round(((stepIndex + 1) / sectionTotal) * 100);
+  // Fetch questionnaire from API on mount
+  useEffect(() => {
+    const fetchQuestionnaire = async () => {
+      try {
+        setLoadingQuestionnaire(true);
+        const response = await questionnaireAPI.get();
+        if (response?.data?.questionary) {
+          setSections(response.data.questionary);
+        }
+      } catch (err) {
+        console.error("Error fetching questionnaire:", err);
+        setSections(SECTIONS);
+      } finally {
+        setLoadingQuestionnaire(false);
+      }
+    };
+
+    if (token) {
+      fetchQuestionnaire();
+    }
+  }, [token]);
+
+  const section = sections[sectionIndex];
+  const step = section?.questions?.[stepIndex];
+  const sectionTotal = section?.questions?.length || 0;
+  const sectionProgress = section ? Math.round(((stepIndex + 1) / sectionTotal) * 100) : 0;
 
   const isRequired = useMemo(() => {
     // mark some steps required: key data like 1.3 biological sex
-    return ["1.3"].includes(step.code);
-  }, [step.code]);
+    return ["1.3"].includes(step?.code);
+  }, [step?.code]);
 
   const updateAnswer = (code, value) => {
     setAnswers((prev) => ({ ...prev, [code]: value }));
@@ -349,21 +374,8 @@ export default function Onboarding() {
     updateAnswer(code, next);
   };
 
-  const advanceStep = () => {
-    if (stepIndex < sectionTotal - 1) {
-      setStepIndex((i) => i + 1);
-      return;
-    }
-    if (sectionIndex < SECTIONS.length - 1) {
-      setSectionIndex((s) => s + 1);
-      setStepIndex(0);
-      return;
-    }
-    handleSubmit();
-  };
-
   const handleNext = () => {
-    if (isRequired && !answers[step.code]) {
+    if (isRequired && !answers[step?.code]) {
       setError("Please provide an answer to continue.");
       return;
     }
@@ -383,10 +395,23 @@ export default function Onboarding() {
       return;
     }
     if (sectionIndex > 0) {
-      const prevSection = SECTIONS[sectionIndex - 1];
+      const prevSection = sections[sectionIndex - 1];
       setSectionIndex((s) => s - 1);
       setStepIndex(prevSection.questions.length - 1);
     }
+  };
+
+  const advanceStep = () => {
+    if (stepIndex < sectionTotal - 1) {
+      setStepIndex((i) => i + 1);
+      return;
+    }
+    if (sectionIndex < sections.length - 1) {
+      setSectionIndex((s) => s + 1);
+      setStepIndex(0);
+      return;
+    }
+    handleSubmit();
   };
 
   const handleSubmit = async () => {
@@ -410,6 +435,8 @@ export default function Onboarding() {
   };
 
   const renderInput = () => {
+    if (!step) return null;
+
     switch (step.type) {
       case "intro":
         return null;
@@ -526,6 +553,39 @@ export default function Onboarding() {
     }
   };
 
+  // Loading state
+  if (loadingQuestionnaire) {
+    return (
+      <div className="min-h-screen bg-pageBackground flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-gray-600">Loading questionnaire...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state - sections empty
+  if (sections.length === 0) {
+    return (
+      <div className="min-h-screen bg-pageBackground flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Unable to load questionnaire</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-purple-800"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!step) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-pageBackground font-inter">
       <div className="max-w-md  flex flex-col justify-between min-h-screen mx-auto bg-pageBackground rounded-xl p-8 relative">
@@ -541,7 +601,7 @@ export default function Onboarding() {
             <div className="flex items-center justify-between mb-4 text-sm text-gray-500">
                 <button onClick={handleBack} className="text-gray-600 hover:text-black">←</button>
                 <div>
-                    Section {sectionIndex + 1} of {SECTIONS.length} · Step {stepIndex + 1} of {sectionTotal}
+                    Section {sectionIndex + 1} of {sections.length} · Step {stepIndex + 1} of {sectionTotal}
                 </div>
             </div>
 
@@ -596,11 +656,11 @@ export default function Onboarding() {
                         loading ? "bg-gray-300 text-gray-500" : "bg-black text-white hover:bg-gray-900"
                         }`}
                     >
-                        {sectionIndex === SECTIONS.length - 1 && stepIndex === sectionTotal - 1
+                        {sectionIndex === sections.length - 1 && stepIndex === sectionTotal - 1
                         ? loading ? "Saving..." : "Finish"
                         : "Next"}
                     </button>
-                    {!isRequired && step.type !== "intro" && (
+                    {!isRequired && step?.type !== "intro" && (
                         <button
                         type="button"
                         onClick={handleSkip}
