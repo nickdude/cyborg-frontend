@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI, actionPlanAPI } from "@/services/api";
@@ -23,15 +23,7 @@ export default function BloodReports() {
   const [generatingReportId, setGeneratingReportId] = useState(null);
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    if (!token) {
-      router.push("/login");
-    } else {
-      fetchReports();
-    }
-  }, [token]);
-
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       const response = await userAPI.getBloodReports(userId);
       setReports(response.data || []);
@@ -40,7 +32,15 @@ export default function BloodReports() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!token) {
+      router.push("/login");
+    } else {
+      fetchReports();
+    }
+  }, [token, fetchReports, router]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files?.[0];

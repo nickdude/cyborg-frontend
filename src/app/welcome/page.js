@@ -234,9 +234,9 @@ function SlideThree({ onPrev }) {
   return (
     <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter">
         <div className="flex flex-col justify-center items-center gap-5">
-            <div className="text-3xl font-bold leading-tight">Let’s get to know you</div>
+            <div className="text-3xl font-bold leading-tight">Let&apos;s get to know you</div>
             <p className="text-gray-700 leading-relaxed px-4">
-                We're going to ask a few short questions about your health.
+                We&apos;re going to ask a few short questions about your health.
                 <br />
                 Everything you share - your goals, challenges, & experience - helps us
                 personalize your health insights, action plan, and journey with Cyborg.

@@ -14,7 +14,7 @@ export default function Home() {
     if (!loading && token) {
       router.push("/dashboard");
     }
-  }, [token, loading]);
+  }, [token, loading, router]);
 
   if (loading) {
     return (

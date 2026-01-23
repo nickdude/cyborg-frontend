@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI } from "@/services/api";
@@ -92,15 +92,7 @@ export default function Profile() {
   const [success, setSuccess] = useState("");
   const [formData, setFormData] = useState({});
 
-  useEffect(() => {
-    if (!token) {
-      router.push("/login");
-    } else {
-      fetchProfile();
-    }
-  }, [token]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await userAPI.getProfile(userId);
       setProfile(response.data);
@@ -121,7 +113,15 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!token) {
+      router.push("/login");
+    } else {
+      fetchProfile();
+    }
+  }, [token, fetchProfile, router]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -185,7 +185,7 @@ export default function Profile() {
 
         {/* Title */}
         <h1 className="text-xl font-medium text-black mb-2 text-left">
-          Let's set up your Cyborg account
+          Let&apos;s set up your Cyborg account
         </h1>
 
         {/* Error Message */}

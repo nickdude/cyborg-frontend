@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI } from "@/services/api";
@@ -32,17 +32,7 @@ export default function HearAboutUsPage() {
     email: { sources: [], otherText: "" },
   });
 
-  useEffect(() => {
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-    if (user?.id) {
-      fetchSaved();
-    }
-  }, [token, user?.id]);
-
-  const fetchSaved = async () => {
+  const fetchSaved = useCallback(async () => {
     try {
       const res = await userAPI.getHearAboutUs(user.id);
       if (res.data) {
@@ -58,7 +48,17 @@ export default function HearAboutUsPage() {
     } catch (e) {
       // ignore if none exists
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    if (user?.id) {
+      fetchSaved();
+    }
+  }, [token, user?.id, fetchSaved, router]);
 
   const toggleExpand = (key) => {
     setExpanded((prev) => {

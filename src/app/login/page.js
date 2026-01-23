@@ -322,7 +322,7 @@ export default function Login() {
 
           <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
             <p className="text-xs text-gray-600 mb-2">
-              We'll send a one-time password to your email for verification.
+              We&apos;ll send a one-time password to your email for verification.
             </p>
             <button
               type="button"
@@ -349,7 +349,7 @@ export default function Login() {
         </form>
 
         <p className="text-center text-secondary text-sm mb-4">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/register" className="text-primary font-semibold hover:underline">
             Create one
           </Link>

@@ -114,7 +114,7 @@ export default function ProfilePage() {
         zipCode: user.zipCode || "",
       });
     }
-  }, [token, user]);
+  }, [token, user, router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -156,7 +156,7 @@ export default function ProfilePage() {
 
         {/* Title */}
         <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
-          Let's set up your Cyborg account
+          Let&apos;s set up your Cyborg account
         </h1>
 
         {/* Error Message */}

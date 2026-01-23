@@ -248,7 +248,7 @@ export default function Register() {
           </form>
 
           <p className="text-center text-secondary text-sm">
-            Didn't receive the code?{" "}
+            Didn&apos;t receive the code?{" "}
             <button
               type="button"
               onClick={() => setStep(1)}

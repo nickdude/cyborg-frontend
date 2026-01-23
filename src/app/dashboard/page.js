@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI } from "@/services/api";
@@ -12,17 +12,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  useEffect(() => {
-    if (!loading) {
-      if (!token) {
-        router.push("/login");
-      } else {
-        fetchProfile();
-      }
-    }
-  }, [token, loading]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       if (user?.id) {
         const response = await userAPI.getProfile(user.id);
@@ -33,7 +23,17 @@ export default function Dashboard() {
     } finally {
       setLoadingProfile(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!loading) {
+      if (!token) {
+        router.push("/login");
+      } else {
+        fetchProfile();
+      }
+    }
+  }, [token, loading, fetchProfile, router]);
 
   if (loading || loadingProfile) {
     return (

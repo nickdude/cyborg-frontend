@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { actionPlanAPI } from "@/services/api";
@@ -20,15 +20,7 @@ export default function ActionPlan() {
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    if (!token) {
-      router.push("/login");
-    } else if (reportId || planId) {
-      fetchPlan();
-    }
-  }, [token, reportId, planId]);
-
-  const fetchPlan = async () => {
+  const fetchPlan = useCallback(async () => {
     try {
       // We expect planId from notification
       if (!planId) {
@@ -58,7 +50,15 @@ export default function ActionPlan() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [planId]);
+
+  useEffect(() => {
+    if (!token) {
+      router.push("/login");
+    } else if (reportId || planId) {
+      fetchPlan();
+    }
+  }, [token, reportId, planId, fetchPlan, router]);
 
   const handleDownloadPDF = async () => {
     if (!planId) return;

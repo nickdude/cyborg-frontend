@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { paymentAPI } from "@/services/api";
@@ -30,7 +30,7 @@ export default function MembershipPage() {
   const [agreePolicies, setAgreePolicies] = useState(false);
   const [agreeBilling, setAgreeBilling] = useState(false);
 
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
     try {
       const response = await paymentAPI.getAllPlans();
       // API returns envelope with data array
@@ -48,9 +48,9 @@ export default function MembershipPage() {
     } finally {
       setPlansLoading(false);
     }
-  };
+  }, []);
 
-  const fetchSubscription = async () => {
+  const fetchSubscription = useCallback(async () => {
     try {
       const response = await paymentAPI.getUserSubscription(user.id);
       if (response.data) {
@@ -59,7 +59,7 @@ export default function MembershipPage() {
     } catch (err) {
       console.log("No active subscription");
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!token) {
@@ -71,7 +71,7 @@ export default function MembershipPage() {
     if (user?.id) {
       fetchSubscription();
     }
-  }, [token, user?.id]);
+  }, [token, user?.id, fetchPlans, fetchSubscription, router]);
 
   useEffect(() => {
     if (user?.email) setEmail(user.email);
@@ -337,7 +337,7 @@ export default function MembershipPage() {
                   className="mt-1"
                 />
                 <p className="text-secondary text-[14px]">
-                  By checking this box and confirming below, I acknowledge that I have read, understand, and agree to Cyborgs's <span className="text-black">Terms of Service, Informed Medical Consent, Membership Agreement, Privacy Policy and Notice of Medical Group Privacy Practices</span>.
+                  By checking this box and confirming below, I acknowledge that I have read, understand, and agree to Cyborg&apos;s <span className="text-black">Terms of Service, Informed Medical Consent, Membership Agreement, Privacy Policy and Notice of Medical Group Privacy Practices</span>.
                 </p>
               </label>
 
