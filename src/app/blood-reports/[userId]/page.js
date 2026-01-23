@@ -273,6 +273,17 @@ export default function BloodReports() {
             </div>
           )}
         </section>
+
+        {/* Skip Button */}
+        <div className="flex justify-center pt-4">
+          <Button
+            onClick={() => router.push('/concierge')}
+            variant="secondary"
+            className="border border-gray-300 text-gray-800 hover:bg-gray-50 px-8"
+          >
+            Skip for now
+          </Button>
+        </div>
       </main>
     </div>
   );

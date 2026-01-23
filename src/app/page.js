@@ -35,7 +35,7 @@ export default function Home() {
           100+ lab tests. Every year. Detect early signs of 1,000+ conditions. All for only $17/month
         </p>
 
-        <Button href="/register" variant="primary" size="md" fullWidth>
+        <Button href="/login" variant="primary" size="md" fullWidth>
           Join Today →
         </Button>
 

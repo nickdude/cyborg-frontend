@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import UserActions from "@/components/UserActions";
 
 const quickPrompts = [
   "How does the feature work?",
@@ -191,7 +192,10 @@ export default function ConciergePage() {
               <div className="text-xl font-medium">Concierge</div>
             </div>
           </div>
-          <Badge>BETA</Badge>
+          <div className="flex items-center gap-3">
+            <Badge>BETA</Badge>
+            <UserActions />
+          </div>
         </header>
 
         <div>
