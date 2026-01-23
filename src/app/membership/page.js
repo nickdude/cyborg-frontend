@@ -21,6 +21,8 @@ export default function MembershipPage() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [plansLoading, setPlansLoading] = useState(true);
 
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [zip, setZip] = useState("");
   const [dobMonth, setDobMonth] = useState("");
@@ -74,9 +76,18 @@ export default function MembershipPage() {
   }, [token, user?.id, fetchPlans, fetchSubscription, router]);
 
   useEffect(() => {
+    if (user?.firstName) setFirstName(user.firstName);
+    if (user?.lastName) setLastName(user.lastName);
     if (user?.email) setEmail(user.email);
     if (user?.phone) setPhone(user.phone);
-  }, [user?.email, user?.phone]);
+    if (user?.zipCode) setZip(user.zipCode);
+    if (user?.dateOfBirth) {
+      const dob = new Date(user.dateOfBirth);
+      setDobMonth(String(dob.getMonth() + 1).padStart(2, '0'));
+      setDobDay(String(dob.getDate()).padStart(2, '0'));
+      setDobYear(String(dob.getFullYear()));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (document.querySelector("script[data-razorpay]") || typeof window === "undefined") {
@@ -99,6 +110,32 @@ export default function MembershipPage() {
       return;
     }
 
+    // Validate all mandatory fields
+    if (!firstName || !firstName.trim()) {
+      setError("First name is required");
+      return;
+    }
+    if (!lastName || !lastName.trim()) {
+      setError("Last name is required");
+      return;
+    }
+    if (!email || !email.trim()) {
+      setError("Email is required");
+      return;
+    }
+    if (!zip || !zip.trim()) {
+      setError("ZIP code is required");
+      return;
+    }
+    if (!dobMonth || !dobDay || !dobYear) {
+      setError("Date of birth is required");
+      return;
+    }
+    if (!phone || !phone.trim()) {
+      setError("Phone number is required");
+      return;
+    }
+
     if (!agreePolicies || !agreeBilling) {
       setError("Please agree to the terms and billing authorization.");
       return;
@@ -116,6 +153,8 @@ export default function MembershipPage() {
       const orderResponse = await paymentAPI.createOrder({
         userId: user.id,
         planType: selectedPlan.id,
+        firstName,
+        lastName,
         email,
         zip,
         dob: `${dobYear}-${dobMonth}-${dobDay}`,
@@ -268,6 +307,25 @@ export default function MembershipPage() {
                   <h2 className="text-xl font-medium text-black">Purchase Membership</h2>
                   <p className="text-secondary font-medium text-[16px] mt-3">Your membership auto-renews each year. Cancel anytime.</p>
                   <div className="mt-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="First Name"
+                  name="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="John"
+                  required
+                />
+                <Input
+                  label="Last Name"
+                  name="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Doe"
+                  required
+                />
+              </div>
+
               <Input
                 label="Email"
                 name="email"
