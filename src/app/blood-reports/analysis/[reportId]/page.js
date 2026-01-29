@@ -313,7 +313,7 @@ export default function BloodReportAnalysis() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 mt-0.5">•</span>
-                <span>Address any biomarkers marked as "out of range" with medical guidance</span>
+                <span>Address any biomarkers marked as &quot;out of range&quot; with medical guidance</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 mt-0.5">•</span>
