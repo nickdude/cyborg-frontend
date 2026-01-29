@@ -29,7 +29,9 @@ export default function BloodReportAnalysis() {
         setLoading(true);
         const response = await userAPI.getBloodReport(reportId);
         setReport(response.data);
-        setAnalysis(response.data?.aiAnalysis);
+        // New AI structure stores actionPlan directly in response
+        const aiData = response.data?.actionPlan || response.data?.aiAnalysis;
+        setAnalysis(aiData);
       } catch (err) {
         setError(err.message || "Failed to load analysis");
       } finally {
@@ -42,14 +44,14 @@ export default function BloodReportAnalysis() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "excellent":
+      case "optimal":
         return "text-green-700 bg-green-50 border-green-200";
-      case "good":
+      case "near_boundary":
         return "text-blue-700 bg-blue-50 border-blue-200";
-      case "attention":
+      case "out_of_range":
         return "text-yellow-700 bg-yellow-50 border-yellow-200";
-      case "needs-improvement":
-        return "text-red-700 bg-red-50 border-red-200";
+      case "unknown":
+        return "text-orange-700 bg-orange-50 border-orange-200";
       default:
         return "text-gray-700 bg-gray-50 border-gray-200";
     }
@@ -57,25 +59,45 @@ export default function BloodReportAnalysis() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "excellent":
-      case "good":
+      case "optimal":
         return <CheckCircle2 className="h-5 w-5" />;
-      case "attention":
+      case "near_boundary":
         return <Info className="h-5 w-5" />;
-      case "needs-improvement":
+      case "out_of_range":
+        return <AlertCircle className="h-5 w-5" />;
+      case "unknown":
         return <AlertCircle className="h-5 w-5" />;
       default:
         return <Info className="h-5 w-5" />;
     }
   };
 
-  const getPriorityBadge = (priority) => {
-    const colors = {
-      high: "bg-red-100 text-red-700",
-      medium: "bg-yellow-100 text-yellow-700",
-      low: "bg-green-100 text-green-700",
-    };
-    return colors[priority] || colors.medium;
+  const getGradeColor = (grade) => {
+    switch (grade) {
+      case "A":
+        return "bg-green-100 text-green-700";
+      case "B":
+        return "bg-blue-100 text-blue-700";
+      case "C":
+        return "bg-yellow-100 text-yellow-700";
+      case "D":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const getConfidenceBadgeColor = (confidence) => {
+    switch (confidence) {
+      case "high":
+        return "bg-green-100 text-green-700";
+      case "medium":
+        return "bg-yellow-100 text-yellow-700";
+      case "low":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
   };
 
   if (loading) {
@@ -140,108 +162,201 @@ export default function BloodReportAnalysis() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-600">Confidence:</span>
-              <span className="font-semibold text-primary">
-                {Math.round(analysis.aiMetadata.confidence * 100)}%
-              </span>
+            <div className="text-sm">
+              <span className="text-gray-600">Report ID:</span>
+              <span className="font-mono text-xs ml-2">{analysis.report_id}</span>
             </div>
           </div>
-
-          {/* Overview */}
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">Overview</h3>
-            <p className="text-blue-800">{analysis.insights.overview}</p>
-          </div>
         </div>
 
-        {/* Key Findings */}
-        <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
-          <h2 className="text-xl font-bold mb-4">Key Findings</h2>
-          <div className="space-y-4">
-            {analysis.insights.keyFindings.map((finding, index) => (
-              <div
-                key={index}
-                className={`border rounded-lg p-4 ${getStatusColor(finding.status)}`}
-              >
-                <div className="flex items-start gap-3">
-                  {getStatusIcon(finding.status)}
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold">{finding.category}</h3>
-                      <span className="text-xs uppercase font-medium px-2 py-1 rounded">
-                        {finding.status.replace("-", " ")}
-                      </span>
-                    </div>
-                    <p className="text-sm mb-2">{finding.description}</p>
-                    <p className="text-sm font-medium">
-                      <span className="opacity-75">Recommendation:</span> {finding.recommendation}
-                    </p>
+        {/* Biological Age Section */}
+        {analysis.biological_age && (
+          <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
+            <h2 className="text-xl font-bold mb-4">Biological Age Assessment</h2>
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-lg font-semibold">Predicted Age</h3>
+                    <span
+                      className={`text-xs uppercase font-medium px-3 py-1 rounded-full ${getConfidenceBadgeColor(
+                        analysis.biological_age.confidence
+                      )}`}
+                    >
+                      {analysis.biological_age.confidence} confidence
+                    </span>
                   </div>
+                  <p className="text-4xl font-bold text-primary mb-3">
+                    {analysis.biological_age.predicted_age} years
+                  </p>
+                  <p className="text-gray-700 text-sm leading-relaxed">
+                    {analysis.biological_age.rationale}
+                  </p>
                 </div>
               </div>
-            ))}
+            </div>
+          </div>
+        )}
+
+        {/* Biomarkers Section */}
+        {analysis.biomarkers && analysis.biomarkers.length > 0 && (
+          <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
+            <h2 className="text-xl font-bold mb-4">Blood Biomarkers Analysis</h2>
+            <div className="space-y-4">
+              {analysis.biomarkers.map((biomarker, index) => (
+                <div
+                  key={index}
+                  className={`border rounded-lg p-4 ${getStatusColor(biomarker.status)}`}
+                >
+                  <div className="flex items-start gap-3">
+                    {getStatusIcon(biomarker.status)}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between gap-4 mb-2 flex-wrap">
+                        <div>
+                          <h3 className="font-semibold text-base">{biomarker.name}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-lg font-bold text-gray-900">
+                              {biomarker.value}
+                            </span>
+                            <span className="text-sm text-gray-600">{biomarker.unit}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-semibold ${getGradeColor(
+                              biomarker.grade
+                            )}`}
+                          >
+                            Grade {biomarker.grade}
+                          </span>
+                          <span className="text-xs uppercase font-medium px-2 py-1 rounded bg-white/50">
+                            {biomarker.status.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {biomarker.rationale}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Key Insights - derived from biomarkers */}
+        {analysis.biomarkers && analysis.biomarkers.length > 0 && (
+          <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
+            <h2 className="text-xl font-bold mb-4">Key Insights</h2>
+            <div className="space-y-3">
+              {/* Show problematic biomarkers */}
+              {analysis.biomarkers
+                .filter((b) => b.status === "out_of_range" || b.status === "unknown")
+                .map((biomarker, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
+                  >
+                    <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-yellow-900">{biomarker.name}</h4>
+                      <p className="text-sm text-yellow-800">{biomarker.rationale}</p>
+                    </div>
+                  </div>
+                ))}
+
+              {/* Show near-boundary items */}
+              {analysis.biomarkers
+                .filter((b) => b.status === "near_boundary")
+                .map((biomarker, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                  >
+                    <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-blue-900">{biomarker.name}</h4>
+                      <p className="text-sm text-blue-800">{biomarker.rationale}</p>
+                    </div>
+                  </div>
+                ))}
+
+              {/* Show optimal items */}
+              {analysis.biomarkers
+                .filter((b) => b.status === "optimal")
+                .map((biomarker, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg"
+                  >
+                    <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-green-900">{biomarker.name}</h4>
+                      <p className="text-sm text-green-800">{biomarker.rationale}</p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recommendations */}
+        <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
+          <h2 className="text-xl font-bold mb-4">Recommendations</h2>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-semibold text-blue-900 mb-2">Next Steps</h3>
+            <ul className="space-y-2 text-sm text-blue-800">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Review your results with a licensed clinician for proper interpretation</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Address any biomarkers marked as "out of range" with medical guidance</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>Monitor near-boundary markers and retest as recommended by your doctor</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-blue-600 mt-0.5">•</span>
+                <span>
+                  Maintain healthy lifestyle factors that support optimal biomarker levels
+                </span>
+              </li>
+            </ul>
           </div>
         </div>
 
-        {/* Risk Factors */}
-        {analysis.insights.riskFactors && analysis.insights.riskFactors.length > 0 && (
-          <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
-            <h2 className="text-xl font-bold mb-4">Risk Factors to Monitor</h2>
-            <ul className="space-y-2">
-              {analysis.insights.riskFactors.map((risk, index) => (
-                <li key={index} className="flex items-start gap-2 text-gray-700">
-                  <span className="text-yellow-600 mt-0.5">⚠️</span>
-                  <span>{risk}</span>
+        {/* Disclaimers */}
+        {analysis.disclaimers && analysis.disclaimers.length > 0 && (
+          <div className="bg-gray-50 rounded-lg border border-gray-300 p-4">
+            <h3 className="font-semibold text-gray-900 mb-2">Important Disclaimers</h3>
+            <ul className="space-y-2 text-sm text-gray-700">
+              {analysis.disclaimers.map((disclaimer, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-gray-500 mt-0.5">•</span>
+                  <span>{disclaimer}</span>
                 </li>
               ))}
             </ul>
           </div>
         )}
 
-        {/* Personalized Recommendations */}
-        <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
-          <h2 className="text-xl font-bold mb-4">Personalized Recommendations</h2>
-          <div className="space-y-6">
-            {analysis.insights.personalizedRecommendations.map((rec, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-lg">{rec.title}</h3>
-                  <span
-                    className={`text-xs uppercase font-medium px-3 py-1 rounded-full ${getPriorityBadge(
-                      rec.priority
-                    )}`}
-                  >
-                    {rec.priority} priority
-                  </span>
-                </div>
-                <ul className="space-y-2">
-                  {rec.actions.map((action, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-gray-700">
-                      <span className="text-primary mt-1">•</span>
-                      <span>{action}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* AI Metadata */}
+        {/* Analysis Metadata */}
         <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 text-sm text-gray-600">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <span className="font-medium">Analysis Model:</span> {analysis.aiMetadata.model}
+              <span className="font-medium">Analysis ID:</span> {analysis.report_id}
             </div>
             <div>
-              <span className="font-medium">Data Points Analyzed:</span>{" "}
-              {analysis.aiMetadata.dataPointsAnalyzed.bloodMarkers} blood markers,{" "}
-              {analysis.aiMetadata.dataPointsAnalyzed.questionnaireAnswers} questionnaire answers
+              <span className="font-medium">Generated:</span>{" "}
+              {new Date(analysis.created_at).toLocaleString()}
             </div>
             <div>
-              <span className="font-medium">Processed:</span>{" "}
-              {new Date(analysis.processedAt).toLocaleString()}
+              <span className="font-medium">Biomarkers Analyzed:</span>{" "}
+              {analysis.biomarkers?.length || 0}
             </div>
           </div>
         </div>
