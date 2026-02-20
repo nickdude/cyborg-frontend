@@ -2,7 +2,7 @@
 
 export default function FilterTabs({ filters, activeFilter, onFilterChange }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2">
+    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
       {filters.map((filter) => (
         <button
           key={filter.id}

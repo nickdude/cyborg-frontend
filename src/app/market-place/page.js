@@ -6,7 +6,7 @@ import SearchBar from "@/components/SearchBar";
 import FilterTabs from "@/components/FilterTabs";
 import ProductSection from "@/components/ProductSection";
 
-export default function Data() {
+export default function Marketplace() {
   const [activeTab, setActiveTab] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");

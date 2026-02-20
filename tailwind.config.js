@@ -19,7 +19,10 @@ module.exports = {
         pageBackground: "#F2F2F2",
         borderColor: "#E6E6E8",
         dataBarBg: "#71717833",
-        saleBadgeBg: "#541D7A1A"
+        saleBadgeBg: "#541D7A1A",
+        biomarkerOptimal: "#05BC7E",
+        biomarkerNormal: "#D7D82E",
+        biomarkerOutOfRange: "#F865DD"
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
