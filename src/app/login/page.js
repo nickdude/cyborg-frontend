@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,7 +26,15 @@ export default function Login() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user, token } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && token) {
+      const nextRoute = getNextRoute(user);
+      router.push(nextRoute);
+    }
+  }, [user, token, router]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

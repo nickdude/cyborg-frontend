@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,7 @@ import SocialButton from "@/components/SocialButton";
 import CyborgLogo from "@/components/CyborgLogo";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
+import { getNextRoute } from "@/utils/navigationFlow";
 
 function DoctorToggle({ value, onChange, className = "" }) {
   const isDoctor = value === "doctor";
@@ -53,7 +54,15 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user, token } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && token) {
+      const nextRoute = getNextRoute(user);
+      router.push(nextRoute);
+    }
+  }, [user, token, router]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
