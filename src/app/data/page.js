@@ -176,7 +176,7 @@ export default function DataDashboard() {
   }, [filteredBiomarkers]);
 
   return (
-    <div className="min-h-screen pb-24 px-4 font-inter bg-dataBarBg">
+    <div className="min-h-screen pb-24 px-4 font-inter bg-pageBackground">
       {/* Header */}
       <div className="pt-6 pb-6 space-y-2">
         <div className="flex items-center gap-2">
