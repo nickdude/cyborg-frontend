@@ -105,8 +105,7 @@ export default function UserActions() {
   if (!token) return null;
 
   return (
-    <div className="flex items-center gap-3 relative">
-      {/* Bell Icon with Notifications Dropdown */}
+    <div className="absolute top-3 right-3 flex items-center gap-3">{/* Bell Icon with Notifications Dropdown */}
       <div className="relative" ref={notificationRef}>
         <button
           onClick={() => {
@@ -207,17 +206,17 @@ export default function UserActions() {
               <p className="font-semibold text-gray-900">{user?.firstName || "User"}</p>
               <p className="text-xs text-gray-500 truncate">{user?.email}</p>
             </div>
+            <Link href="/membership" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
+              <ClipboardList className="w-5 h-5 text-gray-700" />
+              <span className="text-sm text-gray-800">Your Order</span>
+            </Link>
             <Link href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
               <Settings className="w-5 h-5 text-gray-700" />
               <span className="text-sm text-gray-800">Settings</span>
             </Link>
-            <Link href={`/blood-reports/${user?.id}`} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
-              <Activity className="w-5 h-5 text-gray-700" />
-              <span className="text-sm text-gray-800">Blood Reports</span>
-            </Link>
-            <Link href="/concierge" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
+            <Link href="/hear-about-us" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
               <MessageSquare className="w-5 h-5 text-gray-700" />
-              <span className="text-sm text-gray-800">Concierge</span>
+              <span className="text-sm text-gray-800">Refer a Friend</span>
             </Link>
             <button
               onClick={handleLogout}
