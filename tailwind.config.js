@@ -17,7 +17,8 @@ module.exports = {
         lightGray: "#D8D8D8",
         gray: "#7D7D7D",
         pageBackground: "#F2F2F2",
-        borderColor: "#E6E6E8"
+        borderColor: "#E6E6E8",
+        dataBarBg: "#71717833"
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

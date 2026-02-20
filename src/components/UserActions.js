@@ -107,7 +107,7 @@ export default function UserActions() {
   return (
     <div className="absolute top-3 right-3 flex items-center gap-3">{/* Bell Icon with Notifications Dropdown */}
       <div className="relative" ref={notificationRef}>
-        <button
+        {/* <button
           onClick={() => {
             setShowDropdown(!showDropdown);
             setShowUserMenu(false);
@@ -121,7 +121,7 @@ export default function UserActions() {
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
-        </button>
+        </button> */}
 
         {/* Notification Dropdown */}
         {showDropdown && (
