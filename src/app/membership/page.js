@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import { paymentAPI } from "@/services/api";
 import Input from "@/components/Input";
@@ -31,6 +32,40 @@ export default function MembershipPage() {
   const [phone, setPhone] = useState("");
   const [agreePolicies, setAgreePolicies] = useState(false);
   const [agreeBilling, setAgreeBilling] = useState(false);
+
+  // Refs for auto-tab functionality
+  const dobDayRef = useRef(null);
+  const dobYearRef = useRef(null);
+
+  // Auto-tab handlers for date of birth
+  const handleDobMonthChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ''); // Only digits
+    if (value.length <= 2) {
+      setDobMonth(value);
+      // Auto-advance to day field when 2 digits entered
+      if (value.length === 2 && dobDayRef.current) {
+        dobDayRef.current.focus();
+      }
+    }
+  };
+
+  const handleDobDayChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ''); // Only digits
+    if (value.length <= 2) {
+      setDobDay(value);
+      // Auto-advance to year field when 2 digits entered
+      if (value.length === 2 && dobYearRef.current) {
+        dobYearRef.current.focus();
+      }
+    }
+  };
+
+  const handleDobYearChange = (e) => {
+    const value = e.target.value.replace(/\D/g, ''); // Only digits
+    if (value.length <= 4) {
+      setDobYear(value);
+    }
+  };
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -286,7 +321,13 @@ export default function MembershipPage() {
                 <div className="rounded-2xl bg-white p-5 shadow-sm lg:sticky lg:top-20">
                   <p className="text-lg font-medium text-secondary">Order Summary</p>
                   <div className="mt-4 flex justify-center">
-                    <div className="h-48 w-full max-w-xs rounded-xl border border-tertiary bg-gray-50" aria-label="membership artwork placeholder" />
+                    <Image
+                      src="/assets/plans/plan1.jpg"
+                      alt="Membership plan"
+                      width={384}
+                      height={192}
+                      className="h-48 w-full max-w-xs rounded-xl border border-tertiary object-cover"
+                    />
                   </div>
 
                   <div className="mt-4 text-sm text-gray-800 space-y-3">
@@ -352,25 +393,27 @@ export default function MembershipPage() {
                     inputMode="numeric"
                     maxLength={2}
                     value={dobMonth}
-                    onChange={(e) => setDobMonth(e.target.value)}
+                    onChange={handleDobMonthChange}
                     placeholder="MM"
                     className="w-full rounded-xl border border-tertiary px-4 py-3 focus:outline-none focus:border-primary"
                   />
                   <input
+                    ref={dobDayRef}
                     type="text"
                     inputMode="numeric"
                     maxLength={2}
                     value={dobDay}
-                    onChange={(e) => setDobDay(e.target.value)}
+                    onChange={handleDobDayChange}
                     placeholder="DD"
                     className="w-full rounded-xl border border-tertiary px-4 py-3 focus:outline-none focus:border-primary"
                   />
                   <input
+                    ref={dobYearRef}
                     type="text"
                     inputMode="numeric"
                     maxLength={4}
                     value={dobYear}
-                    onChange={(e) => setDobYear(e.target.value)}
+                    onChange={handleDobYearChange}
                     placeholder="YYYY"
                     className="w-full rounded-xl border border-tertiary px-4 py-3 focus:outline-none focus:border-primary"
                   />

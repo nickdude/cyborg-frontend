@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI } from "@/services/api";
@@ -15,15 +16,26 @@ export default function WelcomeFlow() {
 
   return (
     <div className="min-h-screen bg-pageBackground flex items-center justify-center">
-      <div className="max-w-md w-full h-[100vh] bg-white rounded-xl shadow-lg p-4 relative">
-        <div className="flex justify-between items-center mb-16">
+      <div className="max-w-md w-full h-[100vh] bg-white shadow-lg p-4 relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/assets/welcome/welcome.jpg"
+            alt="Welcome background"
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+        <div className="flex justify-between items-center mb-16 relative z-10 text-white ">
           <h1 className="text-2xl font-extrabold tracking-tight">CYBORG</h1>
           <div className="text-sm text-gray-400">Step {step} / 3</div>
         </div>
 
-        {step === 1 && <SlideOne onNext={next} />}
-        {step === 2 && <SlideTwo onNext={next} onPrev={prev} />}
-        {step === 3 && <SlideThree onPrev={prev} />}
+        <div className="relative z-10">
+          {step === 1 && <SlideOne onNext={next} />}
+          {step === 2 && <SlideTwo onNext={next} onPrev={prev} />}
+          {step === 3 && <SlideThree onPrev={prev} />}
+        </div>
       </div>
     </div>
   );
@@ -110,11 +122,11 @@ function SlideOne({ onNext }) {
     <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter">
       
       <div className="flex flex-col justify-center items-center gap-5">
-        <div className="text-[32px] font-medium leading-tight w-2/3">Every body has 100 year potential</div>
-        <p className="text-black font-medium text-[16px] leading-relaxed px-10">
+        <div className="text-[32px] text-white font-medium leading-tight w-2/3">Every body has 100 year potential</div>
+        <p className="text-white font-medium text-[16px] leading-relaxed px-10">
             No matter where you come from, your body holds that potential.
         </p>
-        <p className="text-black font-medium text-[16px] leading-relaxed px-8">We give you the system to unlock it.</p>
+        <p className="text-white font-medium text-[16px] leading-relaxed px-8">We give you the system to unlock it.</p>
       </div>
       <div className="w-full px-2">
         <div
@@ -178,17 +190,17 @@ function SlideTwo({ onNext, onPrev }) {
   ];
 
   return (
-    <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter">
+    <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter text-white">
             <div className="flex flex-col justify-center items-center gap-5">
                     <div className="text-center space-y-2">
                         <p className="text-sm text-gray-500">Payment Successful</p>
                         <div className="text-3xl font-bold leading-tight">Welcome to Cyborg</div>
                     </div>
 
-                    <div className="border rounded-xl p-4 space-y-3">
+                    <div className="rounded-xl p-4 space-y-3 bg-white/30">
                         {bullets.map((item) => (
-                        <div key={item} className="flex gap-3 text-left text-gray-800">
-                            <span className="text-green-600">✓</span>
+                        <div key={item} className="flex gap-3 text-left text-gray-800 font-bold">
+                            <span className="text-white">✓</span>
                             <span className="text-sm leading-relaxed">{item}</span>
                         </div>
                         ))}
@@ -197,7 +209,7 @@ function SlideTwo({ onNext, onPrev }) {
             <div className=" w-full px-2">
                 <button
                 onClick={onNext}
-                className="flex-1 py-3 w-full transition rounded-lg bg-black text-white font-semibold hover:bg-gray-900"
+                className="flex-1 py-3 w-full transition rounded-lg bg-white text-black font-semibold hover:bg-gray-900"
                 >
                 Continue
                 </button>
@@ -232,16 +244,17 @@ function SlideThree({ onPrev }) {
   };
 
   return (
-    <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter">
+    <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter text-white">
         <div className="flex flex-col justify-center items-center gap-5">
-            <div className="text-3xl font-bold leading-tight">Let&apos;s get to know you</div>
-            <p className="text-gray-700 leading-relaxed px-4">
+            <div className="text-[32px] w-1/2 font-bold leading-tight">Let&apos;s get to know you</div>
+            <p className="text-gray-700 leading-relaxed px-4 text-sm w-2/3">
                 We&apos;re going to ask a few short questions about your health.
-                <br />
+            </p>
+            <p className="text-gray-700 leading-relaxed px-4 text-sm w-5/6">
                 Everything you share - your goals, challenges, & experience - helps us
                 personalize your health insights, action plan, and journey with Cyborg.
             </p>
-            <div className="text-sm text-gray-600">
+            <div className="text-gray-700 leading-relaxed px-4 text-sm mt-20">
                 This is required to schedule your lab test.
                 <br />
                 Estimated time to complete: 10 min
@@ -251,7 +264,7 @@ function SlideThree({ onPrev }) {
         <button
           onClick={handleContinue}
           disabled={loading}
-          className="flex-1 py-3 px-20 w-full rounded-lg bg-black text-white font-semibold hover:bg-gray-900 text-center disabled:opacity-50"
+          className="flex-1 py-3 px-20 w-full rounded-lg bg-white text-black font-semibold hover:bg-gray-900 text-center disabled:opacity-50"
         >
           {loading ? "Loading..." : "Complete Intake"}
         </button>
