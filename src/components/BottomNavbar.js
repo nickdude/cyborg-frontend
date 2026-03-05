@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import FloatingActionButton from "./FloatingActionButton";
 
 export default function BottomNavbar() {
     const pathname = usePathname();
@@ -10,7 +11,9 @@ export default function BottomNavbar() {
         return pathname === path;
       };
     return (
-      <nav className="fixed bottom-0 inset-x-0 bg-white shadow-lg">
+      <>
+        <FloatingActionButton />
+        <nav className="fixed bottom-0 inset-x-0 bg-white shadow-lg">
         <div className="max-w-md mx-auto py-3 flex items-center justify-center text-[10px] font-bold">
           <Link href="/" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/") ? "text-black" : "text-secondary"}`}>
             <Image src="/assets/icons/house.svg" alt="home" width={24} height={24} className={isActive("/") ? "" : "opacity-60"} />
@@ -33,5 +36,6 @@ export default function BottomNavbar() {
           </Link>
         </div>
       </nav>
+      </>
     )
 }       

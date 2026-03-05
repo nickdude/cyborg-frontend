@@ -330,9 +330,11 @@ export default function SemaglutidePage() {
             </div>
           </div>
 
-          <button className="mt-8 w-full bg-black text-white py-4 rounded-lg font-semibold font-inter text-xl hover:bg-gray-900 transition-colors">
-            Get Started
-          </button>
+          <Link href="/market-place/prescriptions/semaglutide/onboarding">
+            <button className="mt-8 w-full bg-black text-white py-4 rounded-lg font-semibold font-inter text-xl hover:bg-gray-900 transition-colors">
+              Get Started
+            </button>
+          </Link>
         </div>
 
         <div className="mb-12">
@@ -356,9 +358,11 @@ export default function SemaglutidePage() {
 
           <ExpandableTopics topics={productData.scienceTopics} />
 
-          <button className="mt-6 w-fit px-4 bg-black text-white py-3 rounded-lg font-semibold font-inter hover:bg-gray-900 transition-colors">
-            Get Started
-          </button>
+          <Link href="/market-place/prescriptions/semaglutide/onboarding">
+            <button className="mt-6 w-fit px-4 bg-black text-white py-3 rounded-lg font-semibold font-inter hover:bg-gray-900 transition-colors">
+              Get Started
+            </button>
+          </Link>
         </div>
 
         {/* Get Started Guide Component */}
