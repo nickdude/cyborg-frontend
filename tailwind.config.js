@@ -18,6 +18,7 @@ module.exports = {
         gray: "#7D7D7D",
         pageBackground: "#F2F2F2",
         borderColor: "#E6E6E8",
+        stepIndicator: "#717178",
         dataBarBg: "#71717833",
         saleBadgeBg: "#541D7A1A",
         biomarkerOptimal: "#05BC7E",

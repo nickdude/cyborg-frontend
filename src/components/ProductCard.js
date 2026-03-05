@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export default function ProductCard({ product }) {
-  return (
-    <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition">
+  const content = (
+    <>
       {/* Product Image */}
-      <div className="relative aspect-square mb-3 flex items-center justify-center bg-gray-50 rounded-lg">
+      <div className="relative aspect-square mb-3 flex items-center justify-center rounded-lg bg-pageBackground">
         <Image
           src={product.image}
           alt={product.name}
@@ -42,6 +43,22 @@ export default function ProductCard({ product }) {
           </div>
         )}
       </div>
+    </>
+  );
+
+  if (product.link) {
+    return (
+      <Link href={product.link}>
+        <div className=" rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer">
+          {content}
+        </div>
+      </Link>
+    );
+  }
+
+  return (
+    <div className=" rounded-xl p-4 shadow-sm hover:shadow-md transition">
+      {content}
     </div>
   );
 }

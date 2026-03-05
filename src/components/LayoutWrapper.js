@@ -8,7 +8,7 @@ export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   
   // Pages where UserActions and BottomNavbar should appear
-  const showComponents = ["/market-place", "/data", "/protocol", "/concierge", "/"].includes(pathname);
+  const showComponents = ["/market-place", "/data", "/protocol", "/concierge", "/", "/market-place/prescriptions/semaglutide"].includes(pathname);
 
   return (
     <>

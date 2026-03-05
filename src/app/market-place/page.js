@@ -181,6 +181,19 @@ export default function Marketplace() {
       onSale: false,
       section: "chronic"
     },
+    {
+      id: 14,
+      name: "Semaglutide",
+      brand: "Metabolic Health",
+      category: "Weight Management",
+      type: "prescription",
+      price: 349.00,
+      originalPrice: 399,
+      image: "/assets/sample-medicine.png",
+      onSale: true,
+      section: "hormone",
+      link: "/market-place/prescriptions/semaglutide"
+    },
   ];
 
   // Dynamic filters based on active tab
