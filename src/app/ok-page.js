@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import HomeScheduledSection from "@/components/home/HomeScheduledSection";
 import { homeScheduledData } from "@/data/homeScheduledData";
 
-export default function Dashboard() {
+export default function Home() {
     const { user } = useAuth();
     const userName = user?.firstName || "Yaman";
     const initials = `${user?.firstName?.[0] || "Y"}${user?.lastName?.[0] || "N"}`;
