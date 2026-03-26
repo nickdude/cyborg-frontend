@@ -35,6 +35,34 @@ function DoctorToggle({ value, onChange, className = "" }) {
   );
 }
 
+function AuthShell({ children }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center font-inter lg:bg-[#f3f4f7] lg:p-8">
+      <div className="w-full lg:grid lg:max-w-[1040px] lg:grid-cols-[1fr_460px] lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-[0_24px_70px_rgba(0,0,0,0.14)]">
+        <aside className="hidden lg:flex lg:flex-col lg:justify-between lg:bg-primary lg:p-10 lg:text-white">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.18em] text-white/80">Cyborg</p>
+            <h2 className="mt-6 max-w-[12ch] text-5xl font-semibold leading-[1.05] tracking-[-0.02em]">
+              Start your journey
+            </h2>
+            <p className="mt-4 max-w-[28ch] text-lg leading-[1.4] text-white/85">
+              Create your account and unlock personalized longevity insights.
+            </p>
+          </div>
+
+          <div className="space-y-3 text-white/90">
+            <p>✓ Register with OTP or password</p>
+            <p>✓ Access clinician-guided protocols</p>
+            <p>✓ Track biomarkers and health goals</p>
+          </div>
+        </aside>
+
+        <div className="lg:flex lg:items-center lg:justify-center lg:bg-white lg:p-10">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Register() {
   const [step, setStep] = useState(1); // 1: email, 2: otp, 3: phone, 4: email-password, 5: phone-password
   const [registrationMethod, setRegistrationMethod] = useState("email-otp"); // email-otp, email-password, phone-otp, phone-password
@@ -209,7 +237,7 @@ export default function Register() {
   // OTP Verification Step
   if (step === 2) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 font-inter">
+      <AuthShell>
         <div className="w-full max-w-md bg-white p-8 rounded-3xl">
           <div className="mb-8 w-32">
             <CyborgLogo />
@@ -267,14 +295,14 @@ export default function Register() {
             </button>
           </p>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   // Phone Sign Up Step
   if (step === 3) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 font-inter">
+      <AuthShell>
         <div className="w-full max-w-md bg-white p-8 rounded-3xl">
           <div className="mb-8 w-32">
             <CyborgLogo />
@@ -327,14 +355,14 @@ export default function Register() {
             </button>
           </p>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   // Email with Password Step
   if (step === 4) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 font-inter">
+      <AuthShell>
         <div className="w-full max-w-md bg-white p-8 rounded-3xl">
           <div className="mb-8 w-32">
             <CyborgLogo />
@@ -420,14 +448,14 @@ export default function Register() {
             </button>
           </p>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   // Phone with Password Step
   if (step === 5) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 font-inter">
+      <AuthShell>
         <div className="w-full max-w-md bg-white p-8 rounded-3xl">
           <div className="mb-8 w-32">
             <CyborgLogo />
@@ -513,13 +541,13 @@ export default function Register() {
             </button>
           </p>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   // Main Registration Step
   return (
-    <div className="min-h-screen flex items-center justify-center font-inter">
+    <AuthShell>
       <div className="w-full max-w-md bg-white p-4 pt-20">
         <div className="mb-8 w-32">
           <CyborgLogo />
@@ -656,6 +684,6 @@ export default function Register() {
           </Link>
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }
