@@ -12,6 +12,34 @@ import CyborgLogo from "@/components/CyborgLogo";
 import { Eye, EyeOff } from "lucide-react";
 import { getNextRoute } from "@/utils/navigationFlow";
 
+function AuthShell({ children }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 font-inter lg:bg-[#f3f4f7] lg:p-8">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white lg:grid lg:max-w-[1040px] lg:grid-cols-[1fr_460px] lg:shadow-[0_24px_70px_rgba(0,0,0,0.14)]">
+        <aside className="hidden lg:flex lg:flex-col lg:justify-between lg:bg-primary lg:p-10 lg:text-white">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.18em] text-white/80">Cyborg</p>
+            <h2 className="mt-6 max-w-[12ch] text-5xl font-semibold leading-[1.05] tracking-[-0.02em]">
+              Welcome back
+            </h2>
+            <p className="mt-4 max-w-[28ch] text-lg leading-[1.4] text-white/85">
+              Continue your personalized longevity journey with secure sign in.
+            </p>
+          </div>
+
+          <div className="space-y-3 text-white/90">
+            <p>✓ Secure login with OTP or password</p>
+            <p>✓ Clinician-guided health platform</p>
+            <p>✓ One app for biomarkers, plans, and care</p>
+          </div>
+        </aside>
+
+        <div className="p-8 lg:p-10">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Login() {
   const [step, setStep] = useState(1); // 1: email, 2: phone, 3: password, 4: otp
   const [loginMethod, setLoginMethod] = useState("email-otp"); // "email-otp", "phone-otp", or "password"
@@ -126,8 +154,7 @@ export default function Login() {
 
   if (step === 2) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 font-inter">
-        <div className="w-full max-w-md bg-white p-8 rounded-3xl">
+      <AuthShell>
           <div className="mb-8 w-32">
             <CyborgLogo />
           </div>
@@ -164,16 +191,14 @@ export default function Login() {
               Back to email
             </button>
           </p>
-        </div>
-      </div>
+      </AuthShell>
     );
   }
 
   // Password Login Step
   if (step === 3) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 font-inter">
-        <div className="w-full max-w-md bg-white p-8 rounded-3xl">
+      <AuthShell>
           <div className="mb-8 w-32">
             <CyborgLogo />
           </div>
@@ -236,16 +261,14 @@ export default function Login() {
               Back to email OTP
             </button>
           </p>
-        </div>
-      </div>
+      </AuthShell>
     );
   }
 
   // OTP Verification Step
   if (step === 4) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 font-inter">
-        <div className="w-full max-w-md bg-white p-8 rounded-3xl">
+      <AuthShell>
           <div className="mb-8 w-32">
             <CyborgLogo />
           </div>
@@ -294,15 +317,13 @@ export default function Login() {
               Change {formData.email ? "email" : "phone"}
             </button>
           </p>
-        </div>
-      </div>
+      </AuthShell>
     );
   }
 
   // Main Login Step
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 font-inter">
-      <div className="w-full max-w-md bg-white p-8 rounded-3xl">
+    <AuthShell>
         <div className="mb-8 w-32">
           <CyborgLogo />
         </div>
@@ -391,7 +412,6 @@ export default function Login() {
             Terms of Service
           </Link>
         </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 }
