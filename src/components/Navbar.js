@@ -6,7 +6,7 @@ import Image from "next/image";
 import UserActions from "@/components/UserActions";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function Navbar({ backHref = "/", showBack = true }) {
+export default function Navbar({ backHref = "/", showBack = true, showUserActions = true }) {
   const { token } = useAuth();
 
   return (
@@ -23,12 +23,12 @@ export default function Navbar({ backHref = "/", showBack = true }) {
         )}
       </div>
 
-      <div className="h-10 flex items-center justify-center">
+      <div className="h-10 flex items-center justify-center mt-3">
         <CyborgLogo width={100} height={40} />
       </div>
 
       {/* Bell Icon + User Menu */}
-      {token && <UserActions />}
+      {token && showUserActions && <UserActions />}
     </header>
   );
 }

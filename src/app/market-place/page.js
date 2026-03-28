@@ -305,43 +305,65 @@ export default function Marketplace() {
   };
 
   return (
-    <div className="min-h-screen pb-24 px-4">
+    <div className="min-h-screen pb-24 px-4 lg:px-8">
       <IconTabs 
         categories={dataCategories} 
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
       />
 
-      <div className="pt-20 space-y-6">
-        {/* Search Bar */}
-        <SearchBar 
-          placeholder="Search anything" 
-          value={searchQuery}
-          onChange={setSearchQuery}
-        />
-
-        {/* Filter Tabs */}
-        <FilterTabs 
-          filters={filters}
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-        />
-
-        {/* Product Sections */}
-        <div className="space-y-8">
-          {Object.entries(groupedProducts).map(([section, products]) => (
-            <ProductSection 
-              key={section}
-              title={sectionTitles[section] || section}
-              products={products}
-            />
-          ))}
-
-          {filteredProducts.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              No products found
+      <div className="max-w-[1240px] mx-auto pt-20">
+        {/* Desktop Layout: Sidebar + Content */}
+        <div className="lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start space-y-6 lg:space-y-0">
+          {/* Left Sidebar - Filters (sticky on desktop) */}
+          <div className="lg:col-span-3 lg:sticky lg:top-24">
+            <div className="space-y-4 lg:bg-white lg:rounded-2xl lg:border lg:border-borderColor lg:p-5">
+              <div className="hidden lg:block">
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">Filters</h3>
+              </div>
+              <FilterTabs 
+                filters={filters}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+              />
             </div>
-          )}
+          </div>
+
+          {/* Right Content Area */}
+          <div className="lg:col-span-9 space-y-6">
+            {/* Search Bar */}
+            <SearchBar 
+              placeholder="Search anything" 
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+
+            {/* Filter Tabs Mobile */}
+            <div className="lg:hidden">
+              <FilterTabs 
+                filters={filters}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+              />
+            </div>
+
+            {/* Product Sections */}
+            <div className="space-y-8">
+              {Object.entries(groupedProducts).map(([section, products]) => (
+                <ProductSection 
+                  key={section}
+                  title={sectionTitles[section] || section}
+                  products={products}
+                />
+              ))}
+
+              {filteredProducts.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  No products found
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

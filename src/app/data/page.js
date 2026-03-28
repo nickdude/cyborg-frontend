@@ -176,70 +176,73 @@ export default function DataDashboard() {
   }, [filteredBiomarkers]);
 
   return (
-    <div className="min-h-screen pb-24 px-4 font-inter bg-pageBackground">
-      {/* Header */}
-      <div className="pt-6 pb-6 space-y-2">
-        <div className="flex items-center gap-2">
-          <h1 className="text-3xl text-black">Data</h1>
-          <span className="text-secondary text-2xl">Twin</span>
-        </div>
-        <div className="flex justify-between space-y-1">
-          <h2 className="text-2xl text-black">{userName}</h2>
-          <p className="text-sm text-secondary">Updated Dec 16, 2025</p>
-        </div>
-        <p className="text-secondary text-xs pt-2">{userName}, you're doing quite well. While there's room for improvement in some areas, your overall health markers are good.</p>
-      </div>
-
-      {/* Biomarkers Section */}
-      <div className="bg-white rounded-2xl p-6 space-y-4 font-inter">
-        {/* Header and Stats */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-gray-900">Biomarkers</h2>
-          
-          <StatsGrid stats={stats} />
-          <ProgressBar stats={stats} />
-        </div>
-
-        {/* Search and Filters */}
-        <div className="space-y-3 pt-2">
-          <SearchBar 
-            placeholder="Search..." 
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-          
-          <div className="grid grid-cols-2 gap-3">
-            <DropdownFilter
-              label="All ranges"
-              options={rangeOptions}
-              value={rangeFilter}
-              onChange={setRangeFilter}
-            />
-            <DropdownFilter
-              label="Category"
-              options={categories}
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-            />
+    <div className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10">
+      <div className="mx-auto w-full max-w-[1240px] px-4 pt-6 lg:px-8 lg:pt-10">
+        {/* Header */}
+        <div className="pb-6 space-y-2 lg:pb-10 lg:space-y-3">
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl text-black lg:text-5xl font-bold">Data</h1>
+            <span className="text-secondary text-2xl lg:text-4xl font-bold">Twin</span>
           </div>
-        </div>
-      </div>
-
-      {/* Biomarkers List by Category */}
-      <div className="space-y-6 pt-6">
-        {Object.entries(groupedBiomarkers).map(([category, biomarkers]) => (
-          <BiomarkersList
-            key={category}
-            title={category}
-            biomarkers={biomarkers}
-          />
-        ))}
-
-        {filteredBiomarkers.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            No biomarkers found
+          <div className="flex items-end justify-between gap-4 lg:items-center">
+            <h2 className="text-2xl text-black lg:text-3xl font-semibold">{userName}</h2>
+            <p className="text-xs text-secondary lg:text-sm">Updated Dec 16, 2025</p>
           </div>
-        )}
+          <p className="pt-2 text-xs text-secondary lg:max-w-[70ch] lg:text-base lg:leading-relaxed">
+            {userName}, you're doing quite well. While there's room for improvement in some areas, your overall health markers are good.
+          </p>
+        </div>
+
+        <section className="lg:grid lg:grid-cols-12 lg:gap-7 lg:items-start">
+          {/* Biomarkers Summary / Filters */}
+          <div className="bg-white rounded-2xl p-6 space-y-4 lg:col-span-3 lg:sticky lg:top-24 lg:p-8">
+            <div className="space-y-5">
+              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Biomarkers</h2>
+              <StatsGrid stats={stats} />
+              <ProgressBar stats={stats} />
+            </div>
+
+            <div className="border-t border-borderColor pt-5 space-y-3">
+              <SearchBar
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+              />
+
+              <div className="grid grid-cols-2 gap-3 lg:gap-2.5">
+                <DropdownFilter
+                  label="All ranges"
+                  options={rangeOptions}
+                  value={rangeFilter}
+                  onChange={setRangeFilter}
+                />
+                <DropdownFilter
+                  label="Category"
+                  options={categories}
+                  value={categoryFilter}
+                  onChange={setCategoryFilter}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Biomarkers List by Category */}
+          <div className="space-y-8 pt-6 lg:col-span-9 lg:pt-0">
+            {Object.entries(groupedBiomarkers).map(([category, biomarkers]) => (
+              <BiomarkersList
+                key={category}
+                title={category}
+                biomarkers={biomarkers}
+              />
+            ))}
+
+            {filteredBiomarkers.length === 0 && (
+              <div className="py-12 text-center text-gray-500">
+                No biomarkers found
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );

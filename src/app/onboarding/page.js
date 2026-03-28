@@ -587,8 +587,26 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-pageBackground font-inter">
-      <div className="max-w-md  flex flex-col justify-between min-h-screen mx-auto bg-pageBackground rounded-xl p-8 relative">
+    <div className="min-h-screen bg-pageBackground font-inter lg:flex lg:items-center lg:justify-center lg:p-8">
+      <div className="max-w-md flex flex-col justify-between min-h-screen mx-auto bg-pageBackground rounded-xl p-8 relative w-full lg:max-w-[1180px] lg:min-h-[760px] lg:grid lg:grid-cols-[360px_1fr] lg:gap-8 lg:p-0">
+        <aside className="hidden lg:flex lg:flex-col lg:justify-between lg:rounded-2xl lg:bg-primary lg:p-8 lg:text-white">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">CYBORG</h1>
+            <p className="mt-6 text-white/90 leading-relaxed">
+              Complete your onboarding so we can personalize your health insights, action plan, and recommendations.
+            </p>
+          </div>
+
+          <div>
+            <p className="text-white/80 text-sm">Section {sectionIndex + 1} of {sections.length}</p>
+            <p className="mt-2 text-2xl font-semibold">Step {stepIndex + 1} of {sectionTotal}</p>
+            <div className="mt-4 h-1 w-full rounded bg-white/30">
+              <div className="h-1 rounded bg-white" style={{ width: `${sectionProgress}%` }} />
+            </div>
+          </div>
+        </aside>
+
+        <div className="flex flex-col justify-between min-h-screen rounded-xl bg-pageBackground p-8 relative lg:min-h-[760px] lg:rounded-2xl lg:bg-white lg:shadow-sm">
         {/* Progress bar */}
         <div className="">
             <div className="w-full h-1 bg-gray-200 rounded mb-6">
@@ -605,7 +623,7 @@ export default function Onboarding() {
                 </div>
             </div>
 
-            <div className="min-h-[60vh] flex flex-col gap-8 ">
+                <div className="min-h-[60vh] flex flex-col gap-8 lg:min-h-[430px]">
                     <h1 className="text-2xl font-extrabold tracking-tight mb-2">CYBORG</h1>
 
                     <div className="space-y-4">
@@ -689,6 +707,7 @@ export default function Onboarding() {
             Skip
           </Link>
         </div> */}
+      </div>
       </div>
     </div>
   );

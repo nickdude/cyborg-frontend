@@ -45,24 +45,24 @@ export default function BiomarkerCard({ biomarker }) {
     <>
       <div
         onClick={() => setShowDetail(true)}
-        className="bg-white rounded-xl p-4 font-inter flex items-center gap-4 cursor-pointer hover:shadow-md transition"
+        className="bg-white rounded-xl p-4 lg:p-6 font-inter flex items-center gap-4 cursor-pointer hover:shadow-md transition lg:border lg:border-borderColor"
       >
       {/* Left Section: Status Dot + Info */}
       <div className="flex items-start gap-3 flex-1">
         <div 
-          className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+          className="w-3 h-3 rounded-full flex-shrink-0 mt-1 lg:w-3.5 lg:h-3.5"
           style={{ backgroundColor: getStatusDotColor(status) }}
         />
-        <div className="flex-1">
-          <p className="font-bold text-gray-900 text-sm">{name}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{value} <span className="text-gray-400">{unit}</span></p>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-gray-900 text-sm lg:text-base truncate">{name}</p>
+          <p className="text-xs text-gray-500 mt-0.5 lg:text-sm">{value} <span className="text-gray-400">{unit}</span></p>
         </div>
       </div>
 
       {/* Right Section: Trend Line + Vertical Range Marker */}
-      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
         {/* Horizontal Trend Line */}
-        <div className="relative w-20 h-8">
+        <div className="relative w-20 h-8 lg:w-28 lg:h-10">
           {/* Light background */}
           <div 
             className="absolute inset-0 opacity-20"
@@ -105,7 +105,7 @@ export default function BiomarkerCard({ biomarker }) {
         </div>
 
         {/* Vertical Range Indicator */}
-        <div className="flex flex-col gap-1 h-12">
+        <div className="flex flex-col gap-1 h-12 lg:h-16 lg:gap-1.5">
           <div className="flex-1 w-1 rounded-full bg-red-400" /> {/* Out of range - Red */}
           <div className="flex-1 w-1 rounded-full bg-yellow-400" /> {/* Normal - Yellow */}
           <div className="flex-1 w-1 rounded-full" style={{ backgroundColor: getStatusDotColor(status) }} /> {/* Optimal/Status - Green/Teal */}

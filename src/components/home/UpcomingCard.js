@@ -2,11 +2,11 @@
 
 export default function UpcomingCard({ upcoming }) {
   return (
-    <div className="mt-4 bg-[#3B3B3B] rounded-2xl p-4 text-white">
-      <p className="text-lg font-semibold font-inter">{upcoming.title}</p>
+    <div className="mt-4 bg-[#3B3B3B] rounded-2xl p-4 text-white lg:p-5">
+      <p className="text-lg font-semibold font-inter lg:text-xl">{upcoming.title}</p>
       <p className="text-sm font-inter opacity-70">{upcoming.subtitle}</p>
 
-      <div className="mt-48">
+      <div className="mt-48 lg:mt-56">
         {upcoming.rows.map((row, index) => (
           <div
             key={index}
@@ -15,7 +15,7 @@ export default function UpcomingCard({ upcoming }) {
             {row.map((day) => (
               <div
                 key={day}
-                className="w-8 h-8 rounded-full bg-white/15 text-white/90 flex items-center justify-center text-xs font-semibold"
+                className="w-8 h-8 rounded-full bg-white/15 text-white/90 flex items-center justify-center text-xs font-semibold lg:h-10 lg:w-10 lg:text-sm"
               >
                 {day}
               </div>

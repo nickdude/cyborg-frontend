@@ -12,9 +12,6 @@ export default function Protocol() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedGoal, setSelectedGoal] = useState(null);
 
-  // Get user name
-  const userName = user?.firstName || "User";
-
   // Sample protocol products
   const protocolProducts = [
     {
@@ -95,7 +92,7 @@ export default function Protocol() {
   }
 
   return (
-    <div className="min-h-screen pb-24 px-4 font-inter bg-pageBackground">
+    <div className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10">
       <style jsx>{`
         @keyframes fadeIn {
           from {
@@ -125,80 +122,66 @@ export default function Protocol() {
         }
       `}</style>
 
-      {/* Header with Tabs */}
-      <div className="pt-6 pb-6">
-        <div className="flex items-center gap-4 mb-6">
-          {activeTab === "goals" && (
-            <>
-              <button
-                onClick={() => setActiveTab("goals")}
-                className="font-inter text-black text-lg font-medium transition-all duration-300 animate-slide-in"
-              >
-                Goals
-              </button>
-              <button
-                onClick={() => setActiveTab("protocol")}
-                className="font-inter text-secondary text-lg font-medium hover:text-black transition-colors duration-300"
-              >
-                Protocol
-              </button>
-            </>
-          )}
+      <div className="mx-auto w-full max-w-[1240px] px-4 pt-6 lg:px-8 lg:pt-8">
+        {/* Header with Tabs */}
+        <div className="pb-6 lg:pb-8">
+          <div className="mb-6 flex items-center gap-4 lg:gap-6">
+            <button
+              onClick={() => setActiveTab("protocol")}
+              className={`font-inter text-lg font-medium transition-colors duration-300 lg:text-xl ${
+                activeTab === "protocol" ? "text-black" : "text-secondary hover:text-black"
+              }`}
+            >
+              Protocol
+            </button>
+            <button
+              onClick={() => setActiveTab("goals")}
+              className={`font-inter text-lg font-medium transition-colors duration-300 lg:text-xl ${
+                activeTab === "goals" ? "text-black" : "text-secondary hover:text-black"
+              }`}
+            >
+              Goals
+            </button>
+          </div>
+
+          {/* Tab content header */}
           {activeTab === "protocol" && (
-            <>
-              <button
-                onClick={() => setActiveTab("protocol")}
-                className="font-inter text-black text-lg font-medium transition-all duration-300 animate-slide-in"
-              >
-                Protocol
-              </button>
-              <button
-                onClick={() => setActiveTab("goals")}
-                className="font-inter text-secondary text-lg font-medium hover:text-black transition-colors duration-300"
-              >
-                Goals
-              </button>
-            </>
+            <h2 className="animate-fade-in font-inter text-2xl font-bold text-black lg:text-3xl">Your protocol items</h2>
           )}
         </div>
 
-        {/* Tab content header */}
+        {/* Goals Tab */}
+        {activeTab === "goals" && (
+          <div className="animate-fade-in grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
+            {healthGoals.map((goal, index) => (
+              <div key={goal.id} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.1}s both` }}>
+                <GoalCard goal={goal} onClick={() => handleGoalClick(goal)} />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Protocol Tab */}
         {activeTab === "protocol" && (
-          <h2 className="text-2xl font-bold text-black font-inter animate-fade-in">Your protocol items</h2>
+          <div className="animate-fade-in grid grid-cols-1 gap-0 lg:grid-cols-2 lg:gap-4">
+            {protocolProducts.map((product, index) => (
+              <div key={product.id} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
+                <ProtocolProductItem
+                  product={product}
+                  onBuyClick={handleBuyClick}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Buy confirmation (can expand this later) */}
+        {selectedProduct && (
+          <div className="animate-fade-in fixed bottom-32 right-4 rounded-full bg-black p-4 text-white shadow-lg lg:bottom-8 lg:right-8">
+            <span className="text-sm">✓ Item added: {selectedProduct.name}</span>
+          </div>
         )}
       </div>
-
-      {/* Goals Tab */}
-      {activeTab === "goals" && (
-        <div className="space-y-4 animate-fade-in">
-          {healthGoals.map((goal, index) => (
-            <div key={goal.id} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.1}s both` }}>
-              <GoalCard goal={goal} onClick={() => handleGoalClick(goal)} />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Protocol Tab */}
-      {activeTab === "protocol" && (
-        <div className="space-y-0 animate-fade-in">
-          {protocolProducts.map((product, index) => (
-            <div key={product.id} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
-              <ProtocolProductItem
-                product={product}
-                onBuyClick={handleBuyClick}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Buy confirmation (can expand this later) */}
-      {selectedProduct && (
-        <div className="fixed bottom-32 right-4 bg-black text-white rounded-full p-4 shadow-lg animate-fade-in">
-          <span className="text-sm">✓ Item added: {selectedProduct.name}</span>
-        </div>
-      )}
     </div>
   );
 }

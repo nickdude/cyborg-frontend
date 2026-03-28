@@ -39,7 +39,7 @@ export default function GoalCard({ goal, onClick, showCTA = true }) {
   return (
     <div
       onClick={onClick}
-      className="aspect-square rounded-3xl p-6 cursor-pointer hover:shadow-lg transition text-white flex flex-col relative overflow-hidden"
+      className="aspect-square rounded-3xl p-6 cursor-pointer hover:shadow-lg transition text-white flex flex-col relative overflow-hidden lg:p-7"
       style={{
         backgroundImage: `url(${bgImage})`,
         backgroundSize: "cover",
@@ -58,9 +58,9 @@ export default function GoalCard({ goal, onClick, showCTA = true }) {
         </div>
 
         {/* Title and Description - centered in middle */}
-        <div className="flex-1 flex flex-col justify-center mt-20">
-          <h3 className="text-2xl font-semibold font-inter leading-tight mb-3">{goal.title}</h3>
-          <p className="text-sm font-inter opacity-90 line-clamp-3">{goal.description}</p>
+        <div className="flex-1 flex flex-col justify-center mt-20 lg:mt-16">
+          <h3 className="text-2xl font-semibold font-inter leading-tight mb-3 lg:text-[1.75rem]">{goal.title}</h3>
+          <p className="text-sm font-inter opacity-90 line-clamp-3 lg:text-base">{goal.description}</p>
         </div>
 
         {/* How to solve this - at bottom */}

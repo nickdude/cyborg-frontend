@@ -2,13 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI } from "@/services/api";
-import Image from "next/image";
 import Input from "@/components/Input";
 import Select from "@/components/Select";
 import Button from "@/components/Button";
-import Navbar from "@/components/Navbar";
 
 const US_STATES = [
   { label: "Alabama", value: "AL" },
@@ -80,10 +79,12 @@ const SEXES = [
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -96,185 +97,286 @@ export default function ProfilePage() {
     zipCode: "",
   });
 
+  const [existingProfile, setExistingProfile] = useState({
+    firstName: "",
+    lastName: "",
+    biologicalSex: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    zipCode: "",
+  });
+
+  const normalizeProfile = (profile = {}) => ({
+    firstName: profile.firstName || "",
+    lastName: profile.lastName || "",
+    biologicalSex: profile.biologicalSex || "",
+    addressLine1: profile.addressLine1 || "",
+    addressLine2: profile.addressLine2 || "",
+    city: profile.city || "",
+    state: profile.state || "",
+    zipCode: profile.zipCode || "",
+  });
+
+  const getErrorMessage = (err) => {
+    if (!err) return "Failed to update profile";
+    if (typeof err === "string") return err;
+    if (err.message) return err.message;
+    if (err.error) return err.error;
+    if (Array.isArray(err.errors) && err.errors.length) {
+      return err.errors.map((e) => e.msg || e.message || e).join(", ");
+    }
+    return "Failed to update profile";
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.firstName.trim()) errors.firstName = "First name is required";
+    if (!formData.lastName.trim()) errors.lastName = "Last name is required";
+    if (!formData.biologicalSex) errors.biologicalSex = "Biological sex is required";
+    if (!formData.addressLine1.trim()) errors.addressLine1 = "Address line 1 is required";
+    if (!formData.city) errors.city = "City is required";
+    if (!formData.state) errors.state = "State is required";
+
+    const zip = formData.zipCode.trim();
+    if (!zip) errors.zipCode = "ZIP code is required";
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const loadProfile = async (userId) => {
+    setProfileLoading(true);
+    setError("");
+    try {
+      const response = await userAPI.getProfile(userId);
+      const profile = response?.data || {};
+      const normalized = normalizeProfile(profile);
+      setExistingProfile(normalized);
+      setFormData(normalized);
+      updateUser({ ...(user || {}), ...profile });
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!token) {
       router.push("/login");
       return;
     }
 
-    if (user) {
-      setFormData({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        biologicalSex: user.biologicalSex || "",
-        addressLine1: user.addressLine1 || "",
-        addressLine2: user.addressLine2 || "",
-        city: user.city || "",
-        state: user.state || "",
-        zipCode: user.zipCode || "",
-      });
+    if (user?.id || user?._id) {
+      const fallbackProfile = normalizeProfile(user);
+      setExistingProfile(fallbackProfile);
+      setFormData(fallbackProfile);
+      loadProfile(user.id || user._id);
     }
-  }, [token, user, router]);
+  }, [token, user?.id, user?._id, router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user?.id && !user?._id) {
+      setError("Unable to update profile. Please log in again.");
+      return;
+    }
+
+    if (!validateForm()) {
+      setError("Please fix the highlighted fields.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      const response = await userAPI.updateProfile(user.id, formData);
+      const userId = user.id || user._id;
+      const payload = {
+        ...formData,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        addressLine1: formData.addressLine1.trim(),
+        addressLine2: formData.addressLine2.trim(),
+        zipCode: formData.zipCode.trim(),
+      };
+
+      const response = await userAPI.updateProfile(userId, payload);
+      const savedUser = response?.data?.user || {};
+      const normalized = normalizeProfile(savedUser);
+
+      setExistingProfile(normalized);
+      setFormData(normalized);
+      updateUser({ ...(user || {}), ...savedUser });
       setSuccess("Profile updated successfully!");
-      setTimeout(() => setSuccess(""), 3000);
+      setFieldErrors({});
+      setTimeout(() => {
+        setSuccess("");
+        router.push("/settings");
+      }, 800);
     } catch (err) {
-      setError(err.message || "Failed to update profile");
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <Navbar backHref="/dashboard" />
-
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        {/* Logo */}
-        <div className="mb-8 flex justify-center">
-          <Image
-            src="/assets/cyborg.png"
-            alt="Cyborg"
-            width={150}
-            height={50}
-            priority
-          />
+    <div className="min-h-screen bg-pageBackground pb-10 text-gray-900 font-inter">
+      <main className="mx-auto w-full max-w-[1240px] px-4 pt-8 lg:px-8 lg:pt-10">
+        <div className="mb-6 flex items-center justify-between lg:mb-8">
+          <Link
+            href="/settings"
+            className="text-secondary text-sm font-semibold hover:text-black flex items-center gap-1"
+          >
+            <span aria-hidden>←</span>
+            <span>Back</span>
+          </Link>
         </div>
 
-        {/* Title */}
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
-          Let&apos;s set up your Cyborg account
-        </h1>
+        <section className="mx-auto max-w-3xl rounded-3xl border border-borderColor bg-white px-5 py-6 shadow-sm lg:px-8 lg:py-8">
+          <h1 className="mb-2 text-3xl font-semibold text-gray-900 lg:text-4xl">
+            Edit your profile
+          </h1>
+          <p className="mb-6 text-sm text-secondary lg:mb-8 lg:text-base">
+            Keep your personal details up to date.
+          </p>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
-        {/* Success Message */}
-        {success && (
-          <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-            {success}
-          </div>
-        )}
+          {/* Success Message */}
+          {success && (
+            <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              {success}
+            </div>
+          )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* First Name */}
-          <Input
-            label="First Name"
-            name="firstName"
-            type="text"
-            value={formData.firstName}
-            onChange={handleChange}
-            placeholder="Your first name"
-            required
-          />
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-2">
+            <div className="grid grid-cols-1 gap-x-5 lg:grid-cols-2">
+              <Input
+                label="First Name"
+                name="firstName"
+                type="text"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder={existingProfile.firstName || "Your first name"}
+                error={fieldErrors.firstName}
+                required
+              />
 
-          {/* Last Name */}
-          <Input
-            label="Last Name"
-            name="lastName"
-            type="text"
-            value={formData.lastName}
-            onChange={handleChange}
-            placeholder="Your last name"
-            required
-          />
+              <Input
+                label="Last Name"
+                name="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder={existingProfile.lastName || "Your last name"}
+                error={fieldErrors.lastName}
+                required
+              />
+            </div>
 
-          {/* Biological Sex */}
-          <Select
-            label="Biological Sex"
-            name="biologicalSex"
-            value={formData.biologicalSex}
-            onChange={handleChange}
-            options={SEXES}
-            placeholder="Select sex"
-            required
-          />
+            <Select
+              label="Biological Sex"
+              name="biologicalSex"
+              value={formData.biologicalSex}
+              onChange={handleChange}
+              options={SEXES}
+              placeholder={existingProfile.biologicalSex || "Select sex"}
+              error={fieldErrors.biologicalSex}
+              required
+            />
 
-          {/* Address Line 1 */}
-          <Input
-            label="Address Line 1"
-            name="addressLine1"
-            type="text"
-            value={formData.addressLine1}
-            onChange={handleChange}
-            placeholder="Street address"
-            required
-          />
+            <Input
+              label="Address Line 1"
+              name="addressLine1"
+              type="text"
+              value={formData.addressLine1}
+              onChange={handleChange}
+              placeholder={existingProfile.addressLine1 || "Street address"}
+              error={fieldErrors.addressLine1}
+              required
+            />
 
-          {/* Address Line 2 */}
-          <Input
-            label="Address Line 2"
-            name="addressLine2"
-            type="text"
-            value={formData.addressLine2}
-            onChange={handleChange}
-            placeholder="Apartments, suite, etc. (optional)"
-          />
+            <Input
+              label="Address Line 2"
+              name="addressLine2"
+              type="text"
+              value={formData.addressLine2}
+              onChange={handleChange}
+              placeholder={existingProfile.addressLine2 || "Apartments, suite, etc. (optional)"}
+            />
 
-          {/* City */}
-          <Select
-            label="City"
-            name="city"
-            value={formData.city}
-            onChange={handleChange}
-            options={CITIES}
-            placeholder="Select city"
-            required
-          />
+            <div className="grid grid-cols-1 gap-x-5 lg:grid-cols-3">
+              <Select
+                label="City"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                options={CITIES}
+                placeholder={existingProfile.city || "Select city"}
+                error={fieldErrors.city}
+                required
+              />
 
-          {/* State */}
-          <Select
-            label="State"
-            name="state"
-            value={formData.state}
-            onChange={handleChange}
-            options={US_STATES}
-            placeholder="Select State"
-            required
-          />
+              <Select
+                label="State"
+                name="state"
+                value={formData.state}
+                onChange={handleChange}
+                options={US_STATES}
+                placeholder={existingProfile.state || "Select State"}
+                error={fieldErrors.state}
+                required
+              />
 
-          {/* ZIP Code */}
-          <Input
-            label="ZIP Code"
-            name="zipCode"
-            type="text"
-            value={formData.zipCode}
-            onChange={handleChange}
-            placeholder="Your zipcode"
-            required
-          />
+              <Input
+                label="ZIP Code"
+                name="zipCode"
+                type="text"
+                value={formData.zipCode}
+                onChange={handleChange}
+                placeholder={existingProfile.zipCode || "Your zipcode"}
+                error={fieldErrors.zipCode}
+                required
+              />
+            </div>
 
-          {/* Submit Button */}
-          <div className="pt-4">
-            <Button
-              fullWidth
-              size="lg"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="bg-black hover:bg-gray-900 text-white font-bold"
-            >
-              {loading ? "Updating..." : "Update"}
-            </Button>
-          </div>
-        </form>
+            <div className="pt-3">
+              <Button
+                fullWidth
+                size="lg"
+                type="submit"
+                disabled={loading}
+                className="bg-black hover:bg-gray-900 text-white font-bold"
+              >
+                {loading ? "Saving profile..." : "Save Profile"}
+              </Button>
+            </div>
+          </form>
+
+          {profileLoading && (
+            <p className="mt-4 text-center text-sm text-secondary">Refreshing profile details...</p>
+          )}
+        </section>
       </main>
     </div>
   );

@@ -7,14 +7,32 @@ import BottomNavbar from "./BottomNavbar";
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   
-  // Pages where UserActions and BottomNavbar should appear
-  const showComponents = ["/market-place", "/data", "/protocol", "/concierge", "/dashboard", "/market-place/prescriptions/semaglutide"].includes(pathname);
+  // Pages where BottomNavbar should appear
+  const showBottomNavbar = [
+    "/dashboard",
+    "/market-place",
+    "/data",
+    "/protocol",
+    "/concierge",
+    "/settings",
+    "/market-place/prescriptions/semaglutide",
+  ].includes(pathname);
+
+  // Pages where UserActions should appear
+  const showUserActions = [
+    "/dashboard",
+    "/market-place",
+    "/data",
+    "/protocol",
+    "/concierge",
+    "/market-place/prescriptions/semaglutide",
+  ].includes(pathname);
 
   return (
     <>
-      {showComponents && <UserActions />}
+      {showUserActions && <UserActions />}
       {children}
-      {showComponents && <BottomNavbar />}
+      {showBottomNavbar && <BottomNavbar />}
     </>
   );
 }

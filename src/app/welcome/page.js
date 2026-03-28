@@ -15,8 +15,8 @@ export default function WelcomeFlow() {
   const prev = () => setStep((s) => Math.max(1, s - 1));
 
   return (
-    <div className="min-h-screen bg-pageBackground flex items-center justify-center">
-      <div className="max-w-md w-full h-[100vh] bg-white shadow-lg p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-pageBackground flex items-center justify-center lg:p-6">
+      <div className="max-w-md w-full h-[100svh] bg-white shadow-lg p-4 relative overflow-hidden lg:max-w-[1120px] lg:h-[760px] lg:rounded-3xl lg:p-8 lg:shadow-[0_24px_70px_rgba(0,0,0,0.2)]">
         <div className="absolute inset-0 z-0">
           <Image
             src="/assets/welcome/welcome.jpg"
@@ -26,9 +26,9 @@ export default function WelcomeFlow() {
             priority
           />
         </div>
-        <div className="flex justify-between items-center mb-16 relative z-10 text-white ">
+        <div className="flex justify-between items-center mb-16 relative z-10 text-white lg:mb-10">
           <h1 className="text-2xl font-extrabold tracking-tight">CYBORG</h1>
-          <div className="text-sm text-gray-400">Step {step} / 3</div>
+          <div className="text-sm text-white/80">Step {step} / 3</div>
         </div>
 
         <div className="relative z-10">
@@ -119,14 +119,14 @@ function SlideOne({ onNext }) {
   const progress = maxDrag > 0 ? (offset / maxDrag) * 100 : 0;
 
   return (
-    <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter">
+    <div className="mx-auto flex min-h-[calc(100svh-180px)] w-full max-w-[560px] flex-col items-center justify-between space-y-8 text-center font-inter lg:min-h-[580px]">
       
       <div className="flex flex-col justify-center items-center gap-5">
-        <div className="text-[32px] text-white font-medium leading-tight w-2/3">Every body has 100 year potential</div>
-        <p className="text-white font-medium text-[16px] leading-relaxed px-10">
+        <div className="w-2/3 text-[clamp(2rem,4.2vw,3rem)] text-white font-medium leading-tight lg:w-[18ch]">Every body has 100 year potential</div>
+        <p className="text-white font-medium text-[16px] leading-relaxed px-10 lg:max-w-[36ch] lg:px-0">
             No matter where you come from, your body holds that potential.
         </p>
-        <p className="text-white font-medium text-[16px] leading-relaxed px-8">We give you the system to unlock it.</p>
+        <p className="text-white font-medium text-[16px] leading-relaxed px-8 lg:px-0">We give you the system to unlock it.</p>
       </div>
       <div className="w-full px-2">
         <div
@@ -190,14 +190,14 @@ function SlideTwo({ onNext, onPrev }) {
   ];
 
   return (
-    <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter text-white">
+    <div className="mx-auto flex min-h-[calc(100svh-180px)] w-full max-w-[560px] flex-col items-center justify-between space-y-8 text-center font-inter text-white lg:min-h-[580px]">
             <div className="flex flex-col justify-center items-center gap-5">
                     <div className="text-center space-y-2">
-                        <p className="text-sm text-gray-500">Payment Successful</p>
+              <p className="text-sm text-white/75">Payment Successful</p>
                         <div className="text-3xl font-bold leading-tight">Welcome to Cyborg</div>
                     </div>
 
-                    <div className="rounded-xl p-4 space-y-3 bg-white/30">
+            <div className="rounded-xl p-4 space-y-3 bg-white/30 lg:max-w-[520px]">
                         {bullets.map((item) => (
                         <div key={item} className="flex gap-3 text-left text-gray-800 font-bold">
                             <span className="text-white">✓</span>
@@ -244,13 +244,13 @@ function SlideThree({ onPrev }) {
   };
 
   return (
-    <div className="space-y-8 text-center flex flex-col justify-between min-h-[70vh] items-center font-inter text-white">
+    <div className="mx-auto flex min-h-[calc(100svh-180px)] w-full max-w-[560px] flex-col items-center justify-between space-y-8 text-center font-inter text-white lg:min-h-[580px]">
         <div className="flex flex-col justify-center items-center gap-5">
-            <div className="text-[32px] w-1/2 font-bold leading-tight">Let&apos;s get to know you</div>
-            <p className="text-gray-700 leading-relaxed px-4 text-sm w-2/3">
+        <div className="text-[clamp(2rem,4.2vw,3rem)] w-1/2 font-bold leading-tight lg:w-[14ch]">Let&apos;s get to know you</div>
+        <p className="text-gray-700 leading-relaxed px-4 text-sm w-2/3 lg:w-[42ch] lg:px-0">
                 We&apos;re going to ask a few short questions about your health.
             </p>
-            <p className="text-gray-700 leading-relaxed px-4 text-sm w-5/6">
+        <p className="text-gray-700 leading-relaxed px-4 text-sm w-5/6 lg:w-[48ch] lg:px-0">
                 Everything you share - your goals, challenges, & experience - helps us
                 personalize your health insights, action plan, and journey with Cyborg.
             </p>

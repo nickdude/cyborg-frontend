@@ -33,6 +33,8 @@ export function getNextRoute(user) {
     return "/onboarding";
   }
 
+  //5. All steps complete, go to Dashboard
+  return "/dashboard";
   // 5. All steps complete, go to blood reports
-  return `/blood-reports/${user.id}`;
+  // return `/blood-reports/${user.id}`;
 }

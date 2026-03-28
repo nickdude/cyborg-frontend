@@ -105,23 +105,23 @@ export default function UserActions() {
   if (!token) return null;
 
   return (
-    <div className="absolute top-3 right-3 flex items-center gap-3">{/* Bell Icon with Notifications Dropdown */}
+    <div className="fixed top-6 right-6 lg:top-8 lg:right-8 flex items-center gap-3 z-40">{/* Bell Icon with Notifications Dropdown */}
       <div className="relative" ref={notificationRef}>
-        {/* <button
+        <button
           onClick={() => {
             setShowDropdown(!showDropdown);
             setShowUserMenu(false);
           }}
-          className="relative p-2 hover:bg-gray-200 rounded-full transition"
+          className="relative p-2.5 hover:bg-gray-100 rounded-full transition bg-white border border-borderColor lg:p-3"
           aria-label="Notifications"
         >
-          <Bell className="w-6 h-6" />
+          <Bell className="w-5 h-5 lg:w-6 lg:h-6" />
           {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
-        </button> */}
+        </button>
 
         {/* Notification Dropdown */}
         {showDropdown && (
@@ -194,7 +194,7 @@ export default function UserActions() {
             setShowUserMenu((prev) => !prev);
             setShowDropdown(false);
           }}
-          className="w-10 h-10 rounded-full border border-borderColor bg-white flex items-center justify-center font-semibold text-gray-800 hover:ring-2 hover:ring-primary/50 transition"
+          className="w-10 h-10 lg:w-12 lg:h-12 rounded-full border border-borderColor bg-white flex items-center justify-center font-semibold text-gray-800 hover:ring-2 hover:ring-primary/50 transition text-sm lg:text-base"
           aria-label="User menu"
         >
           <span>{user?.firstName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}</span>
@@ -210,7 +210,7 @@ export default function UserActions() {
               <ClipboardList className="w-5 h-5 text-gray-700" />
               <span className="text-sm text-gray-800">Your Order</span>
             </Link>
-            <Link href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
+            <Link href="/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50">
               <Settings className="w-5 h-5 text-gray-700" />
               <span className="text-sm text-gray-800">Settings</span>
             </Link>

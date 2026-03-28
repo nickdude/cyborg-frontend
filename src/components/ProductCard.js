@@ -49,7 +49,7 @@ export default function ProductCard({ product }) {
   if (product.link) {
     return (
       <Link href={product.link}>
-        <div className=" rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer">
+        <div className="rounded-xl p-4 lg:p-5 shadow-sm hover:shadow-md transition cursor-pointer lg:border lg:border-borderColor lg:bg-white">
           {content}
         </div>
       </Link>
@@ -57,7 +57,7 @@ export default function ProductCard({ product }) {
   }
 
   return (
-    <div className=" rounded-xl p-4 shadow-sm hover:shadow-md transition">
+    <div className="rounded-xl p-4 lg:p-5 shadow-sm hover:shadow-md transition lg:border lg:border-borderColor lg:bg-white">
       {content}
     </div>
   );

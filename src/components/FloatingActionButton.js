@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function FloatingActionButton() {
   return (
     <Link href="/concierge">
-      <button className="fixed bottom-28 right-6 z-40 flex items-center justify-center transition-all active:scale-95 hover:shadow-2xl">
+      <button className="fixed bottom-28 right-6 z-40 flex items-center justify-center transition-all active:scale-95 hover:shadow-2xl lg:hidden">
         {/* Outer purple circle */}
         <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-lg">
           {/* White circle middle ring */}

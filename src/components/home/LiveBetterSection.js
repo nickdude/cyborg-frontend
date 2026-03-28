@@ -6,11 +6,11 @@ import { ChevronRight } from "lucide-react";
 export default function LiveBetterSection({ data }) {
   return (
     <div className="mt-8">
-      <h3 className="text-2xl font-semibold font-inter text-black mb-4">{data.title}</h3>
+      <h3 className="text-2xl font-semibold font-inter text-black mb-4 lg:text-[1.85rem]">{data.title}</h3>
 
       <div className="space-y-4">
         {data.cards.map((card, index) => (
-          <div key={index} className="relative overflow-hidden rounded-2xl h-[110px]">
+          <div key={index} className="relative overflow-hidden rounded-2xl h-[110px] lg:h-[140px]">
             <Image
               src={card.image}
               alt={card.text || card.textLines?.join(" ") || ""}
@@ -21,12 +21,12 @@ export default function LiveBetterSection({ data }) {
             <div className="relative z-10 h-full flex items-center justify-between px-5 text-white">
               <div>
                 {card.text && (
-                  <p className="text-base font-semibold font-inter max-w-[70%]">{card.text}</p>
+                  <p className="text-base font-semibold font-inter max-w-[70%] lg:max-w-[75%] lg:text-lg">{card.text}</p>
                 )}
                 {card.textLines && (
                   <>
                     {card.textLines.map((line) => (
-                      <p key={line} className="text-base font-semibold font-inter">
+                      <p key={line} className="text-base font-semibold font-inter lg:text-lg">
                         {line}
                       </p>
                     ))}

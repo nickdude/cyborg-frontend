@@ -256,7 +256,7 @@ export default function MembershipPage() {
     <div className="min-h-screen bg-pageBackground text-gray-900">
       <Navbar backHref="/dashboard" />
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 lg:max-w-[1240px] lg:px-6 xl:px-8">
 
         {subscription && (
           <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
@@ -277,9 +277,9 @@ export default function MembershipPage() {
         ) : (
           <>
             {/* Plans Grid */}
-            <div className="mb-8">
+            <div className="mb-8 lg:mb-10">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Select a Membership Plan</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6">
                 {plans.map((p) => (
                   <div
                     key={p.id}
@@ -317,8 +317,8 @@ export default function MembershipPage() {
 
             {/* Purchase Section */}
             {selectedPlan && (
-              <section className="space-y-6 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start font-inter">
-                <div className="rounded-2xl bg-white p-5 shadow-sm lg:sticky lg:top-20">
+              <section className="space-y-6 font-inter lg:grid lg:grid-cols-[0.92fr_1.08fr] lg:items-start lg:gap-8 lg:space-y-0 xl:gap-10">
+                <div className="rounded-2xl bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:p-6">
                   <p className="text-lg font-medium text-secondary">Order Summary</p>
                   <div className="mt-4 flex justify-center">
                     <Image
@@ -344,10 +344,10 @@ export default function MembershipPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl shadow-sm py-5">
+                <div className="rounded-2xl bg-white p-5 shadow-sm lg:p-6">
                   <h2 className="text-xl font-medium text-black">Purchase Membership</h2>
                   <p className="text-secondary font-medium text-[16px] mt-3">Your membership auto-renews each year. Cancel anytime.</p>
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-5 space-y-3 lg:space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   label="First Name"
@@ -429,7 +429,7 @@ export default function MembershipPage() {
               />
             </div>
 
-            <div className="mt-4 space-y-3 text-sm text-gray-700">
+            <div className="mt-5 space-y-3 text-sm text-gray-700">
               <label className="flex items-start gap-3">
                 <input
                   type="checkbox"
@@ -455,12 +455,12 @@ export default function MembershipPage() {
               </label>
             </div>
 
-            <div className="mt-5">
+            <div className="mt-6">
               <Button fullWidth size="lg" onClick={handlePurchase} disabled={loading}>
                 {loading ? "Processing..." : `Pay ₹${selectedPlan?.price || 199}`}
               </Button>
             </div>
-            <p className="text-secondary text-[14px] mt-10">
+            <p className="text-secondary text-[14px] mt-8 lg:mt-9">
                 By purchasing this subscription, you agree that your membership will automatically renew at the end of each term for the same duration and at the then-current rate, unless you cancel in accordance with the Membership Agreement. You authorize Superpower to charge your payment method for the initial term and any subsequent renewal terms unless canceled. To cancel, email concierge@superpower.com or log into your account and follow the cancellation instructions. No refunds are provided for the remainder of the subscription term after cancellation. For full details, please refer to your Membership Agreement.
             </p>
           </div>

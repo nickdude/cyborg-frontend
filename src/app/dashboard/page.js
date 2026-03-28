@@ -7,13 +7,12 @@ import { homeScheduledData } from "@/data/homeScheduledData";
 
 export default function Dashboard() {
     const { user } = useAuth();
-    const userName = user?.firstName || "Yaman";
-    const initials = `${user?.firstName?.[0] || "Y"}${user?.lastName?.[0] || "N"}`;
+    const userName = user?.firstName || "User";
 
     return (
-        <div className="min-h-screen bg-pageBackground pb-24">
+        <div className="min-h-screen bg-pageBackground pb-24 lg:pb-10">
             {/* Hero */}
-            <div className="relative w-full min-h-[60vh] text-white">
+            <div className="relative w-full min-h-[60vh] text-white lg:min-h-[480px]">
                 <div className="absolute inset-0 z-0">
                     <Image
                         src="/assets/welcome/welcome.jpg"
@@ -25,23 +24,20 @@ export default function Dashboard() {
                 </div>
                 <div className="absolute inset-0 bg-black/40 z-0" />
 
-                <div className="relative z-10 px-6 pt-10">
-                    <div className="flex items-start justify-between">
+                <div className="relative z-10 mx-auto w-full max-w-[1240px] px-6 pt-10 lg:px-8 lg:pt-14">
+                    <div className="space-y-6">
                         <div>
-                            <p className="text-2xl font-semibold font-inter ">Good morning {userName},</p>
-                            <h1 className="text-lg  font-inter opacity-90">Welcome to
+                            <p className="text-2xl font-semibold font-inter lg:text-[2rem]">Good morning {userName},</p>
+                            <h1 className="text-lg font-inter opacity-90 lg:text-xl">Welcome to
                                 <span className="block">CYBORG</span>
                             </h1>
                         </div>
-                        <div className="w-11 h-11 rounded-full bg-white/80 text-black flex items-center justify-center text-sm font-semibold font-inter">
-                            {initials}
-                        </div>
                     </div>
 
-                    <div className="mt-8 bg-white/20 backdrop-blur rounded-2xl p-5 max-w-sm">
+                    <div className="mt-8 bg-white/20 backdrop-blur rounded-2xl p-5 max-w-sm lg:mt-10 lg:max-w-[430px] lg:p-6">
                         <p className="text-xs font-inter uppercase tracking-wide opacity-80">{homeScheduledData.hero.panelLabel}</p>
-                        <p className="text-base font-semibold font-inter mt-2">{homeScheduledData.hero.appointmentText}</p>
-                        <div className="flex items-center gap-2 mt-44">
+                        <p className="text-base font-semibold font-inter mt-2 lg:text-lg">{homeScheduledData.hero.appointmentText}</p>
+                        <div className="flex items-center gap-2 mt-44 lg:mt-52">
                             {homeScheduledData.hero.progressBars.map((opacity, index) => (
                                 <div
                                     key={index}
