@@ -339,13 +339,13 @@ export default function Marketplace() {
             />
 
             {/* Filter Tabs Mobile */}
-            <div className="lg:hidden">
+            {/* <div className="lg:hidden">
               <FilterTabs 
                 filters={filters}
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
               />
-            </div>
+            </div> */}
 
             {/* Product Sections */}
             <div className="space-y-8">
