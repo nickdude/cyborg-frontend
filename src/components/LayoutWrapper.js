@@ -6,6 +6,7 @@ import BottomNavbar from "./BottomNavbar";
 
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
+  const isOrdersListPage = pathname === "/orders";
   
   // Pages where BottomNavbar should appear
   const showBottomNavbar = [
@@ -15,8 +16,9 @@ export default function LayoutWrapper({ children }) {
     "/protocol",
     "/concierge",
     "/settings",
+    "/orders",
     "/market-place/prescriptions/semaglutide",
-  ].includes(pathname);
+  ].includes(pathname) || isOrdersListPage;
 
   // Pages where UserActions should appear
   const showUserActions = [

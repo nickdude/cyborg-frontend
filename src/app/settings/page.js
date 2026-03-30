@@ -34,7 +34,7 @@ const settingItems = [
   {
     title: "Order History",
     description: "Manage orders",
-    href: "/market-place",
+    href: "/orders",
     icon: History,
   },
   {
