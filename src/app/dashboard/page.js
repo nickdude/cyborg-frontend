@@ -1,13 +1,38 @@
 "use client";
 
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import HomeScheduledSection from "@/components/home/HomeScheduledSection";
+import InsightsDashboard from "@/components/home/InsightsDashboard";
 import { homeScheduledData } from "@/data/homeScheduledData";
+import { homeInsightsData } from "@/data/homeInsightsData";
 
 export default function Dashboard() {
     const { user } = useAuth();
+    const searchParams = useSearchParams();
     const userName = user?.firstName || "User";
+
+    const hasInsightsSignals =
+        user?.dashboardVariant === "insights" ||
+        user?.latestReportReady ||
+        user?.actionPlanReady ||
+        (Array.isArray(user?.bloodReports) && user.bloodReports.length > 0);
+
+    const forcedView = searchParams.get("view");
+    const showInsightsDashboard =
+        forcedView === "insights" || (forcedView !== "scheduled" && hasInsightsSignals);
+    const actionPlanHref = user?.id || user?._id ? `/action-plan/${user?.id || user?._id}` : "/dashboard";
+
+    if (showInsightsDashboard) {
+        return (
+            <InsightsDashboard
+                userName={userName}
+                data={homeInsightsData}
+                actionPlanHref={actionPlanHref}
+            />
+        );
+    }
 
     return (
         <div className="min-h-screen bg-pageBackground pb-24 lg:pb-10">
