@@ -52,10 +52,13 @@ export default function InsightsDashboard({ userName, data, actionPlanHref }) {
                 <p className="text-3xl font-semibold text-black lg:text-4xl">72</p>
                 <p className="text-sm text-secondary lg:text-base">superpower score</p>
               </div>
-              <div>
+              <Link
+                href="/dashboard/biological-age"
+                className="rounded-xl border border-borderColor bg-white px-3 py-2 transition hover:shadow-md"
+              >
                 <p className="text-3xl font-semibold text-black lg:text-4xl">42.4</p>
                 <p className="text-sm text-secondary lg:text-base">biological age</p>
-              </div>
+              </Link>
             </div>
 
             <Link
@@ -93,8 +96,17 @@ export default function InsightsDashboard({ userName, data, actionPlanHref }) {
 
             <section className="mt-6 rounded-2xl border border-borderColor bg-white p-4">
               <h2 className="text-3xl font-semibold text-black lg:text-3xl">Contributing Biomarkers</h2>
-              <div className="mt-3">
-                <BiomarkersList biomarkers={data.contributingBiomarkers} />
+              <div className="mt-3 space-y-8">
+                {Object.entries(
+                  (data.biomarkers || data.contributingBiomarkers || []).reduce((acc, biomarker) => {
+                    const key = biomarker.category || "All Biomarkers";
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(biomarker);
+                    return acc;
+                  }, {})
+                ).map(([category, biomarkers]) => (
+                  <BiomarkersList key={category} title={category} biomarkers={biomarkers} />
+                ))}
               </div>
             </section>
 

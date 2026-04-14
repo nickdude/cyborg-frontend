@@ -1,3 +1,5 @@
+import { biomarkersData } from "@/data/biomarkersData";
+
 export const homeInsightsData = {
   keyInsight: {
     tag: "Top health priority:",
@@ -9,6 +11,7 @@ export const homeInsightsData = {
     normal: 27,
     outOfRange: 5,
   },
+  biomarkers: biomarkersData,
   contributingBiomarkers: [
     {
       id: 1,
