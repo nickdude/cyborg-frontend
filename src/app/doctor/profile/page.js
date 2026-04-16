@@ -26,6 +26,9 @@ export default function DoctorProfilePage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const [referralCode, setReferralCode] = useState("");
+  const [copied, setCopied] = useState(false);
+
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -71,6 +74,7 @@ export default function DoctorProfilePage() {
         }
 
         const profile = data.data || {};
+        if (profile.referralCode) setReferralCode(profile.referralCode);
         setForm({
           firstName: profile.firstName || "",
           lastName: profile.lastName || "",
@@ -214,6 +218,35 @@ export default function DoctorProfilePage() {
             <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 flex items-center gap-2">
               <CheckCircle className="h-4 w-4" />
               {success}
+            </div>
+          )}
+
+          {/* Referral Code Section */}
+          {referralCode && (
+            <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold text-gray-700">Your Referral Code</label>
+                <span className="text-xs text-gray-500">Share with patients to link them to you</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 rounded-lg border border-primary/30 bg-white px-4 py-3 text-lg font-bold tracking-[0.2em] text-primary text-center">
+                  {referralCode}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(referralCode);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="px-4 py-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-purple-800 transition-all whitespace-nowrap"
+                >
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                Patients can register at <span className="font-medium text-gray-700">yourdomain.com/register?ref={referralCode}</span> or enter this code manually during sign-up.
+              </p>
             </div>
           )}
 

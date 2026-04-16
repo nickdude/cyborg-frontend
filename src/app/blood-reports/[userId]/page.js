@@ -12,7 +12,7 @@ export default function BloodReports() {
   const params = useParams();
   const userId = params.userId;
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
 
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,12 +35,13 @@ export default function BloodReports() {
   }, [userId]);
 
   useEffect(() => {
+    if (authLoading) return; // Wait for auth to hydrate
     if (!token) {
       router.push("/login");
     } else {
       fetchReports();
     }
-  }, [token, fetchReports, router]);
+  }, [token, authLoading, fetchReports, router]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files?.[0];
@@ -229,7 +230,7 @@ export default function BloodReports() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
-                        <h3 className="font-semibold text-lg leading-tight">{report.fileName}</h3>
+                        <h3 className="font-semibold text-lg leading-tight">{report.filename}</h3>
                         <p className="text-sm text-gray-600">Uploaded {uploadedDate}</p>
                         {hasPlan && (
                           <span className="inline-flex items-center gap-1 text-green-700 text-sm font-medium">

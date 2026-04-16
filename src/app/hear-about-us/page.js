@@ -102,13 +102,13 @@ export default function HearAboutUsPage() {
       setSuccess("Saved successfully");
       // Determine which source was selected
       let whereYouHeardAboutUs = "Other";
-      if (form.socialMediaOrAd && Object.keys(form.socialMediaOrAd).length > 0) {
+      if (form.socialMediaOrAd?.platforms?.length > 0 || form.socialMediaOrAd?.otherText) {
         whereYouHeardAboutUs = "Social Media";
-      } else if (form.wordOfMouth && Object.keys(form.wordOfMouth).length > 0) {
+      } else if (form.wordOfMouth?.sources?.length > 0 || form.wordOfMouth?.otherText) {
         whereYouHeardAboutUs = "Friend Recommendation";
-      } else if (form.webSearch && Object.keys(form.webSearch).length > 0) {
+      } else if (form.webSearch?.engines?.length > 0 || form.webSearch?.otherText) {
         whereYouHeardAboutUs = "Search Engine";
-      } else if (form.podcast || form.creator || form.email) {
+      } else if (form.podcast?.note || form.creator?.note || form.email?.sources?.length > 0 || form.email?.otherText) {
         whereYouHeardAboutUs = "Advertisement";
       }
       // Update user context with the value

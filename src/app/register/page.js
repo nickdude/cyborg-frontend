@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -63,7 +63,15 @@ function AuthShell({ children }) {
   );
 }
 
-export default function Register() {
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <Register />
+    </Suspense>
+  );
+}
+
+function Register() {
   const [step, setStep] = useState(1); // 1: email, 2: otp, 3: phone, 4: email-password, 5: phone-password
   const [registrationMethod, setRegistrationMethod] = useState("email-otp"); // email-otp, email-password, phone-otp, phone-password
   const [useOTP, setUseOTP] = useState(true); // Toggle between OTP and password
@@ -81,8 +89,19 @@ export default function Register() {
   const [successMsg, setSuccessMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resendTimer, setResendTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, user, token } = useAuth();
+
+  // Read referral code from URL (?ref=DR-XXXXXX)
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) setReferralCode(ref.toUpperCase());
+  }, [searchParams]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -91,6 +110,53 @@ export default function Register() {
       router.push(nextRoute);
     }
   }, [user, token, router]);
+
+  // Resend OTP countdown timer
+  useEffect(() => {
+    if (step !== 2) return;
+    setResendTimer(60);
+    setCanResend(false);
+    const interval = setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setCanResend(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [step]);
+
+  const handleResendOTP = async () => {
+    setResendLoading(true);
+    setError("");
+    try {
+      const payload = { userId };
+      if (formData.email) payload.email = formData.email;
+      if (formData.phone) payload.phone = formData.phone;
+      await authAPI.resendOTP(payload);
+      setSuccessMsg("OTP resent successfully! Check your " + (formData.email ? "email" : "phone"));
+      setResendTimer(60);
+      setCanResend(false);
+      // Restart the countdown
+      const interval = setInterval(() => {
+        setResendTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      setError(err.message || "Failed to resend OTP");
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -155,6 +221,7 @@ export default function Register() {
       if (formData.email) payload.email = formData.email;
       if (formData.phone) payload.phone = formData.phone;
       if (!useOTP && formData.password) payload.password = formData.password;
+      if (referralCode && formData.userType === "user") payload.referralCode = referralCode;
 
       const response = await authAPI.register(payload);
 
@@ -284,16 +351,35 @@ export default function Register() {
             </Button>
           </form>
 
-          <p className="text-center text-secondary text-sm">
-            Didn&apos;t receive the code?{" "}
+          <div className="flex flex-col items-center gap-3">
             <button
               type="button"
-              onClick={() => setStep(1)}
-              className="text-primary font-semibold hover:underline"
+              onClick={handleResendOTP}
+              disabled={!canResend || resendLoading}
+              className={`w-full py-3 rounded-xl text-sm font-semibold transition-colors ${
+                canResend && !resendLoading
+                  ? "bg-gray-100 text-primary hover:bg-gray-200"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              }`}
             >
-              Change {formData.email ? "email" : "phone"}
+              {resendLoading
+                ? "Sending..."
+                : canResend
+                ? "Resend OTP"
+                : `Resend OTP in ${resendTimer}s`}
             </button>
-          </p>
+
+            <p className="text-secondary text-sm">
+              Didn&apos;t receive the code?{" "}
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="text-primary font-semibold hover:underline"
+              >
+                Change {formData.email ? "email" : "phone"}
+              </button>
+            </p>
+          </div>
         </div>
       </AuthShell>
     );
@@ -630,6 +716,22 @@ export default function Register() {
               {useOTP ? "Use password instead" : "Use OTP instead"}
             </button>
           </div>
+
+          {formData.userType === "user" && (
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Doctor Referral Code
+                <span className="text-gray-400 font-normal ml-1">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                placeholder="e.g. DR-A7X9K2"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium tracking-wider uppercase placeholder:normal-case placeholder:tracking-normal placeholder:font-normal focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+            </div>
+          )}
 
           <DoctorToggle
             value={formData.userType}
