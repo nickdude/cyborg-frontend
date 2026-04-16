@@ -46,31 +46,28 @@ export default function MealUploadSheet({ open, onClose, onFilesPicked }) {
       aria-modal="true"
       aria-label="Add a meal"
     >
-      {/* Backdrop — covers everything above the bottom nav so the nav stays visible */}
+      {/* Backdrop — darker + blurred. Stops at the nav. */}
       <button
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute top-0 left-0 right-0 bg-black/50"
+        className="absolute top-0 left-0 right-0 bg-black/70 backdrop-blur-sm"
         style={{ bottom: "var(--meal-nav-offset, 104px)" }}
       />
 
-      {/* Floating palette card — sits just above the nav with horizontal padding */}
+      {/* Floating dark-glass palette */}
       <div
         className="absolute left-0 right-0 flex justify-center px-4"
         style={{ bottom: "calc(var(--meal-nav-offset, 104px) + 12px)" }}
       >
-        <div className="w-full max-w-md rounded-3xl bg-white px-5 pt-5 pb-6 shadow-2xl animate-[slideUp_200ms_ease-out]">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-[#14151a]">Add a meal</h2>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close sheet"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white"
-            >
-              ×
-            </button>
+        <div className="w-full max-w-md rounded-3xl bg-neutral-800/95 backdrop-blur-xl px-5 pt-5 pb-5 shadow-2xl animate-[slideUp_200ms_ease-out]">
+          <div className="mb-4 flex items-center justify-center gap-1.5">
+            <h2 className="text-sm font-semibold text-white">Add a meal</h2>
+            <svg className="h-3.5 w-3.5 text-white/60" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M12 11v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="12" cy="8" r="0.8" fill="currentColor" />
+            </svg>
           </div>
 
         <div className="grid grid-cols-2 gap-3">

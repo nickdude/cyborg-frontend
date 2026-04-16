@@ -25,8 +25,20 @@ export default function BottomNavbar() {
   return (
     <>
       <FloatingActionButton />
-      <nav className="fixed bottom-0 inset-x-0 z-40 bg-white shadow-lg lg:bottom-4 lg:bg-transparent lg:shadow-none">
-        <div className="mx-auto flex max-w-md items-center justify-center py-3 text-[10px] font-bold lg:max-w-[900px] lg:rounded-2xl lg:border lg:border-borderColor lg:bg-white lg:px-6 lg:py-3.5 lg:text-xs lg:shadow-[0_10px_30px_rgba(0,0,0,0.12)]">
+      <nav className="fixed bottom-0 inset-x-0 z-40 lg:bottom-4 lg:bg-transparent lg:shadow-none">
+        {/* Masked background — radial gradient cuts a circular notch out of the top
+            so the center button appears to sit inside a concave scoop in the nav. */}
+        <div
+          className="absolute inset-0 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:rounded-2xl lg:border lg:border-borderColor lg:shadow-[0_10px_30px_rgba(0,0,0,0.12)]"
+          style={{
+            WebkitMaskImage:
+              "radial-gradient(circle 36px at 50% 0px, transparent 35px, black 36px)",
+            maskImage:
+              "radial-gradient(circle 36px at 50% 0px, transparent 35px, black 36px)",
+          }}
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto flex max-w-md items-center justify-center py-3 text-[10px] font-bold lg:max-w-[900px] lg:px-6 lg:py-3.5 lg:text-xs">
           <Link href="/dashboard" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/dashboard") ? "text-black" : "text-secondary"}`}>
             <Image src="/assets/icons/house.svg" alt="home" width={24} height={24} className={isActive("/dashboard") ? "" : "opacity-60"} />
             <span>Home</span>
@@ -39,9 +51,11 @@ export default function BottomNavbar() {
             type="button"
             onClick={() => setActiveSheet((s) => (s ? null : "upload"))}
             aria-label={activeSheet ? "Close add meal" : "Add meal"}
-            className="flex-1 flex flex-col items-center gap-1 text-black"
+            className="flex-1 flex flex-col items-center"
           >
-            <span className="flex h-20 w-20 items-center justify-center rounded-full border-8 border-gray-50 bg-black text-2xl text-white lg:h-14 lg:w-14 lg:border-4 lg:text-xl">
+            {/* Rises above the nav to sit inside the notch cutout. White circle,
+                dark × / +, subtle ring + shadow to lift it off the surface. */}
+            <span className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl font-normal text-black shadow-[0_4px_14px_rgba(0,0,0,0.15)] ring-1 ring-gray-200 lg:-mt-0 lg:h-12 lg:w-12 lg:text-xl">
               {navIconLabel}
             </span>
           </button>
