@@ -6,17 +6,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import FloatingActionButton from "./FloatingActionButton";
 import MealUploadSheet from "./MealUploadSheet";
+import MealDetailsSheet from "./MealDetailsSheet";
 
 export default function BottomNavbar() {
   const pathname = usePathname();
   const isActive = (path) => pathname === path;
 
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [activeSheet, setActiveSheet] = useState(null); // "upload" | "details" | null
+  const [pickedFiles, setPickedFiles] = useState([]);
 
-  // Task 3 will replace this with a handoff to MealDetailsSheet.
   const handleFilesPicked = (files) => {
-    console.log("[MealUpload] picked files:", files.map((f) => `${f.name} (${f.size}B ${f.type})`));
+    setPickedFiles(files);
+    setActiveSheet("details");
   };
+
+  const navIconLabel = activeSheet ? "×" : "＋";
 
   return (
     <>
@@ -33,12 +37,12 @@ export default function BottomNavbar() {
           </Link>
           <button
             type="button"
-            onClick={() => setSheetOpen((v) => !v)}
-            aria-label={sheetOpen ? "Close add meal" : "Add meal"}
+            onClick={() => setActiveSheet((s) => (s ? null : "upload"))}
+            aria-label={activeSheet ? "Close add meal" : "Add meal"}
             className="flex-1 flex flex-col items-center gap-1 text-black"
           >
             <span className="flex h-20 w-20 items-center justify-center rounded-full border-8 border-gray-50 bg-black text-2xl text-white lg:h-14 lg:w-14 lg:border-4 lg:text-xl">
-              {sheetOpen ? "×" : "＋"}
+              {navIconLabel}
             </span>
           </button>
           <Link href="/protocol" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/protocol") ? "text-black" : "text-secondary"}`}>
@@ -53,9 +57,15 @@ export default function BottomNavbar() {
       </nav>
 
       <MealUploadSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+        open={activeSheet === "upload"}
+        onClose={() => setActiveSheet(null)}
         onFilesPicked={handleFilesPicked}
+      />
+
+      <MealDetailsSheet
+        open={activeSheet === "details"}
+        initialFiles={pickedFiles}
+        onClose={() => setActiveSheet(null)}
       />
     </>
   );
