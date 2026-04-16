@@ -83,6 +83,8 @@ export const mealAPI = {
     API.get(`/api/users/${userId}/meals`, { params: { date } }),
   summary: (userId, date) =>
     API.get(`/api/users/${userId}/meals/summary`, { params: { date } }),
+  get: (userId, mealId) =>
+    API.get(`/api/users/${userId}/meals/${mealId}`),
   update: (userId, mealId, body) =>
     API.patch(`/api/users/${userId}/meals/${mealId}`, body),
   delete: (userId, mealId) =>
