@@ -153,28 +153,34 @@ export default function MealDetailsSheet({ open, initialFiles, onClose }) {
   const atLimit = files.length >= MAX_FILES;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="Add meal details">
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Add meal details">
+      {/* Backdrop — stops at the nav so the bottom bar stays visible */}
       <button
         type="button"
         aria-label="Close"
         onClick={() => !analyzing && onClose?.()}
-        className="absolute inset-0 bg-black/50"
+        className="absolute top-0 left-0 right-0 bg-black/50"
+        style={{ bottom: "var(--meal-nav-offset, 104px)" }}
       />
 
-      <div className="relative w-full max-w-md rounded-t-3xl bg-white px-5 pt-6 pb-8 shadow-2xl animate-[slideUp_200ms_ease-out]">
-        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-gray-200" aria-hidden="true" />
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#14151a]">Add details</h2>
-          <button
-            type="button"
-            onClick={() => !analyzing && onClose?.()}
-            disabled={analyzing}
-            aria-label="Close sheet"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white disabled:opacity-40"
-          >
-            ×
-          </button>
-        </div>
+      {/* Floating card positioned just above the nav */}
+      <div
+        className="absolute left-0 right-0 flex justify-center px-4"
+        style={{ bottom: "calc(var(--meal-nav-offset, 104px) + 12px)" }}
+      >
+        <div className="w-full max-w-md rounded-3xl bg-white px-5 pt-5 pb-6 shadow-2xl animate-[slideUp_200ms_ease-out]">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[#14151a]">Add details</h2>
+            <button
+              type="button"
+              onClick={() => !analyzing && onClose?.()}
+              disabled={analyzing}
+              aria-label="Close sheet"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white disabled:opacity-40"
+            >
+              ×
+            </button>
+          </div>
 
         {/* Thumbnail strip */}
         <div className="mb-4 flex gap-3 overflow-x-auto pb-2">
@@ -252,6 +258,7 @@ export default function MealDetailsSheet({ open, initialFiles, onClose }) {
         >
           {analyzing ? `${phaseLabel(elapsedSec)}…` : "Continue"}
         </button>
+        </div>
       </div>
 
       <style jsx>{`

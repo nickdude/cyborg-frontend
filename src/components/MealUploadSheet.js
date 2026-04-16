@@ -41,33 +41,37 @@ export default function MealUploadSheet({ open, onClose, onFilesPicked }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-50"
       role="dialog"
       aria-modal="true"
       aria-label="Add a meal"
     >
-      {/* Backdrop */}
+      {/* Backdrop — covers everything above the bottom nav so the nav stays visible */}
       <button
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute inset-0 bg-black/50"
+        className="absolute top-0 left-0 right-0 bg-black/50"
+        style={{ bottom: "var(--meal-nav-offset, 104px)" }}
       />
 
-      {/* Sheet */}
-      <div className="relative w-full max-w-md rounded-t-3xl bg-white px-5 pt-6 pb-8 shadow-2xl animate-[slideUp_200ms_ease-out]">
-        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-gray-200" aria-hidden="true" />
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#14151a]">Add a meal</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close sheet"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white"
-          >
-            ×
-          </button>
-        </div>
+      {/* Floating palette card — sits just above the nav with horizontal padding */}
+      <div
+        className="absolute left-0 right-0 flex justify-center px-4"
+        style={{ bottom: "calc(var(--meal-nav-offset, 104px) + 12px)" }}
+      >
+        <div className="w-full max-w-md rounded-3xl bg-white px-5 pt-5 pb-6 shadow-2xl animate-[slideUp_200ms_ease-out]">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[#14151a]">Add a meal</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close sheet"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white"
+            >
+              ×
+            </button>
+          </div>
 
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -96,23 +100,24 @@ export default function MealUploadSheet({ open, onClose, onFilesPicked }) {
           </button>
         </div>
 
-        {/* Hidden file inputs — triggered by the card buttons above */}
-        <input
-          ref={cameraRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handlePick}
-          className="hidden"
-        />
-        <input
-          ref={galleryRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handlePick}
-          className="hidden"
-        />
+          {/* Hidden file inputs — triggered by the card buttons above */}
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePick}
+            className="hidden"
+          />
+          <input
+            ref={galleryRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handlePick}
+            className="hidden"
+          />
+        </div>
       </div>
 
       {/* Inline keyframe for the slide-up transition (avoids editing global CSS). */}
