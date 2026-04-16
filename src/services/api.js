@@ -71,6 +71,24 @@ export const actionPlanAPI = {
   }),
 };
 
+// Meal endpoints (all user-scoped; backend routes under /api/users/:userId/meals)
+export const mealAPI = {
+  analyze: (userId, formData) =>
+    API.post(`/api/users/${userId}/meals/analyze`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  commit: (userId, body) =>
+    API.post(`/api/users/${userId}/meals`, body),
+  list: (userId, date) =>
+    API.get(`/api/users/${userId}/meals`, { params: { date } }),
+  summary: (userId, date) =>
+    API.get(`/api/users/${userId}/meals/summary`, { params: { date } }),
+  update: (userId, mealId, body) =>
+    API.patch(`/api/users/${userId}/meals/${mealId}`, body),
+  delete: (userId, mealId) =>
+    API.delete(`/api/users/${userId}/meals/${mealId}`),
+};
+
 // Notification endpoints
 export const notificationAPI = {
   list: () => API.get("/api/notifications"),
