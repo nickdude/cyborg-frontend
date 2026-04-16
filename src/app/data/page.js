@@ -26,9 +26,33 @@ export default function DataDashboard() {
   const [reports, setReports] = useState([]);
   const [twinLoading, setTwinLoading] = useState(false);
   const [twinUploading, setTwinUploading] = useState(false);
+  const [uploadElapsedSec, setUploadElapsedSec] = useState(0);
   const [twinError, setTwinError] = useState("");
-  const [replaceReportId, setReplaceReportId] = useState(null);
+  const [deletingReportId, setDeletingReportId] = useState(null);
   const uploadRef = useRef(null);
+
+  // Phased progress: parsing a report via streaming AI takes ~60-120s.
+  // We surface that honestly instead of a silent "Uploading..." freeze.
+  useEffect(() => {
+    if (!twinUploading) {
+      setUploadElapsedSec(0);
+      return;
+    }
+    const start = Date.now();
+    setUploadElapsedSec(0);
+    const id = setInterval(() => setUploadElapsedSec(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [twinUploading]);
+
+  const uploadPhaseLabel = useMemo(() => {
+    if (!twinUploading) return null;
+    const s = uploadElapsedSec;
+    if (s < 3) return "Uploading your file";
+    if (s < 15) return "Reading the document";
+    if (s < 60) return "Extracting biomarkers with AI";
+    if (s < 120) return "Analyzing your results";
+    return "Still working — almost there";
+  }, [twinUploading, uploadElapsedSec]);
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const staticBaseUrl = apiBaseUrl.replace(/\/api\/?$/, "");
 
@@ -110,26 +134,60 @@ export default function DataDashboard() {
       const formData = new FormData();
       formData.append("file", file);
 
-      if (replaceReportId) {
-        await userAPI.deleteBloodReport(userId, replaceReportId);
-      }
-
       await userAPI.uploadBloodReport(userId, formData);
       await fetchReports();
     } catch (error) {
-      setTwinError(error?.message || "Failed to upload report");
+      const serverMsg = error?.response?.data?.message;
+      setTwinError(serverMsg || error?.message || "Failed to upload report");
     } finally {
       setTwinUploading(false);
-      setReplaceReportId(null);
       if (uploadRef.current) {
         uploadRef.current.value = "";
       }
     }
   };
 
-  const triggerUpload = (reportId = null) => {
-    setReplaceReportId(reportId);
+  const triggerUpload = () => {
     uploadRef.current?.click();
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    if (!userId || !reportId) return;
+    if (!window.confirm("Delete this report? This cannot be undone.")) return;
+    try {
+      setDeletingReportId(reportId);
+      setTwinError("");
+      await userAPI.deleteBloodReport(userId, reportId);
+      await fetchReports();
+    } catch (error) {
+      const serverMsg = error?.response?.data?.message;
+      setTwinError(serverMsg || "Failed to delete report");
+    } finally {
+      setDeletingReportId(null);
+    }
+  };
+
+  // Fetch the stored original file with auth, convert to a blob URL, open in
+  // a new tab. Needed because <a> and window.open can't send the
+  // Authorization header our backend requires.
+  // Fetch the stored file with auth, re-wrap as a PDF blob (the global
+  // response interceptor already unwrapped to response.data, which for
+  // responseType: "blob" is the Blob itself), and open in a new tab.
+  const handleViewReport = async (reportId) => {
+    try {
+      setTwinError("");
+      const raw = await userAPI.getBloodReportFile(reportId);
+      const bodyType =
+        raw?.type && raw.type.startsWith("application/") && raw.type !== "application/json"
+          ? raw.type
+          : "application/pdf";
+      const blob = new Blob([raw], { type: bodyType });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      setTwinError(error?.message || "Could not open this report");
+    }
   };
 
   const filteredReports = useMemo(() => {
@@ -221,6 +279,21 @@ export default function DataDashboard() {
               </div>
             )}
 
+            {twinUploading && (
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-[#e4e6ef] bg-white px-4 py-3">
+                <span className="relative flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-black opacity-40"></span>
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-black"></span>
+                </span>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-[#1e2027]">{uploadPhaseLabel}…</div>
+                  <div className="text-xs text-[#6d6f7b]">
+                    {uploadElapsedSec}s elapsed · typically 60–90s · keep this tab open
+                  </div>
+                </div>
+              </div>
+            )}
+
             {twinLoading ? (
               <div className="rounded-2xl border border-borderColor bg-white p-8 text-center text-gray-500">
                 Loading twin records...
@@ -265,7 +338,7 @@ export default function DataDashboard() {
                       <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       <path d="M5 14V18C5 19.1046 5.89543 20 7 20H17C18.1046 20 19 19.1046 19 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    {twinUploading ? "Uploading..." : "Upload"}
+                    {twinUploading ? `${uploadPhaseLabel}…` : "Upload"}
                   </button>
                 </div>
               </div>
@@ -299,61 +372,82 @@ export default function DataDashboard() {
                   </p>
 
                   <div className="mt-4 space-y-4">
-                    {filteredReports.slice(0, 2).map((report) => {
-                      const previewUrl = report?.filePath
-                        ? `${staticBaseUrl}${report.filePath}`
-                        : null;
-                      const fileName = report?.fileName || "Uploaded report";
-                      const isImage =
-                        report?.mimeType?.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(fileName);
-                      const isPdf = report?.mimeType === "application/pdf" || /\.pdf$/i.test(fileName);
-
+                    {filteredReports.map((report) => {
+                      const fileName = report?.filename || report?.fileName || "Uploaded report";
+                      const isDeleting = deletingReportId === report._id;
                       return (
-                        <button
+                        <div
                           key={report._id}
-                          type="button"
-                          onClick={() => triggerUpload(report._id)}
-                          className="w-full rounded-2xl border border-[#cfd5e4] bg-white p-4 text-left"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleViewReport(report._id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleViewReport(report._id);
+                            }
+                          }}
+                          className="w-full cursor-pointer rounded-2xl border border-[#cfd5e4] bg-white p-4 text-left transition hover:border-[#9ea3b1]"
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-[19px] font-medium text-[#1e2027]">Upload existing health records</span>
-                            <span className="text-[24px] text-[#777b89]">↗</span>
-                          </div>
-
-                          <div className="mt-3 h-[130px] overflow-hidden rounded-lg bg-[#d3d3d6]">
-                            {previewUrl && isImage ? (
-                              <img
-                                src={previewUrl}
-                                alt={fileName}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : previewUrl && isPdf ? (
-                              <iframe
-                                src={previewUrl}
-                                title={fileName}
-                                className="h-full w-full border-0"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center gap-2 text-[#636776]">
-                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                  <path d="M7 3H13L19 9V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2"/>
-                                  <path d="M13 3V9H19" stroke="currentColor" strokeWidth="2"/>
-                                </svg>
-                                <span className="text-sm font-medium">Preview unavailable</span>
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[#f4f5f9] text-[#636776]">
+                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M7 3H13L19 9V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2"/>
+                                <path d="M13 3V9H19" stroke="currentColor" strokeWidth="2"/>
+                              </svg>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-[17px] font-medium text-[#1e2027]">{fileName}</div>
+                              <div className="text-xs text-[#787d8b]">
+                                {report.reportDate
+                                  ? new Date(report.reportDate).toISOString().slice(0, 10)
+                                  : ""}
+                                {report.testCount ? ` · ${report.testCount} tests` : ""}
+                                {report.flaggedCount ? ` · ${report.flaggedCount} flagged` : ""}
                               </div>
-                            )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteReport(report._id);
+                              }}
+                              disabled={isDeleting}
+                              aria-label={isDeleting ? "Deleting report" : "Delete report"}
+                              title="Delete report"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            >
+                              {isDeleting ? (
+                                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
+                                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <path d="M3 6H21M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6L18.1327 19.0114C18.0579 20.1342 17.125 21 16 21H8C6.87502 21 5.94211 20.1342 5.86734 19.0114L5 6H19Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M10 11V17M14 11V17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                                </svg>
+                              )}
+                            </button>
                           </div>
-
-                          <p className="mt-2 truncate text-sm text-[#787d8b]">{fileName}</p>
-
-                          <div className="mt-3 flex justify-end">
-                            <span className="inline-flex rounded-lg bg-black px-3 py-1.5 text-xs font-medium text-white">
-                              {twinUploading && replaceReportId === report._id ? "Replacing..." : "Replace report"}
-                            </span>
-                          </div>
-                        </button>
+                        </div>
                       );
                     })}
+                  </div>
+
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={triggerUpload}
+                      disabled={twinUploading}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-black px-5 text-sm font-medium text-white disabled:opacity-60"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M5 14V18C5 19.1046 5.89543 20 7 20H17C18.1046 20 19 19.1046 19 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {twinUploading ? `${uploadPhaseLabel}…` : "Upload another report"}
+                    </button>
                   </div>
 
                   <input

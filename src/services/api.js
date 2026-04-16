@@ -53,6 +53,10 @@ export const userAPI = {
     }),
   getBloodReports: (userId) => API.get(`/api/users/${userId}/blood-reports`),
   getBloodReport: (reportId) => API.get(`/api/users/blood-reports/${reportId}`),
+  getBloodReportFile: (reportId) =>
+    API.get(`/api/users/blood-reports/${reportId}/file`, {
+      responseType: "blob",
+    }),
   deleteBloodReport: (userId, reportId) =>
     API.delete(`/api/users/${userId}/blood-reports/${reportId}`),
 };
