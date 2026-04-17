@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
-import { Plus, Search, X } from "lucide-react";
+import { ChevronLeft, Plus, Search, X } from "lucide-react";
+import Link from "next/link";
 import { useConciergeStore } from "@/stores/concierge";
 
 function bucketFor(updatedAt) {
@@ -66,8 +67,17 @@ export default function ChatSidebar({
           open ? "translate-x-0" : "-translate-x-full"
         } lg:static lg:translate-x-0`}
       >
-        <div className="flex items-center justify-between px-4 py-4">
-          <span className="text-sm font-semibold text-gray-900">Chats</span>
+        <div className="flex items-center justify-between px-3 py-3">
+          <div className="flex items-center gap-1">
+            <Link
+              href="/dashboard"
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Back to dashboard"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600" />
+            </Link>
+            <span className="text-sm font-semibold text-gray-900">Chats</span>
+          </div>
           <button
             onClick={onClose}
             className="lg:hidden p-1 rounded-lg hover:bg-gray-100 transition-colors"
