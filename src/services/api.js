@@ -111,8 +111,14 @@ export const questionnaireAPI = {
   update: (data) => API.put("/api/questionnaire", data),
 };
 
+export { streamMessage } from "./sse";
+
 export const conciergeAPI = {
-  ask: (query, userId) => API.post("/api/concierge/ask", { query, userId }),
+  listChats: () => API.get("/api/chat"),
+  createChat: () => API.post("/api/chat"),
+  getChat: (chatId) => API.get(`/api/chat/${chatId}`),
+  updateTitle: (chatId, title) => API.patch(`/api/chat/${chatId}`, { title }),
+  deleteChat: (chatId) => API.delete(`/api/chat/${chatId}`),
 };
 
 export const doctorAPI = {
