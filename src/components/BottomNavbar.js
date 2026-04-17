@@ -187,23 +187,27 @@ export default function BottomNavbar() {
         onFilesPicked={handleFilesPicked}
       />
 
-      {/* Nav itself has no z-index so its children (bg plate, content layer)
-          stack in the root stacking context and can sandwich the popup. */}
-      <nav className="fixed bottom-0 inset-x-0 lg:bottom-4 lg:mx-auto lg:max-w-[900px]">
-        {/* Background plate — z-52: above scrim (50), below popup (55). When
-            the popup is open, popup's dark area covers this plate in the
-            overlap band; through the cutout, this plate's white shows as the
-            halo around the FAB. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:rounded-2xl lg:border lg:border-borderColor lg:shadow-[0_10px_30px_rgba(0,0,0,0.12)]"
-          style={{ zIndex: 52 }}
-        />
-        {/* Content layer — z-60: above popup, so nav icons/labels/FAB stay
-            on top and clickable while popup is open. */}
+      {/* Nav background plate — RENDERED AS ITS OWN FIXED SIBLING, not
+          nested inside <nav>. This is deliberate: `position: fixed` creates a
+          stacking context, so nesting the plate inside <nav> would trap both
+          plate (z-52) and content (z-60) inside the nav's context, and the
+          popup (z-55 in root) would paint over the entire nav tree.
+          Splitting them into two fixed siblings puts plate (52), popup (55),
+          and nav items (60) at comparable root-level z-indices so the popup
+          correctly sandwiches between plate and items. */}
+      <div
+        aria-hidden="true"
+        className="fixed bottom-0 inset-x-0 h-[80px] bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:bottom-4 lg:mx-auto lg:max-w-[900px] lg:h-[84px] lg:rounded-2xl lg:border lg:border-borderColor lg:shadow-[0_10px_30px_rgba(0,0,0,0.12)]"
+        style={{ zIndex: 52 }}
+      />
+
+      {/* Nav items — z-60 so they stay visible/clickable above the popup. */}
+      <nav
+        className="fixed bottom-0 inset-x-0 lg:bottom-4 lg:mx-auto lg:max-w-[900px]"
+        style={{ zIndex: 60 }}
+      >
         <div
           className="relative mx-auto flex max-w-md items-center justify-around px-2 py-3 text-[10px] font-semibold lg:max-w-none lg:px-6 lg:py-3.5 lg:text-xs"
-          style={{ zIndex: 60 }}
         >
           <Link href="/dashboard" className={slotClass(isActive("/dashboard"))}>
             <Image src="/assets/icons/house.svg" alt="home" width={22} height={22} className={isActive("/dashboard") ? "" : "opacity-60"} />
