@@ -108,20 +108,21 @@ function QuickActionPopup({ open, onClose, onFilesPicked }) {
           className="absolute inset-0"
           style={{
             zIndex: 0,
-            overflow: "visible",  // STROKE/2 spills outside viewBox at top
             filter: "drop-shadow(0 -8px 22px rgba(0,0,0,0.18))",
           }}
         >
-          {/* Single stroked path — the outline runs unbroken from popup top
-              through sides, across the bottom, UP and around the FAB via the
-              cutout arc, then back. The FAB has no CSS border; its dark ring
-              IS this arc. */}
+          {/* Solid popup shape — fill only, no stroke (no outer outline). */}
+          <path d={POPUP_D} fill={DARK} />
+          {/* Ring overlay tracing JUST the cutout's interior edge. Same
+              semicircle as the popup's bite, drawn in reverse direction so
+              sweep-flag=1 (opposite of the cutout's 0) traces the same top
+              half. Stroked only, no fill. Hidden when popup is closed. */}
           <path
-            d={POPUP_D}
-            fill={DARK}
+            d={`M ${POPUP_W / 2 - CUT_R} ${POPUP_H} A ${CUT_R} ${CUT_R} 0 0 1 ${POPUP_W / 2 + CUT_R} ${POPUP_H}`}
+            fill="none"
             stroke={DARK}
             strokeWidth={STROKE}
-            strokeLinejoin="round"
+            opacity={open ? 1 : 0}
           />
         </svg>
 
