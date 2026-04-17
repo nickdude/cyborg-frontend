@@ -1,6 +1,7 @@
 "use client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTypewriter } from "@/hooks/useTypewriter";
 import ThinkingBlock from "./ThinkingBlock";
 import ToolChip from "./ToolChip";
 import Sources from "./Sources";
@@ -77,6 +78,11 @@ function MarkdownBody({ text }) {
   );
 }
 
+function TypewriterMarkdown({ text }) {
+  const displayed = useTypewriter(text, true);
+  return <MarkdownBody text={displayed} />;
+}
+
 export default function Message({ message, streaming }) {
   if (message.role === "user") {
     const text = message.content?.[0]?.text || "";
@@ -127,7 +133,18 @@ export default function Message({ message, streaming }) {
         <div className="text-sm text-gray-800 leading-relaxed">
           {(message.content || []).map((block, i) => {
             if (block.type === "text") {
-              return <MarkdownBody key={i} text={block.text} />;
+              const isLastText =
+                streaming &&
+                i ===
+                  message.content.length - 1 -
+                    [...message.content]
+                      .reverse()
+                      .findIndex((b) => b.type === "text");
+              return isLastText ? (
+                <TypewriterMarkdown key={i} text={block.text} />
+              ) : (
+                <MarkdownBody key={i} text={block.text} />
+              );
             }
             if (block.type === "tool") {
               return <ToolChip key={block.id || i} block={block} />;

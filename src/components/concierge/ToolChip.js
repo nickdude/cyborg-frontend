@@ -13,6 +13,7 @@ import {
   Brain,
   Database,
   Search,
+  UtensilsCrossed,
 } from "lucide-react";
 
 const TOOL_META = {
@@ -70,6 +71,11 @@ const TOOL_META = {
     running: "Inspecting schema…",
     done: "Inspected schema",
     Icon: Database,
+  },
+  getMealData: {
+    running: "Checking meal history…",
+    done: "Checked meal history",
+    Icon: UtensilsCrossed,
   },
 };
 
