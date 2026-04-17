@@ -26,9 +26,9 @@ export default function Composer({
   };
 
   return (
-    <div className="border-t border-borderColor bg-white px-4 py-3 sm:px-6">
+    <div className="border-t border-gray-100 bg-white px-4 py-3 sm:px-6">
       <div className="max-w-3xl mx-auto flex items-end gap-2">
-        <div className="flex-1 border border-borderColor rounded-2xl bg-white px-4 py-2 focus-within:ring-2 focus-within:ring-purple-200">
+        <div className="flex-1 border border-gray-200 rounded-2xl bg-gray-50/50 px-4 py-2.5 focus-within:bg-white focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200">
           <textarea
             ref={textareaRef}
             rows={1}
@@ -36,17 +36,17 @@ export default function Composer({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKey}
             placeholder={placeholder || "Message Cyborg…"}
-            className="w-full resize-none outline-none text-sm bg-transparent"
+            className="w-full resize-none outline-none text-sm bg-transparent placeholder:text-gray-400"
           />
         </div>
         <button
           type="button"
           onClick={onSubmit}
           disabled={disabled || !value.trim()}
-          className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center disabled:opacity-40 hover:bg-gray-900 transition shrink-0"
+          className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-30 hover:bg-primary/90 active:scale-95 transition-all duration-150 shrink-0 shadow-sm"
           aria-label="Send"
         >
-          <ArrowUp className="w-5 h-5" />
+          <ArrowUp className="w-4 h-4" />
         </button>
       </div>
     </div>

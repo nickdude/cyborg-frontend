@@ -107,7 +107,7 @@ export default function ConciergePage() {
   };
 
   return (
-    <div className="h-dvh flex bg-pageBackground">
+    <div className="h-dvh flex bg-white">
       <ChatSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -117,16 +117,16 @@ export default function ConciergePage() {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex items-center gap-3 px-4 py-3 border-b border-borderColor bg-white">
+        <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-1 rounded hover:bg-gray-100"
+            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Open sidebar"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="w-5 h-5 text-gray-600" />
           </button>
-          <div className="font-semibold">Concierge</div>
-          <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+          <div className="font-semibold text-gray-900">Concierge</div>
+          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
             BETA
           </span>
         </header>

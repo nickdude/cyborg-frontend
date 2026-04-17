@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Sparkles } from "lucide-react";
 import { useConciergeStore } from "@/stores/concierge";
 import { useStickyScroll } from "@/hooks/useStickyScroll";
 import Message from "./Message";
@@ -36,22 +36,25 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
     <div className="relative flex-1 min-h-0">
       <div
         ref={containerRef}
-        className="h-full overflow-y-auto px-4 sm:px-6 py-6 space-y-3"
+        className="h-full overflow-y-auto px-4 sm:px-6 py-6 space-y-4"
       >
         {isEmpty ? (
-          <div className="max-w-xl mx-auto text-center mt-16">
-            <h1 className="text-2xl font-semibold mb-1">
-              Hi {firstName || "there"}, how can we help you?
+          <div className="max-w-md mx-auto text-center mt-20">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">
+              Hi {firstName || "there"}
             </h1>
             <p className="text-secondary text-sm mb-6">
               Ask about your labs, wearables, or anything health-related.
             </p>
-            <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-col gap-2">
               {QUICK_PROMPTS.map((p) => (
                 <button
                   key={p}
                   onClick={() => onQuickPrompt?.(p)}
-                  className="text-sm bg-white border border-borderColor rounded-full px-4 py-2 hover:bg-gray-50 transition"
+                  className="text-sm text-left bg-white border border-gray-200 rounded-xl px-4 py-3 hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-200 text-gray-700 cursor-pointer"
                 >
                   {p}
                 </button>
@@ -79,10 +82,10 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
       {!isPinned && streaming && (
         <button
           onClick={jumpToBottom}
-          className="absolute bottom-4 right-4 bg-black text-white rounded-full w-10 h-10 shadow-lg hover:bg-gray-800 transition flex items-center justify-center"
+          className="absolute bottom-4 right-4 bg-primary text-white rounded-full w-9 h-9 shadow-lg shadow-primary/25 hover:bg-primary/90 active:scale-95 transition-all duration-150 flex items-center justify-center"
           aria-label="Jump to latest"
         >
-          <ArrowDown className="w-5 h-5" />
+          <ArrowDown className="w-4 h-4" />
         </button>
       )}
     </div>

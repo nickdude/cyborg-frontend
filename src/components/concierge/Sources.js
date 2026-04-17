@@ -1,5 +1,5 @@
 "use client";
-import { ExternalLink, FileText } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 
 const PERPLEXITY_TOOLS = new Set([
   "webSearch",
@@ -37,7 +37,6 @@ function extractCitationsFromResult(result) {
         out.push({
           url: s.url,
           title: s.title || deriveTitleFromUrl(s.url),
-          date: s.date,
         });
     }
   }
@@ -79,27 +78,25 @@ export default function Sources({ content }) {
   });
 
   return (
-    <div className="mt-3 border border-borderColor rounded-lg bg-white overflow-hidden">
-      <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 text-[11px] font-medium text-gray-500">
-        <FileText className="w-3 h-3" />
-        Sources ({dedup.length})
+    <div className="mt-3">
+      <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-1.5">
+        Sources
       </div>
-      <ul className="divide-y divide-gray-100">
+      <div className="flex flex-wrap gap-1.5">
         {dedup.map((c, i) => (
-          <li key={i} className="px-3 py-2 text-xs">
-            <a
-              href={c.url}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="text-purple-700 hover:underline inline-flex items-center gap-1"
-            >
-              <span className="truncate max-w-xs">{c.title}</span>
-              <ExternalLink className="w-3 h-3 shrink-0" />
-            </a>
-            <div className="text-gray-400 truncate">{c.url}</div>
-          </li>
+          <a
+            key={i}
+            href={c.url}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex items-center gap-1 text-[11px] bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md px-2 py-1 text-gray-600 hover:text-primary transition-colors"
+            title={c.url}
+          >
+            <span className="truncate max-w-[120px]">{c.title}</span>
+            <ExternalLink className="w-2.5 h-2.5 shrink-0 text-gray-400" />
+          </a>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

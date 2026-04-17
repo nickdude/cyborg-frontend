@@ -57,65 +57,66 @@ export default function ChatSidebar({
     <>
       {open && (
         <div
-          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-200"
           onClick={onClose}
         />
       )}
       <aside
-        className={`fixed z-50 top-0 left-0 h-full w-80 bg-white border-r border-borderColor flex flex-col transform transition-transform ${
+        className={`fixed z-50 top-0 left-0 h-full w-72 bg-white/95 backdrop-blur-xl border-r border-gray-100 flex flex-col transform transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:static lg:translate-x-0`}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-borderColor">
-          <div className="font-semibold">Concierge</div>
+        <div className="flex items-center justify-between px-4 py-4">
+          <span className="text-sm font-semibold text-gray-900">Chats</span>
           <button
             onClick={onClose}
-            className="lg:hidden p-1 rounded hover:bg-gray-100"
+            className="lg:hidden p-1 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Close sidebar"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
-        <div className="px-3 pt-3">
+        <div className="px-3">
           <button
             onClick={onNew}
-            className="w-full flex items-center gap-2 bg-black text-white rounded-full px-4 py-2 text-sm hover:bg-gray-900 transition"
+            className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition-all duration-150 shadow-sm shadow-primary/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> New chat
           </button>
         </div>
 
         <div className="px-3 pt-3">
-          <div className="flex items-center gap-2 border border-borderColor rounded-lg px-3 py-1.5">
-            <Search className="w-4 h-4 text-gray-400" />
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus-within:bg-white focus-within:border-primary/30 transition-all duration-200">
+            <Search className="w-3.5 h-3.5 text-gray-400" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search chats"
-              className="flex-1 outline-none text-sm bg-transparent"
+              placeholder="Search"
+              className="flex-1 outline-none text-sm bg-transparent placeholder:text-gray-400"
             />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto mt-3 pb-4">
+        <div className="flex-1 overflow-y-auto mt-2 pb-4">
           {ORDER.map((label) => {
             const rows = buckets[label];
             if (!rows || !rows.length) return null;
             return (
-              <div key={label} className="mb-4">
-                <div className="px-4 text-[11px] uppercase tracking-wider text-gray-400 mb-1">
+              <div key={label} className="mt-3">
+                <div className="px-4 text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-1">
                   {label}
                 </div>
                 {rows.map((c) => (
                   <button
                     key={c._id}
                     onClick={() => onSelect(c._id)}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition truncate ${
+                    className={`w-full text-left px-4 py-2 text-[13px] transition-colors truncate rounded-lg mx-1 cursor-pointer ${
                       activeChatId === c._id
-                        ? "bg-purple-50 text-purple-800 font-medium"
-                        : ""
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
                     }`}
+                    style={{ maxWidth: "calc(100% - 8px)" }}
                     title={c.title}
                   >
                     {c.title || "New chat"}
@@ -125,7 +126,9 @@ export default function ChatSidebar({
             );
           })}
           {!Object.keys(buckets).length && (
-            <div className="px-4 text-sm text-gray-400">No chats yet.</div>
+            <div className="px-4 py-8 text-center text-sm text-gray-400">
+              No chats yet
+            </div>
           )}
         </div>
       </aside>
