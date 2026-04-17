@@ -1,6 +1,14 @@
 import axios from "axios";
 import Cookie from "js-cookie";
 
+if (
+  typeof process !== "undefined" &&
+  process.env.NODE_ENV === "production" &&
+  !process.env.NEXT_PUBLIC_API_URL
+) {
+  throw new Error("NEXT_PUBLIC_API_URL must be set in production builds");
+}
+
 const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001",
 });
@@ -81,6 +89,8 @@ export const mealAPI = {
     API.post(`/api/users/${userId}/meals`, body),
   list: (userId, date) =>
     API.get(`/api/users/${userId}/meals`, { params: { date } }),
+  history: (userId, days = 14) =>
+    API.get(`/api/users/${userId}/meals/history`, { params: { days } }),
   summary: (userId, date) =>
     API.get(`/api/users/${userId}/meals/summary`, { params: { date } }),
   get: (userId, mealId) =>

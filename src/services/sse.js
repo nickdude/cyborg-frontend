@@ -1,5 +1,13 @@
 import Cookie from "js-cookie";
 
+if (
+  typeof process !== "undefined" &&
+  process.env.NODE_ENV === "production" &&
+  !process.env.NEXT_PUBLIC_API_URL
+) {
+  throw new Error("NEXT_PUBLIC_API_URL must be set in production builds");
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
 export async function streamMessage(chatId, text, onEvent) {
