@@ -12,7 +12,7 @@ export default function BloodReports() {
   const params = useParams();
   const userId = params.userId;
   const router = useRouter();
-  const { user, token, loading: authLoading } = useAuth();
+  const { user, token, loading: authLoading, updateUser } = useAuth();
 
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +73,12 @@ export default function BloodReports() {
       await userAPI.uploadBloodReport(userId, formData);
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
+      // Flip the dashboard to Insights view immediately — backend has set
+      // user.latestReportReady = true, but the AuthContext copy is stale
+      // until the next login, so update it locally.
+      if (user && !user.latestReportReady) {
+        updateUser({ ...user, latestReportReady: true });
+      }
       fetchReports();
     } catch (err) {
       setError(err.message || "Failed to upload report");
