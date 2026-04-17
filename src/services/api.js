@@ -22,13 +22,29 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle responses
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+];
+
 API.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
       Cookie.remove("authToken");
-      window.location.href = "/login";
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("user");
+        const path = window.location.pathname;
+        const onPublicRoute = PUBLIC_ROUTES.some(
+          (r) => path === r || path.startsWith(`${r}/`)
+        );
+        if (!onPublicRoute) {
+          window.location.href = "/login";
+        }
+      }
     }
     throw error.response?.data || error;
   }
