@@ -4,7 +4,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
 export async function streamMessage(chatId, text, onEvent) {
   const token = Cookie.get("authToken");
-  const res = await fetch(`${BASE_URL}/api/chat/${chatId}/messages`, {
+  const res = await fetch(`${BASE_URL}/api/chats/${chatId}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

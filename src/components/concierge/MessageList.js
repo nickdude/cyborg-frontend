@@ -11,12 +11,15 @@ const QUICK_PROMPTS = [
   "What does my ApoB mean?",
 ];
 
+const EMPTY_MESSAGES = [];
+
 export default function MessageList({ chatId, firstName, onQuickPrompt }) {
-  const messages = useConciergeStore((s) =>
-    chatId ? s.messages[chatId] || [] : []
+  const rawMessages = useConciergeStore((s) =>
+    chatId ? s.messages[chatId] : undefined
   );
+  const messages = rawMessages || EMPTY_MESSAGES;
   const streamStatus = useConciergeStore((s) =>
-    chatId ? s.streams[chatId]?.status : null
+    chatId ? s.streams[chatId]?.status ?? null : null
   );
   const streaming = streamStatus === "streaming";
 

@@ -42,13 +42,13 @@ export default function ConciergePage() {
 
     const pickOrCreate = async () => {
       if (urlId && chats[urlId]) {
-        setActive(urlId);
+        if (activeChatId !== urlId) setActive(urlId);
         loadChat(urlId);
         return;
       }
       if (chatOrder.length) {
         const mostRecent = chatOrder[0];
-        setActive(mostRecent);
+        if (activeChatId !== mostRecent) setActive(mostRecent);
         loadChat(mostRecent);
         router.replace(`/concierge?id=${mostRecent}`);
         return;
@@ -68,6 +68,7 @@ export default function ConciergePage() {
     searchParams,
     chats,
     chatOrder,
+    activeChatId,
     setActive,
     loadChat,
     createChat,

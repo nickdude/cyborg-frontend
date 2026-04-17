@@ -114,11 +114,11 @@ export const questionnaireAPI = {
 export { streamMessage } from "./sse";
 
 export const conciergeAPI = {
-  listChats: () => API.get("/api/chat"),
-  createChat: () => API.post("/api/chat"),
-  getChat: (chatId) => API.get(`/api/chat/${chatId}`),
-  updateTitle: (chatId, title) => API.patch(`/api/chat/${chatId}`, { title }),
-  deleteChat: (chatId) => API.delete(`/api/chat/${chatId}`),
+  listChats: () => API.get("/api/chats"),
+  createChat: () => API.post("/api/chats"),
+  getChat: (chatId) => API.get(`/api/chats/${chatId}`),
+  updateTitle: (chatId, title) => API.patch(`/api/chats/${chatId}`, { title }),
+  deleteChat: (chatId) => API.delete(`/api/chats/${chatId}`),
 };
 
 export const doctorAPI = {

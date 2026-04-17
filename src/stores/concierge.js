@@ -67,7 +67,8 @@ export const useConciergeStore = create((set, get) => ({
     if (get().chatsLoaded) return;
     try {
       const res = await conciergeAPI.listChats();
-      const list = res?.data?.data || [];
+      // axios response interceptor unwraps to envelope { success, data, ... }
+      const list = res?.data || [];
       const chats = {};
       const order = [];
       for (const c of list) {
@@ -90,7 +91,7 @@ export const useConciergeStore = create((set, get) => ({
     if (get().messages[chatId]) return;
     try {
       const res = await conciergeAPI.getChat(chatId);
-      const chat = res?.data?.data;
+      const chat = res?.data;
       if (!chat) return;
       const messages = (chat.messages || []).map(hydrateMessage);
       set((s) => ({
@@ -107,7 +108,7 @@ export const useConciergeStore = create((set, get) => ({
 
   createChat: async () => {
     const res = await conciergeAPI.createChat();
-    const chat = res?.data?.data;
+    const chat = res?.data;
     if (!chat) throw new Error("createChat returned no data");
     set((s) => ({
       chats: { ...s.chats, [chat._id]: chat },
@@ -279,15 +280,39 @@ export const useConciergeStore = create((set, get) => ({
           break;
 
         case "done":
-          set((s) => ({
-            streams: {
-              ...s.streams,
-              [chatId]: {
-                status: "done",
-                startedAt: s.streams[chatId]?.startedAt,
+          set((s) => {
+            const existing = s.chats[chatId] || {};
+            // Derive title from first user message if backend hasn't auto-set yet
+            let title = existing.title;
+            if (!title || title === "New Chat") {
+              const firstUser = (s.messages[chatId] || []).find(
+                (m) => m.role === "user"
+              );
+              const userText = firstUser?.content?.[0]?.text;
+              if (userText) {
+                title = userText.slice(0, 60).replace(/\n/g, " ").trim();
+                if (userText.length > 60) title += "\u2026";
+              }
+            }
+            return {
+              streams: {
+                ...s.streams,
+                [chatId]: {
+                  status: "done",
+                  startedAt: s.streams[chatId]?.startedAt,
+                },
               },
-            },
-          }));
+              chats: {
+                ...s.chats,
+                [chatId]: {
+                  ...existing,
+                  title: title || existing.title || "New Chat",
+                  updatedAt: new Date().toISOString(),
+                },
+              },
+              chatOrder: [chatId, ...s.chatOrder.filter((id) => id !== chatId)],
+            };
+          });
           patchAssistant((m) => {
             if (!m.thinking) return m;
             return {
@@ -300,23 +325,6 @@ export const useConciergeStore = create((set, get) => ({
               },
             };
           });
-          conciergeAPI
-            .getChat(chatId)
-            .then((r) => {
-              const meta = r?.data?.data;
-              if (!meta) return;
-              set((s) => ({
-                chats: {
-                  ...s.chats,
-                  [chatId]: { ...s.chats[chatId], ...meta, messages: undefined },
-                },
-                chatOrder: [
-                  chatId,
-                  ...s.chatOrder.filter((id) => id !== chatId),
-                ],
-              }));
-            })
-            .catch(() => {});
           break;
 
         case "error":

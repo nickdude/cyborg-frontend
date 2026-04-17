@@ -14,7 +14,6 @@ export default function LayoutWrapper({ children }) {
     "/market-place",
     "/data",
     "/protocol",
-    "/concierge",
     "/settings",
     "/orders",
     "/market-place/prescriptions/semaglutide",
@@ -26,7 +25,6 @@ export default function LayoutWrapper({ children }) {
     "/market-place",
     "/data",
     "/protocol",
-    "/concierge",
     "/market-place/prescriptions/semaglutide",
   ].includes(pathname);
 
