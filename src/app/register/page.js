@@ -155,10 +155,9 @@ function Register() {
     setResendLoading(true);
     setError("");
     try {
-      const payload = { userId };
-      if (formData.email) payload.email = formData.email;
-      if (formData.phone) payload.phone = formData.phone;
-      await authAPI.resendOTP(payload);
+      // Backend expects { userId, type: "email"|"phone" } — not the raw value.
+      const type = formData.email ? "email" : "phone";
+      await authAPI.resendOTP({ userId, type });
       setSuccessMsg("OTP resent successfully! Check your " + (formData.email ? "email" : "phone"));
       setResendTimer(60);
       setCanResend(false);

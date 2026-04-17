@@ -11,8 +11,11 @@ import MealDetailsSheet from "./MealDetailsSheet";
 // matching offset math below (popup bottom must equal FAB center Y).
 const FAB = 56;
 const FAB_R = FAB / 2;            // 28
-const HALO = 8;                   // nav-background ring visible around FAB
-const CUT_R = FAB_R + HALO;       // 36 — popup's semicircular bite radius
+const HALO = 6;                   // visible halo width (plate showing through)
+const STROKE = 2;                 // popup outline stroke width
+// CR's inner EDGE (stroke-inside) must leave HALO px to the FAB. Because a
+// centered stroke extends STROKE/2 inside the geometric path, we compensate:
+const CUT_R = FAB_R + HALO + STROKE / 2;  // 35
 const POPUP_W = 320;
 const POPUP_H = 180;              // sized to fit content
 const CORNER = 22;
@@ -105,10 +108,21 @@ function QuickActionPopup({ open, onClose, onFilesPicked }) {
           className="absolute inset-0"
           style={{
             zIndex: 0,
+            overflow: "visible",  // STROKE/2 spills outside viewBox at top
             filter: "drop-shadow(0 -8px 22px rgba(0,0,0,0.18))",
           }}
         >
-          <path d={POPUP_D} fill={DARK} />
+          {/* Single stroked path — the outline runs unbroken from popup top
+              through sides, across the bottom, UP and around the FAB via the
+              cutout arc, then back. The FAB has no CSS border; its dark ring
+              IS this arc. */}
+          <path
+            d={POPUP_D}
+            fill={DARK}
+            stroke={DARK}
+            strokeWidth={STROKE}
+            strokeLinejoin="round"
+          />
         </svg>
 
         <div
@@ -228,13 +242,17 @@ export default function BottomNavbar() {
               onClick={() => setActiveSheet((s) => (s === "actions" ? null : "actions"))}
               aria-label={popupOpen ? "Close quick actions" : "Open quick actions"}
               aria-expanded={popupOpen}
-              className="rounded-full flex items-center justify-center text-white"
+              className="rounded-full flex items-center justify-center"
               style={{
                 width: `${FAB}px`,
                 height: `${FAB}px`,
-                backgroundColor: DARK,
+                // Open state: white FAB sits INSIDE the popup's cutout arc —
+                // the dark ring comes from that SVG stroke, NOT a CSS border.
+                backgroundColor: popupOpen ? "#FFFFFF" : DARK,
+                color: popupOpen ? DARK : "#FFFFFF",
+                border: "none",
                 boxShadow: popupOpen ? "none" : "0 4px 14px rgba(0,0,0,0.22)",
-                transition: "box-shadow 200ms ease-out",
+                transition: "background-color 180ms ease-out, color 180ms ease-out, box-shadow 200ms ease-out",
               }}
             >
               <svg
