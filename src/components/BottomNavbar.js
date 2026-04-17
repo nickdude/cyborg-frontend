@@ -1,81 +1,274 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import FloatingActionButton from "./FloatingActionButton";
-import MealUploadSheet from "./MealUploadSheet";
 import MealDetailsSheet from "./MealDetailsSheet";
+
+// Geometry — single source of truth. Don't edit unless you also edit the
+// matching offset math below (popup bottom must equal FAB center Y).
+const FAB = 56;
+const FAB_R = FAB / 2;            // 28
+const HALO = 8;                   // nav-background ring visible around FAB
+const CUT_R = FAB_R + HALO;       // 36 — popup's semicircular bite radius
+const POPUP_W = 320;
+const POPUP_H = 180;              // sized to fit content
+const CORNER = 22;
+const DARK = "#0F0F0F";
+
+// Popup shape: rounded rect with a concave semicircular bite at the bottom
+// center. Bite arc uses sweep-flag 0 (counterclockwise traversal) so it curves
+// INTO the shape; sweep-flag 1 would bulge down past the bottom edge.
+const POPUP_D = (() => {
+  const cx = POPUP_W / 2;
+  return [
+    `M ${CORNER} 0`,
+    `H ${POPUP_W - CORNER}`,
+    `A ${CORNER} ${CORNER} 0 0 1 ${POPUP_W} ${CORNER}`,
+    `V ${POPUP_H - CORNER}`,
+    `A ${CORNER} ${CORNER} 0 0 1 ${POPUP_W - CORNER} ${POPUP_H}`,
+    `H ${cx + CUT_R}`,
+    `A ${CUT_R} ${CUT_R} 0 0 0 ${cx - CUT_R} ${POPUP_H}`,
+    `H ${CORNER}`,
+    `A ${CORNER} ${CORNER} 0 0 1 0 ${POPUP_H - CORNER}`,
+    `V ${CORNER}`,
+    `A ${CORNER} ${CORNER} 0 0 1 ${CORNER} 0`,
+    "Z",
+  ].join(" ");
+})();
+
+function QuickActionPopup({ open, onClose, onFilesPicked }) {
+  const cameraRef = useRef(null);
+  const galleryRef = useRef(null);
+
+  // Reset hidden file inputs when popup reopens so picking the same file
+  // twice still fires onChange.
+  useEffect(() => {
+    if (open) {
+      if (cameraRef.current) cameraRef.current.value = "";
+      if (galleryRef.current) galleryRef.current.value = "";
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const handlePick = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    onFilesPicked?.(files);
+  };
+
+  return (
+    <>
+      {/* Scrim — tap to close. Below popup/nav, above app content. */}
+      <div
+        aria-hidden="true"
+        onClick={onClose}
+        className={`fixed inset-0 z-[50] bg-black/30 transition-opacity ${
+          open ? "opacity-100 pointer-events-auto duration-200" : "opacity-0 pointer-events-none duration-150"
+        }`}
+      />
+
+      {/* Popup — fixed, horizontally centered to viewport (flex symmetry
+          places the FAB at viewport center too, so cutout aligns). Bottom
+          edge sits at the FAB's center Y (nav-padding-bottom + fab-radius),
+          making the cutout wrap the FAB's top half with an 8px halo.
+          Popup z-55: above scrim (50) and nav bg plate (52), below nav content
+          layer (60) — so the FAB and nav icons stay visible on top. */}
+      <div
+        className="fixed left-1/2 z-[55] [--popup-bottom:40px] lg:[--popup-bottom:58px]"
+        style={{
+          bottom: `calc(var(--popup-bottom) + env(safe-area-inset-bottom, 0px))`,
+          width: `${POPUP_W}px`,
+          height: `${POPUP_H}px`,
+          transform: open ? "translateX(-50%) scale(1)" : "translateX(-50%) scale(0.92)",
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none",
+          transformOrigin: "50% 100%",
+          transition: open
+            ? "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms cubic-bezier(0.22, 1, 0.36, 1)"
+            : "transform 180ms cubic-bezier(0.4, 0, 1, 1), opacity 180ms cubic-bezier(0.4, 0, 1, 1)",
+        }}
+      >
+        <svg
+          viewBox={`0 0 ${POPUP_W} ${POPUP_H}`}
+          width={POPUP_W}
+          height={POPUP_H}
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{
+            zIndex: 0,
+            filter: "drop-shadow(0 -8px 22px rgba(0,0,0,0.18))",
+          }}
+        >
+          <path d={POPUP_D} fill={DARK} />
+        </svg>
+
+        <div
+          className="relative flex h-full flex-col px-5"
+          style={{
+            zIndex: 1,
+            paddingBottom: `${CUT_R + 8}px`,
+            paddingTop: "18px",
+          }}
+        >
+          <div className="mb-3 flex items-center justify-center gap-1.5">
+            <h2 className="text-sm font-semibold text-white">Add a meal</h2>
+            <svg className="h-3.5 w-3.5 text-white/60" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M12 11v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="12" cy="8" r="0.8" fill="currentColor" />
+            </svg>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => cameraRef.current?.click()}
+              className="flex flex-col items-center gap-2 rounded-2xl border border-[#e4e6ef] bg-white px-4 py-4 text-[13px] font-medium text-[#1e2027] transition hover:border-[#9ea3b1] active:scale-95"
+            >
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 7h3l2-3h6l2 3h3a1 1 0 011 1v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="1.8" />
+              </svg>
+              <span>Take photo</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => galleryRef.current?.click()}
+              className="flex flex-col items-center gap-2 rounded-2xl border border-[#e4e6ef] bg-white px-4 py-4 text-[13px] font-medium text-[#1e2027] transition hover:border-[#9ea3b1] active:scale-95"
+            >
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                <circle cx="9" cy="10" r="1.5" fill="currentColor" />
+                <path d="M4 17l5-5 4 4 3-3 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span>Upload image</span>
+            </button>
+          </div>
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={handlePick} className="hidden" />
+          <input ref={galleryRef} type="file" accept="image/*" multiple onChange={handlePick} className="hidden" />
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function BottomNavbar() {
   const pathname = usePathname();
   const isActive = (path) => pathname === path;
 
-  const [activeSheet, setActiveSheet] = useState(null); // "upload" | "details" | null
+  // activeSheet: "actions" (popup) | "details" (meal details) | null
+  const [activeSheet, setActiveSheet] = useState(null);
   const [pickedFiles, setPickedFiles] = useState([]);
+  const popupOpen = activeSheet === "actions";
 
   const handleFilesPicked = (files) => {
     setPickedFiles(files);
     setActiveSheet("details");
   };
 
-  const navIconLabel = activeSheet ? "×" : "＋";
+  const slotClass = (active) =>
+    `flex-1 flex flex-col items-center gap-1 ${active ? "text-black" : "text-secondary"}`;
 
   return (
     <>
       <FloatingActionButton />
-      <nav className="fixed bottom-0 inset-x-0 z-40 lg:bottom-4 lg:bg-transparent lg:shadow-none">
-        {/* Masked nav background — a big radial cutout lifts the top edge into
-            a visible scoop around the center button. Radius 48px, centered 14px
-            below the top edge so the hole reads as a deep concave arc. */}
+
+      <QuickActionPopup
+        open={popupOpen}
+        onClose={() => setActiveSheet(null)}
+        onFilesPicked={handleFilesPicked}
+      />
+
+      {/* Nav itself has no z-index so its children (bg plate, content layer)
+          stack in the root stacking context and can sandwich the popup. */}
+      <nav className="fixed bottom-0 inset-x-0 lg:bottom-4 lg:mx-auto lg:max-w-[900px]">
+        {/* Background plate — z-52: above scrim (50), below popup (55). When
+            the popup is open, popup's dark area covers this plate in the
+            overlap band; through the cutout, this plate's white shows as the
+            halo around the FAB. */}
         <div
-          className="absolute inset-0 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.10)] lg:rounded-2xl lg:border lg:border-borderColor lg:shadow-[0_10px_30px_rgba(0,0,0,0.12)]"
-          style={{
-            WebkitMaskImage:
-              "radial-gradient(circle 48px at 50% 14px, transparent 46px, black 48px)",
-            maskImage:
-              "radial-gradient(circle 48px at 50% 14px, transparent 46px, black 48px)",
-          }}
           aria-hidden="true"
+          className="absolute inset-0 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:rounded-2xl lg:border lg:border-borderColor lg:shadow-[0_10px_30px_rgba(0,0,0,0.12)]"
+          style={{ zIndex: 52 }}
         />
-        <div className="relative mx-auto flex max-w-md items-end justify-center pt-6 pb-3 text-[10px] font-bold lg:max-w-[900px] lg:items-center lg:px-6 lg:py-3.5 lg:text-xs">
-          <Link href="/dashboard" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/dashboard") ? "text-black" : "text-secondary"}`}>
-            <Image src="/assets/icons/house.svg" alt="home" width={24} height={24} className={isActive("/dashboard") ? "" : "opacity-60"} />
+        {/* Content layer — z-60: above popup, so nav icons/labels/FAB stay
+            on top and clickable while popup is open. */}
+        <div
+          className="relative mx-auto flex max-w-md items-center justify-around px-2 py-3 text-[10px] font-semibold lg:max-w-none lg:px-6 lg:py-3.5 lg:text-xs"
+          style={{ zIndex: 60 }}
+        >
+          <Link href="/dashboard" className={slotClass(isActive("/dashboard"))}>
+            <Image src="/assets/icons/house.svg" alt="home" width={22} height={22} className={isActive("/dashboard") ? "" : "opacity-60"} />
             <span>Home</span>
           </Link>
-          <Link href="/data" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/data") ? "text-black" : "text-secondary"}`}>
-            <Image src="/assets/icons/chart.svg" alt="data" width={24} height={24} className={isActive("/data") ? "" : "opacity-60"} />
+
+          <Link href="/data" className={slotClass(isActive("/data"))}>
+            <Image src="/assets/icons/chart.svg" alt="data" width={22} height={22} className={isActive("/data") ? "" : "opacity-60"} />
             <span>Data</span>
           </Link>
-          <button
-            type="button"
-            onClick={() => setActiveSheet((s) => (s ? null : "upload"))}
-            aria-label={activeSheet ? "Close add meal" : "Add meal"}
-            className="flex-1 flex flex-col items-center"
+
+          {/* Center slot — FAB lives HERE in the nav row. Same DOM parent
+              whether popup is open or closed; only the inner icon rotates
+              when toggling, so the button's hit area stays rock-steady. */}
+          <div className="flex-1 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => setActiveSheet((s) => (s === "actions" ? null : "actions"))}
+              aria-label={popupOpen ? "Close quick actions" : "Open quick actions"}
+              aria-expanded={popupOpen}
+              className="rounded-full flex items-center justify-center text-white"
+              style={{
+                width: `${FAB}px`,
+                height: `${FAB}px`,
+                backgroundColor: DARK,
+                boxShadow: popupOpen ? "none" : "0 4px 14px rgba(0,0,0,0.22)",
+                transition: "box-shadow 200ms ease-out",
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+                className="h-5 w-5"
+                style={{
+                  transform: popupOpen ? "rotate(45deg)" : "rotate(0deg)",
+                  transition: "transform 200ms cubic-bezier(0.22, 1, 0.36, 1)",
+                }}
+              >
+                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Protocol slot — label/target swap to Concierge when popup open */}
+          <Link
+            href={popupOpen ? "/concierge" : "/protocol"}
+            className={slotClass(isActive(popupOpen ? "/concierge" : "/protocol"))}
           >
-            {/* Big white circle, straddles the notch. -mt-12 lifts it so ~half of
-                the button rises above the nav's top edge, sitting in the scoop. */}
-            <span className="-mt-12 flex h-16 w-16 items-center justify-center rounded-full bg-white text-[28px] leading-none font-normal text-black shadow-[0_6px_18px_rgba(0,0,0,0.18)] ring-1 ring-gray-200 lg:-mt-0 lg:h-12 lg:w-12 lg:text-xl">
-              {navIconLabel}
-            </span>
-          </button>
-          <Link href="/protocol" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/protocol") ? "text-black" : "text-secondary"}`}>
-            <Image src="/assets/icons/protocol.svg" alt="protocol" width={24} height={24} className={isActive("/protocol") ? "" : "opacity-60"} />
-            <span>Protocol</span>
+            <Image
+              src={popupOpen ? "/assets/icons/text.svg" : "/assets/icons/protocol.svg"}
+              alt={popupOpen ? "concierge" : "protocol"}
+              width={22}
+              height={22}
+              className={isActive(popupOpen ? "/concierge" : "/protocol") ? "" : "opacity-60"}
+            />
+            <span>{popupOpen ? "Concierge" : "Protocol"}</span>
           </Link>
-          <Link href="/market-place" className={`flex-1 flex flex-col items-center gap-1 ${isActive("/market-place") ? "text-black" : "text-secondary"}`}>
-            <Image src="/assets/icons/store.svg" alt="marketplace" width={24} height={24} className={isActive("/market-place") ? "" : "opacity-60"} />
+
+          <Link href="/market-place" className={slotClass(isActive("/market-place"))}>
+            <Image src="/assets/icons/store.svg" alt="marketplace" width={22} height={22} className={isActive("/market-place") ? "" : "opacity-60"} />
             <span>Marketplace</span>
           </Link>
         </div>
       </nav>
-
-      <MealUploadSheet
-        open={activeSheet === "upload"}
-        onClose={() => setActiveSheet(null)}
-        onFilesPicked={handleFilesPicked}
-      />
 
       <MealDetailsSheet
         open={activeSheet === "details"}

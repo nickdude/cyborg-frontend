@@ -33,34 +33,38 @@ export default function MealUploadSheet({ open, onClose, onFilesPicked }) {
   const handlePick = (event) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
+    // Parent's onFilesPicked transitions activeSheet from "upload" to "details";
+    // calling onClose here would race that and leave activeSheet as null.
     onFilesPicked?.(files);
-    onClose?.();
   };
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50"
+      className="fixed inset-0 z-[55] pointer-events-none"
       role="dialog"
       aria-modal="true"
       aria-label="Add a meal"
     >
-      {/* Backdrop — darker + blurred. Stops at the nav. */}
+      {/* Backdrop — darkens everything above the sheet. Nav (z-50) sits on
+          top and still receives clicks because the wrapper is pointer-none. */}
       <button
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="absolute top-0 left-0 right-0 bg-black/70 backdrop-blur-sm"
-        style={{ bottom: "var(--meal-nav-offset, 104px)" }}
+        className="absolute top-0 left-0 right-0 bg-black/45 backdrop-blur-[2px] pointer-events-auto"
+        style={{ bottom: "77px" }}
       />
 
-      {/* Floating dark-glass palette */}
+      {/* Dark sheet — floating rounded card sitting above the nav with side
+          margins. Bottom edge meets the top of the nav's halo so the two
+          visually connect around the X button. */}
       <div
-        className="absolute left-0 right-0 flex justify-center px-4"
-        style={{ bottom: "calc(var(--meal-nav-offset, 104px) + 12px)" }}
+        className="absolute left-4 right-4 bg-neutral-800 rounded-[28px] px-5 py-5 shadow-2xl animate-[slideUp_350ms_cubic-bezier(0.32,0.72,0,1)] pointer-events-auto"
+        style={{ bottom: "68px" }}
       >
-        <div className="w-full max-w-md rounded-3xl bg-neutral-800/95 backdrop-blur-xl px-5 pt-5 pb-5 shadow-2xl animate-[slideUp_200ms_ease-out]">
+        <div className="mx-auto w-full max-w-md">
           <div className="mb-4 flex items-center justify-center gap-1.5">
             <h2 className="text-sm font-semibold text-white">Add a meal</h2>
             <svg className="h-3.5 w-3.5 text-white/60" viewBox="0 0 24 24" fill="none" aria-hidden="true">

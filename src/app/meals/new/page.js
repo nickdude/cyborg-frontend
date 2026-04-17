@@ -68,7 +68,7 @@ export default function NewMealPage() {
       const saved = resp?.data;
       if (!saved?._id) throw new Error("No meal id returned");
       sessionStorage.removeItem(DRAFT_KEY);
-      router.replace(`/meals/${saved._id}`);
+      router.replace("/meals");
     } catch (err) {
       const serverMsg = err?.response?.data?.message || err?.message;
       setError(serverMsg || "Couldn't save meal. Try again.");

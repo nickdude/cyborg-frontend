@@ -283,16 +283,25 @@ function Register() {
 
     try {
       const type = formData.email ? "email" : "phone";
-      await authAPI.verifyOTP({
+      const response = await authAPI.verifyOTP({
         userId,
         otp,
         type,
       });
 
-      setSuccessMsg("Email/Phone verified! Redirecting to login...");
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+      // Backend now issues a session token on successful OTP verification —
+      // log the user in directly and route them forward without a second login.
+      const payload = response?.data;
+      if (payload?.token && payload?.user) {
+        login(payload.user, payload.token);
+        setSuccessMsg("Verified! Taking you in…");
+        const nextRoute = getNextRoute(payload.user);
+        setTimeout(() => router.push(nextRoute), 600);
+      } else {
+        // Backwards-compat: older backend without auto-login — fall back to login screen
+        setSuccessMsg("Verified! Redirecting to login…");
+        setTimeout(() => router.push("/login"), 1500);
+      }
     } catch (err) {
       setError(err.message || "OTP verification failed");
     } finally {
