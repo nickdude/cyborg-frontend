@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Menu } from "lucide-react";
+import { ChevronLeft, Menu } from "lucide-react";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConciergeStore } from "@/stores/concierge";
 import ChatSidebar from "@/components/concierge/ChatSidebar";
@@ -117,7 +118,14 @@ export default function ConciergePage() {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
+        <header className="flex items-center gap-2 px-3 py-3 border-b border-gray-100 bg-white">
+          <Link
+            href="/dashboard"
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Back to dashboard"
+          >
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
+          </Link>
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
