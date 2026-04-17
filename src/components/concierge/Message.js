@@ -1,5 +1,6 @@
 "use client";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import ThinkingBlock from "./ThinkingBlock";
 import ToolChip from "./ToolChip";
 import Sources from "./Sources";
@@ -7,6 +8,7 @@ import Sources from "./Sources";
 function MarkdownBody({ text }) {
   return (
     <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
       components={{
         p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
         strong: ({ children }) => (
