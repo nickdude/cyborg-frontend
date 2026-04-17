@@ -271,19 +271,15 @@ export default function BottomNavbar() {
             </button>
           </div>
 
-          {/* Protocol slot — label/target swap to Concierge when popup open */}
-          <Link
-            href={popupOpen ? "/concierge" : "/protocol"}
-            className={slotClass(isActive(popupOpen ? "/concierge" : "/protocol"))}
-          >
+          <Link href="/protocol" className={slotClass(isActive("/protocol"))}>
             <Image
-              src={popupOpen ? "/assets/icons/text.svg" : "/assets/icons/protocol.svg"}
-              alt={popupOpen ? "concierge" : "protocol"}
+              src="/assets/icons/protocol.svg"
+              alt="protocol"
               width={22}
               height={22}
-              className={isActive(popupOpen ? "/concierge" : "/protocol") ? "" : "opacity-60"}
+              className={isActive("/protocol") ? "" : "opacity-60"}
             />
-            <span>{popupOpen ? "Concierge" : "Protocol"}</span>
+            <span>Protocol</span>
           </Link>
 
           <Link href="/market-place" className={slotClass(isActive("/market-place"))}>
