@@ -15,17 +15,29 @@ import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { getNextRoute } from "@/utils/navigationFlow";
 
-function DoctorToggle({ value, onChange, className = "" }) {
+function DoctorToggle({ value, onChange, className = "", disabled = false, disabledReason }) {
   const isDoctor = value === "doctor";
   return (
-    <div className={`flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm ${className}`}>
-      <span className="text-gray-800 font-medium">Register as a doctor</span>
+    <div
+      className={`flex items-center justify-between rounded-xl border px-3 py-2 text-sm ${
+        disabled ? "border-gray-200 bg-gray-100 opacity-60" : "border-gray-200 bg-gray-50"
+      } ${className}`}
+      title={disabled ? disabledReason : undefined}
+    >
+      <div className="flex flex-col">
+        <span className="text-gray-800 font-medium">Register as a doctor</span>
+        {disabled && disabledReason && (
+          <span className="text-[11px] text-gray-500 mt-0.5">{disabledReason}</span>
+        )}
+      </div>
       <button
         type="button"
-        onClick={() => onChange(isDoctor ? "user" : "doctor")}
+        onClick={() => !disabled && onChange(isDoctor ? "user" : "doctor")}
+        disabled={disabled}
+        aria-disabled={disabled}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          isDoctor ? "bg-primary" : "bg-borderColor"
-        }`}
+          disabled ? "cursor-not-allowed" : ""
+        } ${isDoctor ? "bg-primary" : "bg-borderColor"}`}
       >
         <span
           className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow ${
@@ -104,6 +116,14 @@ function Register() {
     const ref = searchParams.get("ref");
     if (ref) setReferralCode(ref.toUpperCase());
   }, [searchParams]);
+
+  // A referral code means the user is being onboarded as a patient of that
+  // doctor — they must register as a user, never as a doctor.
+  useEffect(() => {
+    if (referralCode && formData.userType !== "user") {
+      setFormData((prev) => ({ ...prev, userType: "user" }));
+    }
+  }, [referralCode, formData.userType]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -418,6 +438,8 @@ function Register() {
               value={formData.userType}
               onChange={handleUserTypeChange}
               className="mt-4 mb-3"
+              disabled={!!referralCode}
+              disabledReason="Referral codes are for patient accounts."
             />
 
             <Button fullWidth variant="primary" disabled={loading || !formData.phone}>
@@ -519,6 +541,8 @@ function Register() {
               value={formData.userType}
               onChange={handleUserTypeChange}
               className="mt-4 mb-3"
+              disabled={!!referralCode}
+              disabledReason="Referral codes are for patient accounts."
             />
 
             <Button fullWidth variant="primary" disabled={loading || !formData.email || !formData.password}>
@@ -612,6 +636,8 @@ function Register() {
               value={formData.userType}
               onChange={handleUserTypeChange}
               className="mt-4 mb-3"
+              disabled={!!referralCode}
+              disabledReason="Referral codes are for patient accounts."
             />
 
             <Button fullWidth variant="primary" disabled={loading || !formData.phone || !formData.password}>
@@ -739,7 +765,9 @@ function Register() {
             value={formData.userType}
             onChange={handleUserTypeChange}
             className="mb-3"
-          />
+              disabled={!!referralCode}
+              disabledReason="Referral codes are for patient accounts."
+            />
 
           <Button
             type="submit"
