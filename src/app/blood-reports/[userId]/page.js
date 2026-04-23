@@ -262,8 +262,7 @@ export default function BloodReports() {
                         disabled={generatingReportId === report._id}
                         onClick={() =>
                           hasPlan
-                            // ? router.push(`/action-plan/${userId}?planId=${report.actionPlanId}`)
-                             ? router.push(`/blood-reports/analysis/${report._id}`)
+                            ? router.push(`/action-plan/${userId}?planId=${report.actionPlanId}`)
                             : handleGeneratePlan(report._id)
                         }
                       >

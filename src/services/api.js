@@ -89,10 +89,24 @@ export const userAPI = {
 export const actionPlanAPI = {
   create: (reportId) => API.post("/api/action-plans", { reportId }),
   get: (planId) => API.get(`/api/action-plans/${planId}`),
+  getLatest: () => API.get("/api/action-plans/latest"),
   retry: (planId) => API.post(`/api/action-plans/${planId}/retry`),
   exportPDF: (planId) => API.get(`/api/action-plans/${planId}/pdf`, {
     responseType: "blob",
   }),
+};
+
+// Goals endpoints
+export const goalsAPI = {
+  list: () => API.get("/api/goals"),
+  get: (goalId) => API.get(`/api/goals/${goalId}`),
+};
+
+// Biomarker endpoints (individual biomarker data)
+export const biomarkerAPI = {
+  timeline: (canonicalName) => API.get(`/api/users/blood-reports/timeline/${encodeURIComponent(canonicalName)}`),
+  panel: () => API.get("/api/users/blood-reports/biomarker-panel"),
+  list: () => API.get("/api/users/blood-reports/biomarkers"),
 };
 
 // Meal endpoints (all user-scoped; backend routes under /api/users/:userId/meals)

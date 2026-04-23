@@ -29,9 +29,16 @@ export default function BloodReportAnalysis() {
         setLoading(true);
         const response = await userAPI.getBloodReport(reportId);
         setReport(response.data);
-        // New AI structure stores actionPlan directly in response
-        const aiData = response.data?.actionPlan || response.data?.aiAnalysis;
-        setAnalysis(aiData);
+        const reportData = response.data;
+        if (reportData?.scores || reportData?.biomarkerPanel?.length > 0) {
+          setAnalysis({
+            biological_age: reportData.scores?.bioAge?.bioAge,
+            biomarkers: reportData.biomarkerPanel || [],
+            report_id: reportData._id,
+            created_at: reportData.createdAt,
+            scores: reportData.scores,
+          });
+        }
       } catch (err) {
         setError(err.message || "Failed to load analysis");
       } finally {
