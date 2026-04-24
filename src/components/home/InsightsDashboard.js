@@ -7,7 +7,7 @@ import BiomarkersList from "@/components/BiomarkersList";
 import ActionButtons from "./ActionButtons";
 import LiveBetterSection from "./LiveBetterSection";
 
-export default function InsightsDashboard({ userName, data, actionPlanHref }) {
+export default function InsightsDashboard({ userName, data, scores, reportDate, actionPlanHref }) {
   return (
     <div className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10">
       <div className="mx-auto w-full max-w-[1240px] px-4 pt-6 lg:px-8 lg:pt-10">
@@ -49,14 +49,14 @@ export default function InsightsDashboard({ userName, data, actionPlanHref }) {
 
             <div className="mx-auto mt-2 grid max-w-[440px] grid-cols-2 gap-4 text-center lg:mx-0 lg:mt-0 lg:max-w-none">
               <div>
-                <p className="text-3xl font-semibold text-black lg:text-4xl">72</p>
+                <p className="text-3xl font-semibold text-black lg:text-4xl">{scores?.cyborgScore?.final ?? scores?.cyborgScore ?? "—"}</p>
                 <p className="text-sm text-secondary lg:text-base">superpower score</p>
               </div>
               <Link
                 href="/dashboard/biological-age"
                 className="rounded-xl border border-borderColor bg-white px-3 py-2 transition hover:shadow-md"
               >
-                <p className="text-3xl font-semibold text-black lg:text-4xl">42.4</p>
+                <p className="text-3xl font-semibold text-black lg:text-4xl">{scores?.bioAge?.bioAge ?? scores?.bioAge ?? "—"}</p>
                 <p className="text-sm text-secondary lg:text-base">biological age</p>
               </Link>
             </div>
@@ -67,7 +67,7 @@ export default function InsightsDashboard({ userName, data, actionPlanHref }) {
             >
               <div>
                 <p className="text-sm font-semibold text-black lg:text-base">Review your action plan ›</p>
-                <p className="mt-0.5 text-xs text-secondary lg:text-sm">Updated Jan 6</p>
+                <p className="mt-0.5 text-xs text-secondary lg:text-sm">{reportDate ? `Updated ${new Date(reportDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : ""}</p>
               </div>
               <div className="relative h-[80px] w-[120px] flex-shrink-0 lg:h-[90px] lg:w-[135px]">
                 <Image

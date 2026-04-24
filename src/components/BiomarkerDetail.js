@@ -10,9 +10,11 @@ function InsightCard({ title, body, cta }) {
           <p className="text-xs text-secondary mt-2 leading-relaxed">{body}</p>
         </div>
       </div>
-      <button className="text-xs text-secondary mt-3 flex items-center gap-2 px-10">
-        {cta} <span>→</span>
-      </button>
+      {cta && (
+        <button className="text-xs text-secondary mt-3 flex items-center gap-2 px-10">
+          {cta} <span>→</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -28,27 +30,25 @@ function AskItem({ text }) {
 }
 
 export default function BiomarkerDetail({ biomarker, onClose }) {
+  const bioName = biomarker?.name || "Unknown Biomarker";
   const detail = {
-    name: biomarker?.name || "Lipoprotein (a)",
-    value: biomarker?.value || "177.4",
-    unit: biomarker?.unit || "nmol/L",
-    status: biomarker?.status || "out_of_range",
-    optimalRange: biomarker?.optimalRange || { min: 0, max: 60 },
-    timeline: biomarker?.timeline || { start: "Jul 2025", end: "Jan 2026" },
+    name: bioName,
+    value: biomarker?.value || "—",
+    unit: biomarker?.unit || "",
+    status: biomarker?.status || "normal",
+    optimalRange: biomarker?.optimalRange || { min: null, max: null },
+    timeline: biomarker?.timeline || null,
     insight: biomarker?.insight || {
-      title: "Key Insight - Familial Risk",
-      body:
-        "Your Lp(a) level is largely inherited. High values can increase lifetime heart risk even with healthy habits. Because it runs in families, your results may help relatives understand their own risk too",
-      cta: "Share this with your family",
+      title: `About ${bioName}`,
+      body: `Tap "Ask Cyborg AI" below to learn more about your ${bioName} levels and what they mean for your health.`,
+      cta: null,
     },
     questions: biomarker?.questions || [
-      "What does an elevated Lipoprotein (a) level mean for my heart disease risk profile?",
-      "How can I naturally lower my Lipoprotein (a) through lifestyle or nutrition changes?",
-      "Should I consider additional testing or specialized panels to better understand my cardiovascular risk related to Lipoprotein (a)",
+      `What does my ${bioName} level mean for my health?`,
+      `How can I improve my ${bioName} through lifestyle changes?`,
+      `Should I get additional testing related to ${bioName}?`,
     ],
-    description:
-      biomarker?.description ||
-      "Lipoprotein (a) or Lp(a) is a macromolecular complex composed of one molecule of Low-Density Lipoprotein (LDL) containing apolipoprotein B100 and one molecule of apolipoprotein(a). Lp(a) is synthesized by the liver and its assembly occurs at the hepatocyte cell membrane surface. Lp(a) has structural and functional similarities to both LDL and plasminogen, and may play a role in cholesterol transport, atherosclerosis, thrombosis, and inflammation.",
+    description: biomarker?.description || null,
   };
   return (
     <div className="fixed inset-0 bg-black/40 flex items-end z-50">
@@ -101,18 +101,22 @@ export default function BiomarkerDetail({ biomarker, onClose }) {
               </div>
 
               {/* Optimal Range Box */}
-              <div className="mt-3">
-                <div className="relative rounded-md border border-dashed border-biomarkerOptimal/60 bg-biomarkerOptimal/10 px-3 py-3">
-                  <span className="text-xs text-secondary">{detail.optimalRange.max}</span>
+              {detail.optimalRange.min != null && detail.optimalRange.max != null && (
+                <div className="mt-3">
+                  <div className="relative rounded-md border border-dashed border-biomarkerOptimal/60 bg-biomarkerOptimal/10 px-3 py-3">
+                    <span className="text-xs text-secondary">{detail.optimalRange.max}</span>
+                  </div>
+                  <span className="text-xs text-secondary">{detail.optimalRange.min}</span>
                 </div>
-                <span className="text-xs text-secondary">{detail.optimalRange.min}</span>
-              </div>
+              )}
 
               <div className="border-t border-borderColor mt-4" />
-              <div className="flex justify-center gap-16 text-xs text-secondary mt-2">
-                <span>{detail.timeline.start}</span>
-                <span>{detail.timeline.end}</span>
-              </div>
+              {detail.timeline && (
+                <div className="flex justify-center gap-16 text-xs text-secondary mt-2">
+                  <span>{detail.timeline.start}</span>
+                  <span>{detail.timeline.end}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -127,7 +131,12 @@ export default function BiomarkerDetail({ biomarker, onClose }) {
           </div>
           <div className="border border-borderColor rounded-lg p-3">
             <p className="text-xs text-secondary">Optimal range</p>
-            <p className="text-lg font-semibold text-biomarkerOptimal">{detail.optimalRange.min} - {detail.optimalRange.max} <span className="text-xs text-secondary">{detail.unit}</span></p>
+            <p className="text-lg font-semibold text-biomarkerOptimal">
+              {detail.optimalRange.min != null && detail.optimalRange.max != null && (detail.optimalRange.min !== 0 || detail.optimalRange.max !== 0)
+                ? <>{detail.optimalRange.min} - {detail.optimalRange.max} <span className="text-xs text-secondary">{detail.unit}</span></>
+                : <span className="text-secondary text-sm">Not established</span>
+              }
+            </p>
           </div>
         </div>
 
@@ -146,13 +155,14 @@ export default function BiomarkerDetail({ biomarker, onClose }) {
           </div>
         </div>
 
-        {/* What is Lipoprotein */}
-        <div className="px-6 pt-6">
-          <h3 className="text-lg font-semibold text-gray-900">What is {detail.name}</h3>
-          <p className="text-xs text-gray-600 mt-2 leading-relaxed">
-            {detail.description}
-          </p>
-        </div>
+        {detail.description && (
+          <div className="px-6 pt-6">
+            <h3 className="text-lg font-semibold text-gray-900">What is {detail.name}</h3>
+            <p className="text-xs text-gray-600 mt-2 leading-relaxed">
+              {detail.description}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
