@@ -89,11 +89,9 @@ function Sparkline({ values, color = "#F59E0B" }) {
 // ─── Patient Card ───
 function PatientCard({ patient, index = 0, onClick }) {
   const status = patient.status || "Normal";
-  const bioAge = patient.scores?.bioAge;
+  const bioAge = patient.bioAge || patient.scores?.bioAge;
   const chronoAge = patient.age;
-  const apob = patient.biomarkerPanel?.find(
-    (b) => b.canonicalName === "ApoB" || b.displayName?.includes("ApoB")
-  );
+  const apobValue = patient.apobValue;
 
   const bioAgeDiff = bioAge && chronoAge ? chronoAge - bioAge : null;
   const bioAgeBarValue = bioAge ? Math.min(100, Math.max(0, (bioAge / 80) * 100)) : 50;
@@ -170,9 +168,9 @@ function PatientCard({ patient, index = 0, onClick }) {
             <p className="text-[#717178] text-[10px] font-normal">Lowest % for Age Range</p>
           </div>
           <div className="flex items-center gap-2">
-            <Sparkline values={apob ? [60, 55, 58, 52, apob.numericValue || 55] : [60, 55, 58, 52, 55]} />
+            <Sparkline values={apobValue ? [60, 55, 58, 52, apobValue] : [60, 55, 58, 52, 55]} />
             <span className="text-lg font-normal text-white">
-              {apob?.numericValue != null ? Math.round(apob.numericValue) : "—"}
+              {apobValue != null ? Math.round(apobValue) : "—"}
             </span>
             <span className="w-2 h-2 rounded-full bg-[#f865dd]" />
           </div>
