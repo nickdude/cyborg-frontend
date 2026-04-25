@@ -107,6 +107,7 @@ export const biomarkerAPI = {
   timeline: (canonicalName) => API.get(`/api/users/blood-reports/timeline/${encodeURIComponent(canonicalName)}`),
   panel: () => API.get("/api/users/blood-reports/biomarker-panel"),
   list: () => API.get("/api/users/blood-reports/biomarkers"),
+  trends: () => API.get("/api/users/blood-reports/trends"),
 };
 
 // Meal endpoints (all user-scoped; backend routes under /api/users/:userId/meals)
@@ -135,6 +136,7 @@ export const mealAPI = {
 export const notificationAPI = {
   list: () => API.get("/api/notifications"),
   markRead: (notificationId) => API.patch(`/api/notifications/${notificationId}/read`),
+  markAllRead: () => API.patch("/api/notifications/read-all"),
 };
 
 // Payment endpoints
@@ -162,7 +164,13 @@ export const conciergeAPI = {
 };
 
 export const doctorAPI = {
-  ask: (query, userId) => API.post("/api/doctor/ask", { query, userId }),
+  listChats: (patientId) =>
+    API.get(`/api/doctor/chats${patientId ? `?patientId=${patientId}` : ""}`),
+  createChat: (patientId) => API.post("/api/doctor/chats", { patientId }),
+  getChat: (chatId) => API.get(`/api/doctor/chats/${chatId}`),
+  updateTitle: (chatId, title) =>
+    API.patch(`/api/doctor/chats/${chatId}`, { title }),
+  deleteChat: (chatId) => API.delete(`/api/doctor/chats/${chatId}`),
 };
 
 export default API;

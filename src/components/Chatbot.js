@@ -1,23 +1,27 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader, FileText } from "lucide-react";
 import { doctorAPI } from "@/services/api";
+import { streamDoctorMessage } from "@/services/sse";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Chatbot({ patientId, patientName }) {
   const { user } = useAuth();
+  const [chatId, setChatId] = useState(null);
   const [messages, setMessages] = useState([
     {
-      id: 1,
+      id: "welcome",
       text: `Hello! I'm your AI medical assistant. I can help you with insights about ${patientName}'s health profile, biomarkers, treatment protocols, and clinical recommendations. What would you like to know?`,
-      sender: "ai",
+      role: "assistant",
       timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
   const messagesEndRef = useRef(null);
+  const initRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,48 +29,127 @@ export default function Chatbot({ patientId, patientName }) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, streamingText]);
 
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
+  useEffect(() => {
+    if (!patientId || initRef.current) return;
+    initRef.current = true;
 
-    // Add doctor's message
-    const doctorMessage = {
-      id: messages.length + 1,
-      text: input,
-      sender: "doctor",
+    (async () => {
+      try {
+        const listRes = await doctorAPI.listChats(patientId);
+        const existing = listRes.data;
+        if (existing && existing.length > 0) {
+          const chat = existing[0];
+          setChatId(chat._id);
+          if (chat.messages && chat.messages.length > 0) {
+            const restored = chat.messages.map((m, i) => ({
+              id: `restored-${i}`,
+              text: m.content,
+              role: m.role,
+              timestamp: new Date(m.createdAt || Date.now()),
+            }));
+            setMessages((prev) => [...prev, ...restored]);
+          }
+          return;
+        }
+
+        const createRes = await doctorAPI.createChat(patientId);
+        setChatId(createRes.data._id);
+      } catch (err) {
+        console.error("[DoctorChat] Init failed:", err);
+      }
+    })();
+  }, [patientId]);
+
+  const handleSendMessage = useCallback(async () => {
+    if (!input.trim() || loading) return;
+
+    const text = input.trim();
+    setInput("");
+
+    const userMsg = {
+      id: `user-${Date.now()}`,
+      text,
+      role: "user",
       timestamp: new Date(),
     };
-
-    setMessages((prev) => [...prev, doctorMessage]);
-    setInput("");
+    setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
+    setStreamingText("");
 
-    try {
-      // Call doctor AI API
-      const response = await doctorAPI.ask(input, user?._id || "");
+    let activeChatId = chatId;
+    if (!activeChatId) {
+      try {
+        const createRes = await doctorAPI.createChat(patientId);
+        activeChatId = createRes.data._id;
+        setChatId(activeChatId);
+      } catch (err) {
+        console.error("[DoctorChat] Create chat failed:", err);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            text: "Failed to create chat session. Please try again.",
+            role: "assistant",
+            timestamp: new Date(),
+          },
+        ]);
+        setLoading(false);
+        return;
+      }
+    }
 
-      const aiMessage = {
-        id: messages.length + 2,
-        text: response.data.answer || response.data.message || "I received your question.",
-        sender: "ai",
-        timestamp: new Date(),
-        citations: response.data.citations || null,
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error("Chat error:", error);
-      const errorMessage = {
-        id: messages.length + 2,
-        text: "Sorry, I encountered an error processing your request. Please try again.",
-        sender: "ai",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
+    let accumulated = "";
+
+    await streamDoctorMessage(activeChatId, text, (event) => {
+      if (event.type === "text" || event.type === "content_block_delta") {
+        const chunk = event.text || event.delta?.text || "";
+        accumulated += chunk;
+        setStreamingText(accumulated);
+      } else if (event.type === "done" || event.type === "message_stop") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-${Date.now()}`,
+            text: accumulated || "I processed your request.",
+            role: "assistant",
+            timestamp: new Date(),
+          },
+        ]);
+        setStreamingText("");
+        setLoading(false);
+      } else if (event.type === "error") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            text: event.message || "Something went wrong. Please try again.",
+            role: "assistant",
+            timestamp: new Date(),
+          },
+        ]);
+        setStreamingText("");
+        setLoading(false);
+      }
+    });
+
+    if (loading) {
+      if (accumulated) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `ai-${Date.now()}`,
+            text: accumulated,
+            role: "assistant",
+            timestamp: new Date(),
+          },
+        ]);
+      }
+      setStreamingText("");
       setLoading(false);
     }
-  };
+  }, [input, loading, chatId, patientId]);
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -84,20 +167,22 @@ export default function Chatbot({ patientId, patientName }) {
         </div>
         <div>
           <h3 className="text-sm font-bold text-black">AI Assistant</h3>
-          <p className="text-xs text-gray-500">Patient insights & guidance</p>
+          <p className="text-xs text-gray-500">
+            {patientName ? `Insights for ${patientName}` : "Patient insights & guidance"}
+          </p>
         </div>
       </div>
 
-      {/* Messages Container */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((msg) => (
           <div key={msg.id} className="space-y-2">
             <div
-              className={`flex ${msg.sender === "doctor" ? "justify-end" : "justify-start"}`}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`max-w-[85%] rounded-lg px-4 py-3 ${
-                  msg.sender === "doctor"
+                  msg.role === "user"
                     ? "bg-primary text-white rounded-br-none"
                     : "bg-white border border-borderColor text-black rounded-bl-none shadow-sm"
                 }`}
@@ -105,9 +190,7 @@ export default function Chatbot({ patientId, patientName }) {
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                 <p
                   className={`text-xs mt-1 ${
-                    msg.sender === "doctor"
-                      ? "text-primary/70"
-                      : "text-gray-500"
+                    msg.role === "user" ? "text-white/60" : "text-gray-400"
                   }`}
                 >
                   {msg.timestamp.toLocaleTimeString([], {
@@ -117,45 +200,18 @@ export default function Chatbot({ patientId, patientName }) {
                 </p>
               </div>
             </div>
-
-            {/* Citations */}
-            {msg.citations && msg.citations.length > 0 && (
-              <div className="ml-4 space-y-2">
-                <div className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                  <FileText className="w-3 h-3" />
-                  Clinical References:
-                </div>
-                {msg.citations.map((citation, index) => (
-                  <div
-                    key={citation.chunk_id || index}
-                    className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      {citation.url && (
-                        <div className="font-medium text-blue-700 truncate flex-1">
-                          {citation.url.split("/").pop()}
-                        </div>
-                      )}
-                      {citation.page && (
-                        <div className="text-gray-600 shrink-0 text-[10px] bg-white px-2 py-0.5 rounded">
-                          Page {citation.page}
-                        </div>
-                      )}
-                    </div>
-                    {citation.section && (
-                      <div className="text-blue-800 font-medium mb-1">{citation.section}</div>
-                    )}
-                    {citation.text && (
-                      <div className="text-gray-700 leading-relaxed">{citation.text}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         ))}
 
-        {loading && (
+        {streamingText && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] bg-white border border-borderColor rounded-lg rounded-bl-none px-4 py-3 shadow-sm">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{streamingText}</p>
+            </div>
+          </div>
+        )}
+
+        {loading && !streamingText && (
           <div className="flex justify-start">
             <div className="bg-white border border-borderColor rounded-lg rounded-bl-none px-4 py-3 shadow-sm">
               <div className="flex items-center gap-2">
@@ -169,14 +225,14 @@ export default function Chatbot({ patientId, patientName }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
+      {/* Input */}
       <div className="border-t border-borderColor p-4 bg-white">
         <div className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             placeholder="Ask about biomarkers, risks..."
             disabled={loading}
             className="flex-1 px-4 py-2 border border-borderColor rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-gray-100 disabled:text-gray-500"

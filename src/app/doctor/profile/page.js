@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import Cookie from "js-cookie";
 import { useAuth } from "@/contexts/AuthContext";
 import HeaderActions from "@/components/HeaderActions";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, QrCode } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
@@ -30,6 +31,7 @@ export default function DoctorProfilePage() {
 
   const [referralCode, setReferralCode] = useState("");
   const [copied, setCopied] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -245,9 +247,36 @@ export default function DoctorProfilePage() {
                 >
                   {copied ? "Copied!" : "Copy"}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowQR(!showQR)}
+                  className="px-4 py-3 rounded-lg border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/10 transition-all whitespace-nowrap"
+                >
+                  <QrCode className="h-5 w-5" />
+                </button>
               </div>
+
+              {showQR && (
+                <div className="mt-4 flex flex-col items-center gap-3 p-4 rounded-lg bg-white border border-primary/20">
+                  <QRCodeSVG
+                    value={`http://localhost:3000/register?ref=${referralCode}`}
+                    size={200}
+                    bgColor="#ffffff"
+                    fgColor="#6D28D9"
+                    level="M"
+                    includeMargin
+                  />
+                  <p className="text-xs text-gray-500 text-center">
+                    Scan to register as your patient
+                  </p>
+                  <p className="text-xs text-gray-400 break-all text-center">
+                    http://localhost:3000/register?ref={referralCode}
+                  </p>
+                </div>
+              )}
+
               <p className="mt-2 text-xs text-gray-500">
-                Patients can register at <span className="font-medium text-gray-700">yourdomain.com/register?ref={referralCode}</span> or enter this code manually during sign-up.
+                Patients can register at <span className="font-medium text-gray-700">localhost:3000/register?ref={referralCode}</span> or enter this code manually during sign-up.
               </p>
             </div>
           )}

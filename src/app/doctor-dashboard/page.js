@@ -1,27 +1,251 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { Users, TrendingUp, AlertCircle, Phone, Mail, Calendar, Search } from "lucide-react";
-import HeaderActions from "@/components/HeaderActions";
 import Cookie from "js-cookie";
+import HeaderActions from "@/components/HeaderActions";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  ArrowDownRight,
+  ArrowUpRight,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+
+// ─── Status badge colors ───
+const STATUS_STYLES = {
+  "Need Attention": "bg-[#FF6B35] text-white",
+  "Review Pending": "bg-[#FF6B35] text-white",
+  Normal: "bg-[#22C55E] text-white",
+};
+
+// ─── Placeholder appointments (no backend yet) ───
+const MOCK_APPOINTMENTS = [
+  { date: "Mar 22", title: "1-1 Advisory call with Sahil", time: "11:00 am" },
+  { date: "Mar 22", title: "Appointment scheduled with Sushrut", time: "12:00 pm" },
+  { date: "Mar 22", title: "Appointment with Ateeb", time: "01:00 pm" },
+];
+
+// ─── Biological Age Bar ───
+function BioAgeBar({ value }) {
+  const segments = 16;
+  return (
+    <div className="flex items-center gap-[2px]">
+      {Array.from({ length: segments }).map((_, i) => {
+        const ratio = i / segments;
+        let color;
+        if (ratio < 0.3) color = "bg-green-500";
+        else if (ratio < 0.5) color = "bg-yellow-400";
+        else if (ratio < 0.7) color = "bg-orange-400";
+        else color = "bg-pink-500";
+        const filled = i < Math.round((value / 100) * segments);
+        return (
+          <div
+            key={i}
+            className={`w-[6px] h-4 rounded-[1px] ${filled ? color : "bg-white/10"}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── ApoB Sparkline ───
+function Sparkline({ values, color = "#F59E0B" }) {
+  if (!values || values.length < 2) {
+    return <div className="w-20 h-8 bg-white/5 rounded" />;
+  }
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const w = 80;
+  const h = 32;
+  const points = values
+    .map((v, i) => {
+      const x = (i / (values.length - 1)) * w;
+      const y = h - ((v - min) / range) * h;
+      return `${x},${y}`;
+    })
+    .join(" ");
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// ─── Patient Card ───
+function PatientCard({ patient, onClick }) {
+  const status = patient.status || "Normal";
+  const bioAge = patient.scores?.bioAge;
+  const chronoAge = patient.age;
+  const apob = patient.biomarkerPanel?.find(
+    (b) => b.canonicalName === "ApoB" || b.displayName?.includes("ApoB")
+  );
+
+  const bioAgeDiff = bioAge && chronoAge ? chronoAge - bioAge : null;
+  const bioAgeBarValue = bioAge ? Math.min(100, Math.max(0, (bioAge / 80) * 100)) : 50;
+
+  return (
+    <div
+      onClick={onClick}
+      className="rounded-2xl overflow-hidden bg-[#1A1A2E] cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200"
+    >
+      {/* Avatar area */}
+      <div className="relative h-44 bg-gradient-to-b from-[#2D1B69] to-[#1A1A2E] flex items-end justify-center overflow-hidden">
+        <div className="w-28 h-28 rounded-full bg-white/10 flex items-center justify-center mb-2">
+          <span className="text-4xl font-bold text-white/40">
+            {(patient.firstName?.[0] || "?").toUpperCase()}
+          </span>
+        </div>
+        {/* Status badge */}
+        <span
+          className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold ${
+            STATUS_STYLES[status] || STATUS_STYLES["Normal"]
+          }`}
+        >
+          {status}
+        </span>
+      </div>
+
+      {/* Info area */}
+      <div className="px-4 pb-4 -mt-2">
+        <h3 className="text-white text-xl font-bold">
+          {patient.firstName || "Unknown"} {patient.lastName || ""}
+        </h3>
+        <span className="inline-block mt-1 px-2 py-0.5 rounded bg-white/10 text-white/80 text-xs font-medium">
+          Age: {chronoAge || "N/A"}
+        </span>
+
+        {/* Biological Age */}
+        <div className="mt-4 flex items-center justify-between">
+          <div>
+            <p className="text-white/50 text-xs font-medium">Biological Age</p>
+            <p className="text-white/30 text-[10px]">
+              {bioAgeDiff != null
+                ? `≈ ${Math.abs(bioAgeDiff)} calendar years`
+                : "Not available"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <BioAgeBar value={bioAgeBarValue} />
+            <span className="text-white text-xl font-bold">
+              {bioAge != null ? Math.round(bioAge) : "—"}
+            </span>
+            {bioAgeDiff != null && (
+              <span className={bioAgeDiff > 0 ? "text-red-400" : "text-green-400"}>
+                {bioAgeDiff > 0 ? (
+                  <ArrowDownRight className="w-4 h-4" />
+                ) : (
+                  <ArrowUpRight className="w-4 h-4" />
+                )}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* ApoB */}
+        <div className="mt-3 flex items-center justify-between">
+          <div>
+            <p className="text-white/50 text-xs font-medium">ApoB</p>
+            <p className="text-white/30 text-[10px]">Lowest % for Age Range</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Sparkline values={apob ? [60, 55, 58, 52, apob.numericValue || 55] : [60, 55, 58, 52, 55]} />
+            <span className="text-white text-xl font-bold">
+              {apob?.numericValue != null ? Math.round(apob.numericValue) : "—"}
+            </span>
+            <span className="w-2 h-2 rounded-full bg-orange-400" />
+          </div>
+        </div>
+
+        {/* Watermark */}
+        <p className="text-white/15 text-[10px] mt-3">cyborg.com</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Calendar Strip ───
+function CalendarStrip() {
+  const today = new Date();
+  const days = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    days.push(d);
+  }
+
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  return (
+    <div className="bg-[#1A1A2E] rounded-2xl p-4 shadow-sm">
+      <div className="mb-3">
+        <h3 className="text-sm font-semibold text-white">Upcoming</h3>
+        <p className="text-xs text-white/50">in the next 2 weeks</p>
+      </div>
+      <div className="grid grid-cols-7 gap-1.5">
+        {days.map((d, i) => {
+          const isToday = i === 0;
+          return (
+            <button
+              key={i}
+              className={`w-9 h-9 rounded-full text-xs font-semibold flex items-center justify-center transition-colors mx-auto ${
+                isToday
+                  ? "bg-primary text-white ring-2 ring-primary/30"
+                  : d.getDay() === 0 || d.getDay() === 6
+                  ? "bg-orange-500/20 text-orange-400"
+                  : "bg-white/10 text-white/70 hover:bg-white/20"
+              }`}
+            >
+              {d.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Appointment Item ───
+function AppointmentItem({ date, title, time }) {
+  return (
+    <div className="flex items-start gap-4 py-3 border-b border-gray-100 last:border-0">
+      <div className="flex-shrink-0 text-center">
+        <p className="text-[10px] text-gray-400 uppercase">{date.split(" ")[0]}</p>
+        <p className="text-xl font-bold text-gray-900">{date.split(" ")[1]}</p>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-900 truncate">{title}</p>
+        <p className="text-xs text-gray-400">{time}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Dashboard ───
 export default function DoctorDashboard() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [patients, setPatients] = useState([]);
-  const [filteredPatients, setFilteredPatients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("All patients");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [patientsPerPage] = useState(10);
-  const [stats, setStats] = useState({
-    totalPatients: 0,
-    newThisWeek: 0,
-    activeAlerts: 0,
-  });
+
+  const TABS = ["All patients", "Need Attention", "Review Pending"];
 
   useEffect(() => {
     if (user && user.userType !== "doctor") {
@@ -34,57 +258,18 @@ export default function DoctorDashboard() {
       try {
         setLoading(true);
         const token = Cookie.get("authToken");
-        
-        if (!token) {
-          console.error("No token found");
-          return;
-        }
-        
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-        const url = `${apiUrl}/api/users`;
-        
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+        if (!token) return;
+
+        const res = await fetch(`${apiUrl}/api/doctor/patients`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("❌ API Error:", errorData);
-          throw new Error(`Failed to fetch patients: ${response.status} ${response.statusText}`);
+        const data = await res.json();
+        if (data.success) {
+          setPatients(data.data || []);
         }
-
-        const data = await response.json();
-        const patientsData = data.data || []; // Log first patient to see structure
-        
-        // Add status field if not present
-        const formattedPatients = patientsData.map((patient) => ({
-          ...patient,
-          status: patient.status || "active",
-          age: patient.age || null,
-          registrationDate: patient.registrationDate || new Date().toISOString().split('T')[0],
-        }));
-
-        setPatients(formattedPatients);
-        setFilteredPatients(formattedPatients);
-
-        // Calculate stats
-        const activePatients = formattedPatients.filter(p => p.status === "active").length;
-        const newThisWeek = Math.floor(formattedPatients.length * 0.47);
-        const activeAlerts = Math.floor(formattedPatients.length * 0.12);
-
-        setStats({
-          totalPatients: formattedPatients.length,
-          newThisWeek: newThisWeek,
-          activeAlerts: activeAlerts,
-        });
-      } catch (error) {
-        console.error("Error fetching patients:", error);
-        setPatients([]);
-        setFilteredPatients([]);
+      } catch (err) {
+        console.error("Failed to fetch patients:", err);
       } finally {
         setLoading(false);
       }
@@ -93,293 +278,119 @@ export default function DoctorDashboard() {
     fetchPatients();
   }, []);
 
-  useEffect(() => {
-    let filtered = patients;
+  const filteredPatients = useMemo(() => {
+    let list = patients;
 
-    if (filterStatus !== "all") {
-      filtered = filtered.filter((p) => p.status === filterStatus);
+    if (activeTab !== "All patients") {
+      list = list.filter((p) => p.status === activeTab);
     }
 
     if (searchQuery) {
-      filtered = filtered.filter(
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
         (p) =>
-          (p.firstName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.lastName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.phone || "").includes(searchQuery)
+          (p.firstName || "").toLowerCase().includes(q) ||
+          (p.lastName || "").toLowerCase().includes(q) ||
+          (p.email || "").toLowerCase().includes(q)
       );
     }
 
-    setFilteredPatients(filtered);
-    setCurrentPage(1);
-  }, [searchQuery, filterStatus, patients]);
-
-  const indexOfLastPatient = currentPage * patientsPerPage;
-  const indexOfFirstPatient = indexOfLastPatient - patientsPerPage;
-  const currentPatients = filteredPatients.slice(indexOfFirstPatient, indexOfLastPatient);
-  const totalPages = Math.ceil(filteredPatients.length / patientsPerPage);
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
-  const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
-
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
-  };
+    return list;
+  }, [patients, activeTab, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-white font-inter">
+    <div className="min-h-screen bg-[#F2F2F2] font-inter">
       {/* Header */}
-      <header className="border-b border-borderColor bg-white sticky top-0 z-50 shadow-sm">
-        <div className="max-w-[1400px] mx-auto flex h-16 items-center px-8">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white shadow-lg">
-              <span className="text-lg font-bold">YB</span>
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold text-black">Yi Bios</h1>
-              <p className="text-xs text-gray-500">Healthcare Platform</p>
-            </div>
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">
+              Dr. {user?.firstName || "Doctor"}
+            </h1>
+            <p className="text-xs text-gray-400">Cyborg Longevity Physician</p>
           </div>
-
-          {/* Right section */}
-          <div className="ml-auto">
-            <HeaderActions />
-          </div>
+          <HeaderActions />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-[1400px] mx-auto px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold tracking-tight text-black mb-1">
-            Welcome back, Dr. {user?.firstName || "Doctor"}!
-          </h2>
-          <p className="text-gray-500">
-            Here&apos;s what&apos;s happening with your patients today.
-          </p>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
+        {/* Desktop: two columns. Mobile: single column */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Column — Calendar + Appointments */}
+          <div className="lg:w-[340px] lg:flex-shrink-0 space-y-4">
+            <CalendarStrip />
 
-        {/* Stats Grid */}
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
-          {/* Total Patients Card */}
-          <div className="rounded-xl border border-borderColor bg-white p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:border-primary/50 transform hover:-translate-y-1">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-600">Total Patients</h3>
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="h-5 w-5 text-primary" />
+            {/* Appointments */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
+              <div className="px-0">
+                {MOCK_APPOINTMENTS.map((apt, i) => (
+                  <AppointmentItem key={i} {...apt} />
+                ))}
               </div>
             </div>
-            <div className="text-3xl font-bold text-black mb-1">{stats.totalPatients}</div>
-            <p className="text-xs text-gray-500">Active patient records</p>
           </div>
 
-          {/* New This Week Card */}
-          <div className="rounded-xl border border-borderColor bg-white p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:border-primary/50 transform hover:-translate-y-1">
+          {/* Right Column — Patients */}
+          <div className="flex-1">
+            {/* Patients header */}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-600">New This Week</h3>
-              <div className="p-2 rounded-lg bg-primary/10">
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </div>
+              <h2 className="text-xl font-bold text-gray-900">Patients</h2>
             </div>
-            <div className="text-3xl font-bold text-black mb-1">{stats.newThisWeek}</div>
-            <p className="text-xs text-gray-500">+20% from last week</p>
-          </div>
 
-          {/* Active Alerts Card */}
-          <div className="rounded-xl border border-borderColor bg-white p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:border-primary/50 transform hover:-translate-y-1">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-600">Active Alerts</h3>
-              <div className="p-2 rounded-lg bg-primary/10">
-                <AlertCircle className="h-5 w-5 text-primary" />
-              </div>
+            {/* Tab filters */}
+            <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide">
+              {TABS.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    activeTab === tab
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
-            <div className="text-3xl font-bold text-black mb-1">{stats.activeAlerts}</div>
-            <p className="text-xs text-gray-500">Require attention</p>
-          </div>
-        </div>
 
-        {/* Patients List Section */}
-        <div className="rounded-xl border border-borderColor bg-white shadow-sm">
-          <div className="p-6 border-b border-borderColor">
-            <h3 className="text-lg font-semibold text-black mb-1">Patients List</h3>
-            <p className="text-sm text-gray-500">Manage your patient information and records.</p>
-          </div>
-
-          <div className="p-6">
-            {/* Search and Filter */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            {/* Search (desktop) */}
+            <div className="hidden lg:block mb-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by name, phone, or email..."
+                  placeholder="Search patients..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-borderColor rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm text-black placeholder-gray-400 transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
-              <div className="relative w-full sm:w-[180px]">
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full appearance-none px-4 py-2.5 pr-10 border border-borderColor rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm text-black bg-white transition-all duration-200"
-                >
-                  <option value="all">All Patients</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
+            </div>
+
+            {/* Patient Cards Grid */}
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
-            </div>
-
-            {/* Results Info */}
-            <div className="rounded-lg bg-gray-50 border border-borderColor p-3 mb-4">
-              <p className="text-sm text-gray-600">
-                Showing <span className="font-medium text-black">{filteredPatients.length}</span> of{" "}
-                <span className="font-medium text-black">{patients.length}</span> patients
-              </p>
-            </div>
-
-            {/* Table - Desktop */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-borderColor">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Patient</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Phone</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Registration Date</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Email</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr>
-                      <td colSpan="5" className="text-center py-8">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                          <span className="text-sm text-gray-500">Loading patients...</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : filteredPatients.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="text-center py-8">
-                        <p className="text-sm text-gray-500">No patients found.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    currentPatients.map((patient) => (
-                      <tr
-                        key={patient._id}
-                        className="border-b border-borderColor hover:bg-tertiary/30 cursor-pointer transition-all duration-200"
-                        onClick={() => router.push(`/doctor/patients/${patient._id}`)}
-                      >
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm border border-primary/20">
-                              {(patient.firstName?.[0] || "?")}{(patient.lastName?.[0] || "?")}
-                            </div>
-                            <div>
-                              <div className="font-medium text-black text-sm">
-                                {patient.firstName || "Unknown"} {patient.lastName || ""}
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {patient.age ? `${patient.age} years old` : 'Age N/A'}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2 text-sm text-gray-700">
-                            <Phone className="h-3.5 w-3.5 text-gray-400" />
-                            <span>{patient.phone}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2 text-sm text-gray-700">
-                            <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                            <span>
-                              {new Date(patient.registrationDate).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2 text-sm text-gray-700">
-                            <Mail className="h-3.5 w-3.5 text-gray-400" />
-                            <span>{patient.email}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            patient.status === "active" 
-                              ? "bg-primary text-white shadow-sm" 
-                              : "bg-gray-200 text-gray-700"
-                          }`}>
-                            {patient.status === "active" ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-borderColor pt-4 mt-6">
-                <div className="text-sm text-gray-600">
-                  Showing <span className="font-medium text-black">{indexOfFirstPatient + 1}</span> to{" "}
-                  <span className="font-medium text-black">{Math.min(indexOfLastPatient, filteredPatients.length)}</span> of{" "}
-                  <span className="font-medium text-black">{filteredPatients.length}</span> results
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={prevPage}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-borderColor rounded-lg hover:bg-tertiary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                  >
-                    Previous
-                  </button>
-                  
-                  <div className="flex gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => paginate(page)}
-                        className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
-                          currentPage === page
-                            ? "bg-primary text-white shadow-sm"
-                            : "text-gray-700 bg-white border border-borderColor hover:bg-tertiary/30"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  <button
-                    onClick={nextPage}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-borderColor rounded-lg hover:bg-tertiary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                  >
-                    Next
-                  </button>
-                </div>
+            ) : filteredPatients.length === 0 ? (
+              <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
+                <p className="text-gray-400 text-sm">
+                  {patients.length === 0
+                    ? "No patients linked yet. Share your referral code to get started."
+                    : "No patients match this filter."}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredPatients.map((patient) => (
+                  <PatientCard
+                    key={patient._id}
+                    patient={patient}
+                    onClick={() => router.push(`/doctor/patients/${patient._id}`)}
+                  />
+                ))}
               </div>
             )}
           </div>

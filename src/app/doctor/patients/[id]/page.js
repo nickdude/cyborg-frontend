@@ -1,507 +1,534 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useParams } from "next/navigation";
+import Cookie from "js-cookie";
 import Chatbot from "@/components/Chatbot";
-import HeaderActions from "@/components/HeaderActions";
 import {
   ArrowLeft,
-  User,
-  Heart,
-  AlertCircle,
-  Pill,
-  Activity,
-  Award,
-  TrendingDown,
+  ChevronRight,
   MessageCircle,
   X,
+  Target,
+  Pill,
+  FileText,
 } from "lucide-react";
 
-// Mock patient data
-const mockPatientData = {
-  _id: "patient-001",
-  firstName: "John",
-  lastName: "Anderson",
-  age: 45,
-  phone: "555-0101",
-  email: "john.anderson@mailinator.com",
-  height: "5 ft 10 in",
-  weight: "59 lbs",
-  report_id: "6f343bdf-1e68-49b1-b66c-b96144d45e60",
-  created_at: "2026-01-22T16:34:06.357663Z",
-  biological_age: {
-    predicted_age: 33.0,
-    rationale:
-      "Estimate integrates cardiometabolic labs, inflammatory markers, CBC, and lifestyle risks.",
-    confidence: "medium",
-  },
-  biomarkers: [
-    {
-      name: "Hemoglobin",
-      value: "14.8",
-      unit: "g/dL",
-      status: "optimal",
-      grade: "A",
-      rationale: "Within stated reference range (13.0–17.0), consistent with no anemia.",
-    },
-    {
-      name: "RBC",
-      value: "4.98",
-      unit: "10^6/cu.mm",
-      status: "optimal",
-      grade: "A",
-      rationale: "Within reference range (4.5–5.5), supporting normal red cell count.",
-    },
-    {
-      name: "HCT",
-      value: "44.3",
-      unit: "%",
-      status: "optimal",
-      grade: "A",
-      rationale: "Within reference range (40–50).",
-    },
-    {
-      name: "Glucose - Fasting",
-      value: "85",
-      unit: "mg/dL",
-      status: "optimal",
-      grade: "A",
-      rationale: "Within reference range (70–99), consistent with normal fasting glucose.",
-    },
-    {
-      name: "HbA1c",
-      value: "5.2",
-      unit: "%",
-      status: "optimal",
-      grade: "A",
-      rationale: "Within reference range and below prediabetes threshold.",
-    },
-    {
-      name: "Cholesterol - Total",
-      value: "112",
-      unit: "mg/dL",
-      status: "optimal",
-      grade: "A",
-      rationale: "Desirable per lab criteria (<200).",
-    },
-  ],
-  monitored_issues: [
-    {
-      issue_id: "MI-001",
-      title: "Underweight / possible malnutrition",
-      priority: "high",
-      summary: "Recorded weight is extremely low for stated height.",
-    },
-    {
-      issue_id: "MI-002",
-      title: "Tobacco use (daily smoking)",
-      priority: "high",
-      summary: "Daily cigarette use increases cardiometabolic risk.",
-    },
-    {
-      issue_id: "MI-003",
-      title: "Severe sleep disturbance",
-      priority: "medium",
-      summary: "Reported severe insomnia/unrestful sleep.",
-    },
-  ],
-};
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+
+// Dummy protocol items
+const PROTOCOL_ITEMS = [
+  { name: "Zinc Bisglycinate 15 mg", price: "$14", icon: Pill },
+  { name: "Magnesium Glycinate 400 mg", price: "$18", icon: Pill },
+  { name: "Omega-3 Fish Oil 2000 mg", price: "$22", icon: Pill },
+  { name: "Vitamin D3 5000 IU", price: "$12", icon: Pill },
+];
+
+// Dummy action plan items
+const ACTION_PLAN_ITEMS = [
+  { name: "Ashwagandha", category: "Adaptogen / Stress" },
+  { name: "BHR12", category: "Hormonal Support" },
+  { name: "Peptide RJY3", category: "Recovery / Repair" },
+  { name: "Testosterone Replacement", category: "Hormone Therapy" },
+];
 
 export default function PatientDetail() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const params = useParams();
   const patientId = params.id;
 
-  const [activeTab, setActiveTab] = useState("biomarkers");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [patient, setPatient] = useState(null);
+  const [latestReport, setLatestReport] = useState(null);
+  const [goals, setGoals] = useState([]);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
-  const patient = mockPatientData;
 
-  const getGradeColor = (grade) => {
-    switch (grade) {
-      case "A":
-        return "bg-green-100 text-green-800";
-      case "B":
-        return "bg-yellow-100 text-yellow-800";
-      case "C":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  useEffect(() => {
+    const fetchPatientData = async () => {
+      try {
+        setLoading(true);
+        const token = Cookie.get("authToken");
+        if (!token) {
+          router.push("/login");
+          return;
+        }
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "optimal":
-        return "✓";
-      case "near_boundary":
-        return "⚠";
-      case "out_of_range":
-        return "✕";
-      default:
-        return "−";
-    }
-  };
+        const res = await fetch(`${apiUrl}/api/doctor/patients/${patientId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "high":
-        return "border-l-4 border-red-500 bg-red-50";
-      case "medium":
-        return "border-l-4 border-yellow-500 bg-yellow-50";
-      case "low":
-        return "border-l-4 border-blue-500 bg-blue-50";
-      default:
-        return "border-l-4 border-gray-500 bg-gray-50";
-    }
+        if (!res.ok) throw new Error("Failed to fetch patient data");
+
+        const json = await res.json();
+        const data = json.data || json;
+        setPatient(data.patient || null);
+        setLatestReport(data.latestReport || null);
+        setGoals(data.goals || []);
+      } catch (err) {
+        console.error("Error fetching patient:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (patientId) fetchPatientData();
+  }, [patientId]);
+
+  // Derive biomarker stats from latestReport
+  const biomarkerPanel = latestReport?.biomarkerPanel || [];
+  const totalBiomarkers = biomarkerPanel.length;
+  const optimalCount = biomarkerPanel.filter(
+    (b) => b.optimalFlag === "optimal" || b.flag === "normal"
+  ).length;
+  const outOfRangeCount = biomarkerPanel.filter(
+    (b) => b.flag === "high" || b.flag === "low" || b.flag === "critical"
+  ).length;
+  const inRangeCount = totalBiomarkers - outOfRangeCount;
+
+  // Scores
+  const bioAge = latestReport?.scores?.bioAge;
+  const chronologicalAge = patient?.dateOfBirth
+    ? Math.floor(
+        (Date.now() - new Date(patient.dateOfBirth).getTime()) /
+          (365.25 * 24 * 60 * 60 * 1000)
+      )
+    : null;
+  const ageDiff =
+    bioAge != null && chronologicalAge != null
+      ? chronologicalAge - bioAge
+      : null;
+
+  // Donut chart percentages
+  const optimalPct = totalBiomarkers > 0 ? (optimalCount / totalBiomarkers) * 100 : 0;
+  const inRangePct =
+    totalBiomarkers > 0
+      ? ((inRangeCount - optimalCount) / totalBiomarkers) * 100
+      : 0;
+  const outOfRangePct =
+    totalBiomarkers > 0 ? (outOfRangeCount / totalBiomarkers) * 100 : 0;
+
+  // High priority goal
+  const highPriorityGoal = goals.find(
+    (g) => g.priority === "high" || g.priority === "High"
+  );
+
+  const patientName = patient
+    ? `${patient.firstName || ""} ${patient.lastName || ""}`.trim()
+    : "Patient";
+
+  const patientInitials = patient
+    ? `${(patient.firstName || "?")[0]}${(patient.lastName || "?")[0]}`
+    : "??";
+
+  // --- Loading & Error States ---
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F2F2F2] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-500">Loading patient data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !patient) {
+    return (
+      <div className="min-h-screen bg-[#F2F2F2] flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl p-8 shadow-sm text-center max-w-sm w-full">
+          <p className="text-red-500 font-medium mb-2">
+            {error || "Patient not found"}
+          </p>
+          <button
+            onClick={() => router.back()}
+            className="text-sm text-purple-600 hover:underline"
+          >
+            Go back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- SVG Donut ---
+  const DonutChart = () => {
+    const size = 160;
+    const strokeWidth = 20;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+
+    const optimalLen = (optimalPct / 100) * circumference;
+    const inRangeLen = (inRangePct / 100) * circumference;
+    const outOfRangeLen = (outOfRangePct / 100) * circumference;
+
+    const gap = 4;
+    const optimalOffset = 0;
+    const inRangeOffset = optimalLen + gap;
+    const outOfRangeOffset = optimalLen + inRangeLen + gap * 2;
+
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="transform -rotate-90"
+      >
+        {/* Optimal - green */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#22C55E"
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${optimalLen} ${circumference - optimalLen}`}
+          strokeDashoffset={-optimalOffset}
+          strokeLinecap="round"
+        />
+        {/* In Range - orange/yellow */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#F59E0B"
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${inRangeLen} ${circumference - inRangeLen}`}
+          strokeDashoffset={-inRangeOffset}
+          strokeLinecap="round"
+        />
+        {/* Out of Range - red */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#EF4444"
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${outOfRangeLen} ${circumference - outOfRangeLen}`}
+          strokeDashoffset={-outOfRangeOffset}
+          strokeLinecap="round"
+        />
+      </svg>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-white font-inter">
-      {/* Header */}
-      <header className="border-b border-borderColor bg-white sticky top-0 z-40 shadow-sm">
-        <div className="relative flex items-center h-16 px-4 md:px-8">
-          <div className="flex items-center gap-2 md:gap-4">
+    <div className="min-h-screen bg-[#F2F2F2] font-inter">
+      {/* ───── Header ───── */}
+      <header className="bg-white sticky top-0 z-40 border-b border-gray-200">
+        <div className="flex items-center justify-between h-14 px-4 md:px-6 max-w-[1400px] mx-auto">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-all duration-200"
+              className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="h-5 w-5 text-gray-700" />
             </button>
-            <div>
-              <h1 className="text-base md:text-xl font-bold text-black">Patient Details</h1>
-              <p className="text-xs text-gray-500 hidden sm:block">
-                {patient.firstName} {patient.lastName}
-              </p>
-            </div>
+            <h1 className="text-base font-semibold text-gray-900 truncate max-w-[200px] sm:max-w-none">
+              {patientName}
+            </h1>
           </div>
-
-          {/* Right section - Absolute positioned */}
-          <div className="absolute right-4 md:right-8">
-            <HeaderActions />
+          <div className="h-9 w-9 rounded-full bg-purple-100 text-purple-700 text-sm font-bold flex items-center justify-center flex-shrink-0">
+            {patientInitials}
           </div>
         </div>
       </header>
 
-      <div className="flex">
-        {/* Main Content */}
-        <main className="flex-1 w-full lg:max-w-[calc(100%-30vw)]">
-          {/* Patient Info Card */}
-          <div className="max-w-[1200px] mx-auto px-4 md:px-6 lg:px-8 py-4 md:py-8">
-            <div className="bg-white border border-borderColor rounded-xl shadow-sm p-4 md:p-6 mb-6 md:mb-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column */}
+      {/* ───── Body: two-column on desktop ───── */}
+      <div className="flex max-w-[1400px] mx-auto">
+        {/* Left / Main Content */}
+        <main className="flex-1 w-full lg:pr-[400px] xl:pr-[440px]">
+          <div className="px-4 md:px-6 py-5 space-y-5 max-w-2xl mx-auto lg:max-w-none">
+            {/* ───── Biological Age Card ───── */}
+            <div className="bg-gradient-to-br from-[#2D1B69] to-[#1A1A2E] rounded-2xl p-5 md:p-6 text-white">
+              <p className="text-xs uppercase tracking-wider text-purple-300 mb-1">
+                Biological Age
+              </p>
+              <div className="flex items-end gap-2 mb-2">
+                <span className="text-5xl md:text-6xl font-bold leading-none">
+                  {bioAge != null ? Math.round(bioAge) : "--"}
+                </span>
+              </div>
+              {ageDiff != null ? (
+                <p className="text-sm text-purple-200">
+                  {ageDiff > 0
+                    ? `${ageDiff.toFixed(1)} years younger than your chronological age`
+                    : ageDiff < 0
+                    ? `${Math.abs(ageDiff).toFixed(1)} years older than your chronological age`
+                    : "Same as your chronological age"}
+                </p>
+              ) : (
+                <p className="text-sm text-purple-300/70">
+                  Upload a report to calculate biological age
+                </p>
+              )}
+              <div className="mt-3 flex items-center gap-4 text-xs text-purple-300">
+                <span>Pace of aging: 0.92x</span>
+                {latestReport?.reportDate && (
+                  <span>
+                    Report:{" "}
+                    {new Date(latestReport.reportDate).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* ───── Biomarkers Summary Card ───── */}
+            <button
+              onClick={() =>
+                router.push(`/doctor/patients/${patientId}/biomarkers`)
+              }
+              className="w-full text-left bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5 md:p-6 hover:shadow-md transition-shadow group"
+            >
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-                    <div className="h-12 w-12 md:h-16 md:w-16 rounded-full bg-primary/10 text-primary text-xl md:text-2xl font-bold flex items-center justify-center">
-                      {patient.firstName[0]}
-                      {patient.lastName[0]}
-                    </div>
-                    <div>
-                      <h2 className="text-lg md:text-2xl font-bold text-black">
-                        {patient.firstName} {patient.lastName}
-                      </h2>
-                      <p className="text-xs md:text-sm text-gray-500">ID: {patient._id}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-600 text-sm font-medium min-w-24">
-                        Age:
-                      </span>
-                      <span className="text-black text-sm">{patient.age} years</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-600 text-sm font-medium min-w-24">
-                        Height:
-                      </span>
-                      <span className="text-black text-sm">{patient.height}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-600 text-sm font-medium min-w-24">
-                        Weight:
-                      </span>
-                      <span className="text-black text-sm">{patient.weight}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-600 text-sm font-medium min-w-24">
-                        Phone:
-                      </span>
-                      <span className="text-black text-sm">{patient.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-600 text-sm font-medium min-w-24">
-                        Email:
-                      </span>
-                      <span className="text-black text-sm">{patient.email}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column - Biological Age */}
-                <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg p-4 md:p-6 border border-primary/20">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Award className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold text-black">
-                      Biological Age
-                    </h3>
-                  </div>
-
-                  <div className="mb-4 md:mb-6">
-                    <div className="text-3xl md:text-5xl font-bold text-primary mb-2">
-                      {patient.biological_age.predicted_age.toFixed(0)}
-                      <span className="text-base md:text-lg text-gray-500"> years</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-primary"></div>
-                      <span className="text-sm text-gray-600">
-                        Confidence: {patient.biological_age.confidence}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    {patient.biological_age.rationale.substring(0, 150)}...
+                  <p className="text-sm font-semibold text-gray-900">
+                    Biomarkers
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {totalBiomarkers} biomarkers tested
                   </p>
                 </div>
+                <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
               </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-2 md:gap-4 mb-4 md:mb-6 border-b border-borderColor overflow-x-auto scrollbar-hide">
-              {["biomarkers", "issues", "supplements", "lifestyle"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-3 md:px-4 py-2 md:py-3 font-medium text-xs md:text-sm transition-all duration-200 border-b-2 whitespace-nowrap ${
-                    activeTab === tab
-                      ? "border-primary text-primary"
-                      : "border-transparent text-gray-600 hover:text-black"
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-
-            {/* Biomarkers Tab */}
-            {activeTab === "biomarkers" && (
-              <div>
-                <div className="grid gap-4">
-                  {patient.biomarkers.map((marker) => (
+              {/* Color distribution bar */}
+              {totalBiomarkers > 0 && (
+                <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
+                  {optimalPct > 0 && (
                     <div
-                      key={marker.name}
-                      className="border border-borderColor rounded-lg p-3 md:p-4 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2 md:gap-3 flex-1">
-                          <div className="flex items-center justify-center h-7 w-7 md:h-8 md:w-8 rounded-full bg-primary/10 flex-shrink-0">
-                            <span className="text-xs md:text-sm font-bold text-primary">
-                              {getStatusIcon(marker.status)}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-sm md:text-base text-black truncate">
-                              {marker.name}
-                            </h4>
-                            <p className="text-xs text-gray-500 line-clamp-2">
-                              {marker.rationale.substring(0, 80)}...
-                            </p>
-                          </div>
-                        </div>
-                        <div className={`px-3 py-1 rounded-full font-bold text-sm ${getGradeColor(marker.grade)}`}>
-                          {marker.grade}
-                        </div>
-                      </div>
+                      className="bg-green-500 rounded-full"
+                      style={{ width: `${optimalPct}%` }}
+                    />
+                  )}
+                  {inRangePct > 0 && (
+                    <div
+                      className="bg-yellow-400 rounded-full"
+                      style={{ width: `${inRangePct}%` }}
+                    />
+                  )}
+                  {outOfRangePct > 0 && (
+                    <div
+                      className="bg-red-500 rounded-full"
+                      style={{ width: `${outOfRangePct}%` }}
+                    />
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-green-500" />
+                  Optimal
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-yellow-400" />
+                  Normal
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-red-500" />
+                  Out of range
+                </span>
+              </div>
+            </button>
 
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <span className="text-xl md:text-2xl font-bold text-black">
-                          {marker.value}{" "}
-                          <span className="text-xs md:text-sm text-gray-500 font-normal">
-                            {marker.unit}
-                          </span>
-                        </span>
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                          {marker.status.replace(/_/g, " ")}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+            {/* ───── Donut Chart Section ───── */}
+            <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-200">
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="relative flex-shrink-0">
+                  <DonutChart />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-900">
+                      {inRangeCount}
+                    </span>
+                    <span className="text-xs text-gray-500">in range</span>
+                  </div>
+                </div>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-green-500" />
+                    <span className="text-gray-700">
+                      Optimal:{" "}
+                      <span className="font-semibold text-gray-900">
+                        {optimalCount}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-yellow-400" />
+                    <span className="text-gray-700">
+                      In range:{" "}
+                      <span className="font-semibold text-gray-900">
+                        {inRangeCount - optimalCount}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-red-500" />
+                    <span className="text-gray-700">
+                      Out of range:{" "}
+                      <span className="font-semibold text-gray-900">
+                        {outOfRangeCount}
+                      </span>
+                    </span>
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Issues Tab */}
-            {activeTab === "issues" && (
-              <div className="space-y-4">
-                {patient.monitored_issues.map((issue) => (
+            {/* ───── Goals & Protocol ───── */}
+            <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-gray-900">
+                  Goals & Protocol
+                </h2>
+                <button
+                  onClick={() =>
+                    router.push(`/doctor/patients/${patientId}/goals`)
+                  }
+                  className="text-sm text-purple-600 font-medium hover:underline"
+                >
+                  View all
+                </button>
+              </div>
+
+              {/* High priority goal card */}
+              {highPriorityGoal ? (
+                <div className="bg-gray-900 rounded-xl p-4 mb-4">
+                  <span className="inline-block text-[10px] font-semibold uppercase tracking-wider bg-red-500 text-white px-2 py-0.5 rounded-full mb-2">
+                    High priority
+                  </span>
+                  <h3 className="text-white font-semibold text-sm mb-1">
+                    {highPriorityGoal.title || highPriorityGoal.name}
+                  </h3>
+                  <p className="text-gray-400 text-xs line-clamp-2">
+                    {highPriorityGoal.description || highPriorityGoal.summary || ""}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-xl p-4 mb-4 text-center">
+                  <p className="text-sm text-gray-400">No high priority goals</p>
+                </div>
+              )}
+
+              {/* Stats row */}
+              <div className="flex items-center divide-x divide-gray-200">
+                <div className="flex-1 text-center pr-4">
+                  <p className="text-lg font-bold text-gray-900">
+                    {goals.length}
+                  </p>
+                  <p className="text-xs text-gray-500">Total Goals</p>
+                </div>
+                <div className="flex-1 text-center pl-4">
+                  <p className="text-lg font-bold text-gray-900">6</p>
+                  <p className="text-xs text-gray-500">Protocol Items</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ───── Top Protocol Items ───── */}
+            <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-200">
+              <h2 className="text-base font-semibold text-gray-900 mb-4">
+                Top Protocol Items
+              </h2>
+              <div className="space-y-3">
+                {PROTOCOL_ITEMS.map((item) => (
                   <div
-                    key={issue.issue_id}
-                    className={`rounded-lg p-4 md:p-5 ${getPriorityColor(issue.priority)}`}
+                    key={item.name}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-gray-600 mt-0.5" />
-                        <div>
-                          <h4 className="font-semibold text-black mb-1">
-                            {issue.title}
-                          </h4>
-                          <p className="text-sm text-gray-700">
-                            {issue.summary}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="px-2 py-1 bg-white bg-opacity-70 rounded text-xs font-medium text-gray-700">
-                        {issue.priority.toUpperCase()}
-                      </div>
+                    <div className="h-9 w-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                      <Pill className="h-4 w-4 text-purple-600" />
                     </div>
+                    <span className="flex-1 text-sm font-medium text-gray-800">
+                      {item.name}
+                    </span>
+                    <span className="text-sm font-semibold text-gray-500">
+                      {item.price}
+                    </span>
                   </div>
                 ))}
               </div>
-            )}
+            </div>
 
-            {/* Supplements Tab */}
-            {activeTab === "supplements" && (
-              <div className="grid gap-4">
-                {[
-                  {
-                    name: "Magnesium Glycinate",
-                    reason: "May support sleep quality",
-                    dosage: "200–400 mg nightly",
-                  },
-                  {
-                    name: "Omega-3 Complex",
-                    reason: "Support cardiometabolic health",
-                    dosage: "1,000 mg/day combined EPA+DHA",
-                  },
-                ].map((supplement) => (
+            {/* ───── Your Action Plan ───── */}
+            <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-200 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-semibold text-gray-900">
+                  Your action plan
+                </h2>
+                <button className="text-sm text-purple-600 font-medium hover:underline">
+                  View
+                </button>
+              </div>
+              <div className="space-y-3">
+                {ACTION_PLAN_ITEMS.map((item) => (
                   <div
-                    key={supplement.name}
-                    className="border border-borderColor rounded-lg p-4 md:p-5 hover:shadow-md transition-all"
+                    key={item.name}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
                   >
-                    <div className="flex items-start gap-3 mb-3">
-                      <Pill className="h-5 w-5 text-primary mt-0.5" />
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-black">
-                          {supplement.name}
-                        </h4>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {supplement.reason}
-                        </p>
-                      </div>
+                    <div className="h-9 w-9 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                      <FileText className="h-4 w-4 text-emerald-600" />
                     </div>
-                    <div className="bg-gray-50 rounded p-3">
-                      <p className="text-xs font-medium text-gray-600">
-                        Dosage: {supplement.dosage}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {item.name}
                       </p>
+                      <p className="text-xs text-gray-400">{item.category}</p>
                     </div>
+                    <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
                   </div>
                 ))}
               </div>
-            )}
-
-            {/* Lifestyle Tab */}
-            {activeTab === "lifestyle" && (
-              <div className="grid gap-4">
-                {[
-                  {
-                    section: "Sleep",
-                    icon: Activity,
-                    tips: [
-                      "Set consistent sleep schedule (8-9 hours)",
-                      "Use CBT-I techniques for insomnia",
-                      "Reduce sleep-disrupting substances",
-                    ],
-                  },
-                  {
-                    section: "Exercise",
-                    icon: Heart,
-                    tips: [
-                      "Start with 10-15 min daily walking",
-                      "Add strength training 2x/week",
-                      "Progress cardio to 150 min/week",
-                    ],
-                  },
-                  {
-                    section: "Nutrition",
-                    icon: Activity,
-                    tips: [
-                      "Confirm weight and start restoration plan",
-                      "Increase protein intake",
-                      "Support glucose control with balanced meals",
-                    ],
-                  },
-                ].map((section) => {
-                  const Icon = section.icon;
-                  return (
-                    <div
-                      key={section.section}
-                      className="border border-borderColor rounded-lg p-4 md:p-5 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          <Icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <h4 className="font-semibold text-black">
-                          {section.section}
-                        </h4>
-                      </div>
-                      <ul className="space-y-2">
-                        {section.tips.map((tip, idx) => (
-                          <li
-                            key={idx}
-                            className="flex items-start gap-2 text-sm text-gray-700"
-                          >
-                            <span className="text-primary font-bold mt-0.5">
-                              •
-                            </span>
-                            {tip}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            </div>
           </div>
         </main>
 
-        {/* Right Chatbot Sidebar - Desktop Only */}
-        <aside className="hidden lg:block w-[30vw] bg-white border-l border-borderColor fixed right-0 top-16 bottom-0 z-30">
-          <Chatbot patientId={patient._id} patientName={`${patient.firstName} ${patient.lastName}`} />
+        {/* ───── Right Chatbot Sidebar — Desktop ───── */}
+        <aside className="hidden lg:block fixed right-0 top-14 bottom-0 w-[400px] xl:w-[440px] bg-white border-l border-gray-200 z-30">
+          <Chatbot
+            patientId={patientId}
+            patientName={patientName}
+          />
         </aside>
+      </div>
 
-        {/* Mobile Chatbot Modal */}
-        {mobileChatOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-black/50 animate-in fade-in duration-200">
-            <div className="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom duration-300" style={{ height: '85vh' }}>
-              <div className="flex items-center justify-between p-4 border-b border-borderColor">
-                <h3 className="font-semibold text-black">AI Assistant</h3>
-                <button
-                  onClick={() => setMobileChatOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-all"
-                >
-                  <X className="h-5 w-5 text-gray-600" />
-                </button>
-              </div>
-              <div className="h-[calc(100%-4rem)]">
-                <Chatbot patientId={patient._id} patientName={`${patient.firstName} ${patient.lastName}`} />
-              </div>
+      {/* ───── Mobile Chatbot Modal ───── */}
+      {mobileChatOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/50">
+          <div
+            className="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-2xl"
+            style={{ height: "85vh" }}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900">AI Assistant</h3>
+              <button
+                onClick={() => setMobileChatOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="h-[calc(100%-4rem)]">
+              <Chatbot
+                patientId={patientId}
+                patientName={patientName}
+              />
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Mobile Chatbot Floating Button */}
-        <button
-          onClick={() => setMobileChatOpen(true)}
-          className="lg:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary text-white shadow-2xl hover:bg-purple-800 transition-all duration-200 flex items-center justify-center z-40 animate-bounce"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </button>
-      </div>
+      {/* ───── Mobile Chatbot FAB ───── */}
+      <button
+        onClick={() => setMobileChatOpen(true)}
+        className="lg:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full bg-purple-700 text-white shadow-xl hover:bg-purple-800 transition-colors flex items-center justify-center z-40"
+      >
+        <MessageCircle className="h-6 w-6" />
+      </button>
     </div>
   );
 }
