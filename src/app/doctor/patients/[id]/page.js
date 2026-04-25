@@ -83,7 +83,9 @@ export default function PatientDetail() {
   const inRangeCount = totalBiomarkers - outOfRangeCount;
 
   // Scores
-  const bioAge = latestReport?.scores?.bioAge;
+  const bioAgeRaw = latestReport?.scores?.bioAge;
+  const bioAge = typeof bioAgeRaw === 'object' ? bioAgeRaw?.phenoAge : bioAgeRaw;
+  const bioAgeConfidence = typeof bioAgeRaw === 'object' ? bioAgeRaw?.confidence : null;
   const chronologicalAge = patient?.dateOfBirth
     ? Math.floor(
         (Date.now() - new Date(patient.dateOfBirth).getTime()) /

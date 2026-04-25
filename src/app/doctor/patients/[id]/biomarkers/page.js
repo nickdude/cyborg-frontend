@@ -297,8 +297,10 @@ export default function BiomarkersPage() {
     );
   }
 
-  const bioAge = scores?.bioAge ?? "--";
-  const paceOfAging = scores?.paceOfAging ?? 46;
+  const bioAgeRaw = scores?.bioAge;
+  const bioAge = typeof bioAgeRaw === 'object' ? bioAgeRaw?.phenoAge : bioAgeRaw;
+  const paceRaw = scores?.paceOfAging;
+  const paceOfAging = typeof paceRaw === 'object' ? paceRaw?.pace : (paceRaw ?? 46);
 
   // Compute progress bar widths
   const barTotal = stats.total || 1;
@@ -345,12 +347,12 @@ export default function BiomarkersPage() {
               <div className="flex items-end justify-between mt-2">
                 <div>
                   <p className="text-[40px] font-medium leading-none">
-                    {bioAge !== "--" ? Math.round(bioAge) : "--"}
+                    {bioAge != null ? Math.round(bioAge) : "--"}
                   </p>
                   <p className="text-[14px] text-white/70 mt-1">years</p>
                 </div>
                 <div className="mb-[-4px]">
-                  <MiniGauge value={bioAge !== "--" ? bioAge : 26} color="#a78bfa" />
+                  <MiniGauge value={bioAge != null ? bioAge : 26} color="#a78bfa" />
                 </div>
               </div>
             </div>
