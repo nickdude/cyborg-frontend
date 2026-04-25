@@ -1,11 +1,67 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, ClipboardList, Activity, MessageSquare, Settings, LogOut } from "lucide-react";
+import { Bell, ClipboardList, Upload, FileCheck, CheckCircle, AlertTriangle, Activity, MessageSquare, Settings, LogOut } from "lucide-react";
 import { notificationAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
+
+/**
+ * Maps a notification type to its display metadata: title, message, icon, and
+ * optional navigation path (null means no navigation on click).
+ */
+function getNotificationDisplay(notification) {
+  switch (notification.type) {
+    case "upload:success":
+      return {
+        title: "Report Uploaded",
+        message: "Your report has been uploaded and is being analyzed.",
+        Icon: Upload,
+        navigateTo: null,
+      };
+    case "analysis:ready":
+      return {
+        title: "Analysis Complete",
+        message: "Your blood report analysis is complete.",
+        Icon: FileCheck,
+        navigateTo: null,
+      };
+    case "report:ready":
+      return {
+        title: "Report Ready",
+        message: "Your blood report has been processed. View your results now.",
+        Icon: CheckCircle,
+        navigateTo: "/data",
+      };
+    case "report:failed":
+      return {
+        title: "Report Failed",
+        message: "We couldn't process your report. Please try again.",
+        Icon: AlertTriangle,
+        navigateTo: "/data",
+      };
+    case "actionPlan:ready":
+    case "action_plan_ready": {
+      const planId = notification.metadata?.planId;
+      return {
+        title: "Action Plan Ready",
+        message: "Your personalized action plan has been generated. View it now.",
+        Icon: ClipboardList,
+        navigateTo: planId
+          ? `/action-plan/${notification.userId}?planId=${planId}`
+          : null,
+      };
+    }
+    default:
+      return {
+        title: "Notification",
+        message: "You have a new notification.",
+        Icon: Bell,
+        navigateTo: null,
+      };
+  }
+}
 
 export default function UserActions() {
   const router = useRouter();
@@ -74,6 +130,32 @@ export default function UserActions() {
     }
   };
 
+  const deduplicatedNotifications = useMemo(() => {
+    const seen = new Map();
+    const result = [];
+    for (const n of notifications) {
+      const key = n.type;
+      if (seen.has(key)) {
+        seen.get(key).count++;
+      } else {
+        const entry = { ...n, count: 1 };
+        seen.set(key, entry);
+        result.push(entry);
+      }
+    }
+    return result;
+  }, [notifications]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationAPI.markAllRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+    }
+  };
+
   const handleNotificationClick = async (notification) => {
     // Mark as read
     try {
@@ -83,9 +165,9 @@ export default function UserActions() {
     }
 
     // Navigate based on type
-    if (notification.type === "actionPlan:ready") {
-      const { planId } = notification.metadata;
-      router.push(`/action-plan/${notification.userId}?planId=${planId}`);
+    const { navigateTo } = getNotificationDisplay(notification);
+    if (navigateTo) {
+      router.push(navigateTo);
       setShowDropdown(false);
     }
 
@@ -128,12 +210,22 @@ export default function UserActions() {
           <div className="absolute right-0 mt-2 w-80 bg-white border border-borderColor rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
             <div className="p-4 border-b border-borderColor flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Notifications</h3>
-              <button
-                onClick={() => setShowDropdown(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-xs text-primary hover:text-primary/80 font-medium"
+                  >
+                    Mark all read
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowDropdown(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -146,41 +238,43 @@ export default function UserActions() {
               </div>
             ) : (
               <div className="divide-y divide-borderColor">
-                {notifications.map((notification) => (
-                  <button
-                    key={notification._id}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`w-full text-left p-4 hover:bg-gray-50 transition ${
-                      !notification.read ? "bg-blue-50" : ""
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <ClipboardList className="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">
-                          {notification.type === "actionPlan:ready"
-                            ? "Action Plan Ready"
-                            : "Notification"}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {notification.type === "actionPlan:ready"
-                            ? "Your personalized action plan has been generated. View it now."
-                            : "You have a new notification."}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-2">
-                          {new Date(notification.createdAt).toLocaleDateString()} {""}
-                          {new Date(notification.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
+                {deduplicatedNotifications.map((notification) => {
+                  const { title, message, Icon } = getNotificationDisplay(notification);
+                  return (
+                    <button
+                      key={notification._id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={`w-full text-left p-4 hover:bg-gray-50 transition ${
+                        !notification.read ? "bg-blue-50" : ""
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Icon className="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">
+                            {title}
+                            {notification.count > 1 && (
+                              <span className="ml-2 text-xs font-normal text-gray-400">
+                                ({notification.count})
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">{message}</p>
+                          <p className="text-xs text-gray-400 mt-2">
+                            {new Date(notification.createdAt).toLocaleDateString()} {""}
+                            {new Date(notification.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                        {!notification.read && (
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                        )}
                       </div>
-                      {!notification.read && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                      )}
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

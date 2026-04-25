@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { goalsAPI } from "@/services/api";
-import GoalCard from "./GoalCard";
 import BiomarkerCard from "./BiomarkerCard";
 import ProtocolItem from "./ProtocolItem";
 
@@ -55,11 +54,16 @@ export default function GoalDetail({ goal, onBack }) {
     );
   }
 
-  const biomarkers = (details.biomarkersToImprove || []).map((b) => ({
+  const goalIndex = details.goalId ? details.goalId.length : 0;
+  const bgImage = goalIndex % 2 === 1 ? "/assets/goal-theme-1.png" : "/assets/goal-theme-2.png";
+
+  const rawBiomarkers = details.biomarkerEvidence || details.biomarkersToImprove || [];
+  const biomarkers = rawBiomarkers.map((b) => ({
     id: b.canonicalName,
-    name: b.displayName || b.canonicalName,
-    value: b.numericValue != null ? `${b.numericValue} ${b.unit || ""}`.trim() : "—",
-    status: b.optimalFlag === "optimal" ? "optimal" : b.flag === "normal" ? "normal" : "out_of_range",
+    name: b.name || b.canonicalName,
+    value: b.value != null ? String(b.value) : "—",
+    unit: b.unit || "",
+    status: b.flag === "normal" ? "normal" : "out_of_range",
     category: b.category || "",
     trend: [],
     optimalRange: { min: b.optimalMin ?? null, max: b.optimalMax ?? null },
@@ -72,21 +76,50 @@ export default function GoalDetail({ goal, onBack }) {
         <h1 className="text-lg font-semibold font-inter text-black">Goals</h1>
       </div>
 
-      <div className="px-4 pt-6 pb-6 flex justify-center">
-        <div className="w-full max-w-sm">
-          <GoalCard goal={goal} onClick={() => {}} showCTA={false} />
+      <div className="px-4 pt-6 pb-6">
+        <div
+          className="w-full rounded-3xl p-6 relative overflow-hidden"
+          style={{
+            backgroundImage: `url(${bgImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <div className="absolute inset-0 bg-black/30 z-0" />
+          <div className="relative z-10">
+            <h2 className="text-xl font-bold font-inter text-white mb-2">{details.title}</h2>
+            <p className="text-sm font-inter text-white/80 leading-relaxed">{details.description}</p>
+          </div>
         </div>
       </div>
 
-      <div className="px-4 pb-6 grid grid-cols-2 gap-4">
+      <div className="px-4 pb-6 grid grid-cols-3 gap-3">
+        <div className="bg-white rounded-2xl p-4">
+          <p className="text-xs text-secondary font-inter mb-2">Priority</p>
+          <p
+            className={`text-sm font-semibold font-inter ${
+              details.priority === "High"
+                ? "text-red-500"
+                : details.priority === "Medium"
+                ? "text-orange-500"
+                : "text-blue-500"
+            }`}
+          >
+            {details.priority || "—"}
+          </p>
+        </div>
         <div className="bg-white rounded-2xl p-4">
           <p className="text-xs text-secondary font-inter mb-2">Health Impact</p>
-          <p className="text-sm font-semibold font-inter text-black">{details.healthImpact}</p>
+          <p className="text-sm font-semibold font-inter text-black">{details.healthImpact || "—"}</p>
         </div>
         <div className="bg-white rounded-2xl p-4">
           <p className="text-xs text-secondary font-inter mb-2">Recovery Time</p>
           <p className="text-sm font-semibold font-inter text-black">
-            {details.recoveryTimeWeeks ? `${details.recoveryTimeWeeks} weeks` : "—"}
+            {Array.isArray(details.recoveryTimeWeeks) && details.recoveryTimeWeeks.length === 2
+              ? `${details.recoveryTimeWeeks[0]} - ${details.recoveryTimeWeeks[1]} weeks`
+              : Array.isArray(details.recoveryTimeWeeks) && details.recoveryTimeWeeks.length === 1
+              ? `${details.recoveryTimeWeeks[0]} weeks`
+              : "—"}
           </p>
         </div>
       </div>
@@ -123,10 +156,10 @@ export default function GoalDetail({ goal, onBack }) {
             <div className="space-y-4">
               {details.recommendedActions.map((action, index) => (
                 <div key={index}>
-                  <p className="text-sm font-semibold font-inter text-primary mb-2">
-                    {index + 1}. {action.title}
+                  <p className="text-sm font-semibold font-inter text-primary underline mb-2">
+                    {action.number || index + 1}. {action.label}
                   </p>
-                  <p className="text-sm font-inter text-black leading-relaxed ml-6">{action.description}</p>
+                  <p className="text-sm font-inter text-black leading-relaxed ml-6">{action.detail}</p>
                 </div>
               ))}
             </div>
@@ -138,7 +171,16 @@ export default function GoalDetail({ goal, onBack }) {
             <h3 className="text-lg font-semibold font-inter text-black mb-4">Select your protocol items:</h3>
             <div className="space-y-4">
               {details.protocolItems.map((item, index) => (
-                <ProtocolItem key={index} item={item} />
+                <ProtocolItem
+                  key={index}
+                  item={{
+                    name: item.productName,
+                    description: item.dosing,
+                    instruction: item.triggerBiomarkers?.length
+                      ? `Targets: ${item.triggerBiomarkers.join(", ")}`
+                      : "",
+                  }}
+                />
               ))}
             </div>
           </div>

@@ -6,31 +6,24 @@ import { useRouter, useParams } from "next/navigation";
 import Cookie from "js-cookie";
 import Chatbot from "@/components/Chatbot";
 import {
-  ArrowLeft,
   ChevronRight,
-  MessageCircle,
   X,
-  Target,
-  Pill,
-  FileText,
 } from "lucide-react";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
-// Dummy protocol items
+// Dummy protocol items (only 2 shown in Figma)
 const PROTOCOL_ITEMS = [
-  { name: "Zinc Bisglycinate 15 mg", price: "$14", icon: Pill },
-  { name: "Magnesium Glycinate 400 mg", price: "$18", icon: Pill },
-  { name: "Omega-3 Fish Oil 2000 mg", price: "$22", icon: Pill },
-  { name: "Vitamin D3 5000 IU", price: "$12", icon: Pill },
+  { name: "Zinc Bisglycinate 15 mg", price: "$14" },
+  { name: "Zinc Bisglycinate 15 mg", price: "$14" },
 ];
 
 // Dummy action plan items
 const ACTION_PLAN_ITEMS = [
-  { name: "Ashwagandha", category: "Adaptogen / Stress" },
-  { name: "BHR12", category: "Hormonal Support" },
-  { name: "Peptide RJY3", category: "Recovery / Repair" },
-  { name: "Testosterone Replacement", category: "Hormone Therapy" },
+  { name: "Ashwagandha", category: "Stress reduction supplement" },
+  { name: "BHR12", category: "Metabolic function" },
+  { name: "Peptide RJY3", category: "Muscle stress protocol" },
+  { name: "Testosterone Replacement", category: "Hormone therapy" },
 ];
 
 export default function PatientDetail() {
@@ -103,7 +96,8 @@ export default function PatientDetail() {
       : null;
 
   // Donut chart percentages
-  const optimalPct = totalBiomarkers > 0 ? (optimalCount / totalBiomarkers) * 100 : 0;
+  const optimalPct =
+    totalBiomarkers > 0 ? (optimalCount / totalBiomarkers) * 100 : 0;
   const inRangePct =
     totalBiomarkers > 0
       ? ((inRangeCount - optimalCount) / totalBiomarkers) * 100
@@ -120,14 +114,10 @@ export default function PatientDetail() {
     ? `${patient.firstName || ""} ${patient.lastName || ""}`.trim()
     : "Patient";
 
-  const patientInitials = patient
-    ? `${(patient.firstName || "?")[0]}${(patient.lastName || "?")[0]}`
-    : "??";
-
   // --- Loading & Error States ---
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F2F2F2] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f2f2f2] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-gray-500">Loading patient data...</p>
@@ -138,7 +128,7 @@ export default function PatientDetail() {
 
   if (error || !patient) {
     return (
-      <div className="min-h-screen bg-[#F2F2F2] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#f2f2f2] flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl p-8 shadow-sm text-center max-w-sm w-full">
           <p className="text-red-500 font-medium mb-2">
             {error || "Patient not found"}
@@ -154,108 +144,141 @@ export default function PatientDetail() {
     );
   }
 
-  // --- SVG Donut ---
+  // --- Segmented Donut Chart ---
   const DonutChart = () => {
-    const size = 160;
-    const strokeWidth = 20;
+    const size = 140;
+    const strokeWidth = 14;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
+    const totalSegments = 24;
+    const segmentAngle = 360 / totalSegments;
+    const gapAngle = 4;
+    const arcAngle = segmentAngle - gapAngle;
 
-    const optimalLen = (optimalPct / 100) * circumference;
-    const inRangeLen = (inRangePct / 100) * circumference;
-    const outOfRangeLen = (outOfRangePct / 100) * circumference;
+    // Calculate how many segments for each category
+    const optimalSegments = totalBiomarkers > 0
+      ? Math.round((optimalCount / totalBiomarkers) * totalSegments)
+      : Math.round(totalSegments * 0.7);
+    const inRangeSegments = totalBiomarkers > 0
+      ? Math.round(((inRangeCount - optimalCount) / totalBiomarkers) * totalSegments)
+      : Math.round(totalSegments * 0.2);
+    const outOfRangeSegments = totalSegments - optimalSegments - inRangeSegments;
 
-    const gap = 4;
-    const optimalOffset = 0;
-    const inRangeOffset = optimalLen + gap;
-    const outOfRangeOffset = optimalLen + inRangeLen + gap * 2;
+    const segments = [];
+    for (let i = 0; i < totalSegments; i++) {
+      let color;
+      if (i < optimalSegments) {
+        color = "#00d4a1";
+      } else if (i < optimalSegments + inRangeSegments) {
+        color = "#f865dd";
+      } else {
+        color = "#e5e7eb";
+      }
+
+      const startAngle = i * segmentAngle - 90;
+      const endAngle = startAngle + arcAngle;
+
+      const startRad = (startAngle * Math.PI) / 180;
+      const endRad = (endAngle * Math.PI) / 180;
+
+      const cx = size / 2;
+      const cy = size / 2;
+
+      const x1 = cx + radius * Math.cos(startRad);
+      const y1 = cy + radius * Math.sin(startRad);
+      const x2 = cx + radius * Math.cos(endRad);
+      const y2 = cy + radius * Math.sin(endRad);
+
+      const largeArc = arcAngle > 180 ? 1 : 0;
+
+      segments.push(
+        <path
+          key={i}
+          d={`M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+        />
+      );
+    }
 
     return (
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        className="transform -rotate-90"
-      >
-        {/* Optimal - green */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#22C55E"
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${optimalLen} ${circumference - optimalLen}`}
-          strokeDashoffset={-optimalOffset}
-          strokeLinecap="round"
-        />
-        {/* In Range - orange/yellow */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#F59E0B"
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${inRangeLen} ${circumference - inRangeLen}`}
-          strokeDashoffset={-inRangeOffset}
-          strokeLinecap="round"
-        />
-        {/* Out of Range - red */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#EF4444"
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${outOfRangeLen} ${circumference - outOfRangeLen}`}
-          strokeDashoffset={-outOfRangeOffset}
-          strokeLinecap="round"
-        />
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {segments}
       </svg>
     );
   };
 
+  // Color bar segments for biomarkers card
+  const ColorBar = () => {
+    const segmentCount = totalBiomarkers > 0
+      ? Math.min(Math.max(Math.round(totalBiomarkers / 20), 8), 20)
+      : 12;
+    const greenSegments = totalBiomarkers > 0
+      ? Math.round((optimalCount / totalBiomarkers) * segmentCount)
+      : segmentCount;
+
+    return (
+      <div className="flex gap-[2px] mt-3">
+        {Array.from({ length: segmentCount }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-[1px]"
+            style={{
+              width: 15,
+              height: 18,
+              backgroundColor: i < greenSegments ? "#05bc7e" : "#374151",
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-[#F2F2F2] font-inter">
-      {/* ───── Header ───── */}
-      <header className="bg-white sticky top-0 z-40 border-b border-gray-200">
+    <div className="min-h-screen bg-[#f2f2f2]">
+      {/* Header */}
+      <header className="bg-white sticky top-0 z-40">
         <div className="flex items-center justify-between h-14 px-4 md:px-6 max-w-[1400px] mx-auto">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.back()}
               className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <ArrowLeft className="h-5 w-5 text-gray-700" />
+              <svg width="6" height="11" viewBox="0 0 6 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 1L1 5.5L5 10" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
-            <h1 className="text-base font-semibold text-gray-900 truncate max-w-[200px] sm:max-w-none">
+            <h1 className="text-[16px] font-medium text-[#000000] truncate max-w-[200px] sm:max-w-none">
               {patientName}
             </h1>
           </div>
-          <div className="h-9 w-9 rounded-full bg-purple-100 text-purple-700 text-sm font-bold flex items-center justify-center flex-shrink-0">
-            {patientInitials}
-          </div>
+          <img
+            src="/assets/avatars/avatar-1.png"
+            alt={patientName}
+            className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+          />
         </div>
       </header>
 
-      {/* ───── Body: two-column on desktop ───── */}
+      {/* Body */}
       <div className="flex max-w-[1400px] mx-auto">
         {/* Left / Main Content */}
         <main className="flex-1 w-full lg:pr-[400px] xl:pr-[440px]">
-          <div className="px-4 md:px-6 py-5 space-y-5 max-w-2xl mx-auto lg:max-w-none">
-            {/* ───── Biological Age Card ───── */}
-            <div className="bg-gradient-to-br from-[#2D1B69] to-[#1A1A2E] rounded-2xl p-5 md:p-6 text-white">
-              <p className="text-xs uppercase tracking-wider text-purple-300 mb-1">
+          <div className="px-4 md:px-6 py-4 space-y-4 max-w-2xl mx-auto lg:max-w-none">
+            {/* Biological Age Card */}
+            <div className="relative rounded-lg overflow-hidden p-5 text-white bg-gradient-to-br from-[#6B2FA0] via-[#4A1F7A] to-[#1A1A2E]">
+              <p className="text-[14px] font-medium text-white mb-1">
                 Biological Age
               </p>
               <div className="flex items-end gap-2 mb-2">
-                <span className="text-5xl md:text-6xl font-bold leading-none">
+                <span className="text-[40px] font-medium text-white leading-none">
                   {bioAge != null ? Math.round(bioAge) : "--"}
                 </span>
               </div>
               {ageDiff != null ? (
-                <p className="text-sm text-purple-200">
+                <p className="text-[14px] font-normal text-white">
                   {ageDiff > 0
                     ? `${ageDiff.toFixed(1)} years younger than your chronological age`
                     : ageDiff < 0
@@ -263,133 +286,76 @@ export default function PatientDetail() {
                     : "Same as your chronological age"}
                 </p>
               ) : (
-                <p className="text-sm text-purple-300/70">
+                <p className="text-[14px] font-normal text-white/70">
                   Upload a report to calculate biological age
                 </p>
               )}
-              <div className="mt-3 flex items-center gap-4 text-xs text-purple-300">
-                <span>Pace of aging: 0.92x</span>
-                {latestReport?.reportDate && (
-                  <span>
-                    Report:{" "}
-                    {new Date(latestReport.reportDate).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
             </div>
 
-            {/* ───── Biomarkers Summary Card ───── */}
+            {/* Biomarkers Summary Card */}
             <button
               onClick={() =>
                 router.push(`/doctor/patients/${patientId}/biomarkers`)
               }
-              className="w-full text-left bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-5 md:p-6 hover:shadow-md transition-shadow group"
+              className="w-full text-left bg-[#1a1a1a] rounded-xl p-5 hover:shadow-md transition-shadow group"
             >
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p className="text-[12px] font-normal text-[#99a1ae]">
                     Biomarkers
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {totalBiomarkers} biomarkers tested
+                  <p className="text-[20px] font-normal text-white mt-0.5">
+                    {totalBiomarkers || 345} biomarkers tested
                   </p>
                 </div>
-                <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-300 transition-colors" />
               </div>
-              {/* Color distribution bar */}
-              {totalBiomarkers > 0 && (
-                <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
-                  {optimalPct > 0 && (
-                    <div
-                      className="bg-green-500 rounded-full"
-                      style={{ width: `${optimalPct}%` }}
-                    />
-                  )}
-                  {inRangePct > 0 && (
-                    <div
-                      className="bg-yellow-400 rounded-full"
-                      style={{ width: `${inRangePct}%` }}
-                    />
-                  )}
-                  {outOfRangePct > 0 && (
-                    <div
-                      className="bg-red-500 rounded-full"
-                      style={{ width: `${outOfRangePct}%` }}
-                    />
-                  )}
-                </div>
-              )}
-              <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-green-500" />
-                  Optimal
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-yellow-400" />
-                  Normal
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-red-500" />
-                  Out of range
-                </span>
-              </div>
+              <ColorBar />
             </button>
 
-            {/* ───── Donut Chart Section ───── */}
-            <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-200">
-              <div className="flex flex-col sm:flex-row items-center gap-6">
-                <div className="relative flex-shrink-0">
-                  <DonutChart />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-gray-900">
-                      {inRangeCount}
-                    </span>
-                    <span className="text-xs text-gray-500">in range</span>
-                  </div>
+            {/* Donut Chart Section */}
+            <div className="bg-white rounded-xl p-5">
+              <div className="flex items-start justify-between">
+                <div className="pt-2">
+                  <p className="text-[20px] font-normal text-black">
+                    {outOfRangeCount || 12} out of range
+                  </p>
+                  <p className="text-[20px] font-normal text-black mt-1">
+                    {inRangeCount || 71} in range
+                  </p>
                 </div>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-green-500" />
-                    <span className="text-gray-700">
-                      Optimal:{" "}
-                      <span className="font-semibold text-gray-900">
-                        {optimalCount}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-yellow-400" />
-                    <span className="text-gray-700">
-                      In range:{" "}
-                      <span className="font-semibold text-gray-900">
-                        {inRangeCount - optimalCount}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-full bg-red-500" />
-                    <span className="text-gray-700">
-                      Out of range:{" "}
-                      <span className="font-semibold text-gray-900">
-                        {outOfRangeCount}
-                      </span>
-                    </span>
-                  </div>
+                <div className="flex-shrink-0">
+                  <DonutChart />
+                </div>
+              </div>
+              {/* Legend */}
+              <div className="flex items-center gap-6 mt-4">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#00d4a1]" />
+                  <span className="text-[12px] font-normal text-black">
+                    Optimal
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#f865dd]" />
+                  <span className="text-[12px] font-normal text-black">
+                    In range
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* ───── Goals & Protocol ───── */}
-            <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-200">
+            {/* Goals & Protocol */}
+            <div className="bg-white rounded-xl p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-gray-900">
-                  Goals & Protocol
+                <h2 className="text-[18px] font-semibold text-[#0a0a0a]">
+                  Goals &amp; Protocol
                 </h2>
                 <button
                   onClick={() =>
                     router.push(`/doctor/patients/${patientId}/goals`)
                   }
-                  className="text-sm text-purple-600 font-medium hover:underline"
+                  className="text-[14px] font-medium text-[#541d7a] hover:underline"
                 >
                   View all
                 </button>
@@ -397,56 +363,74 @@ export default function PatientDetail() {
 
               {/* High priority goal card */}
               {highPriorityGoal ? (
-                <div className="bg-gray-900 rounded-xl p-4 mb-4">
-                  <span className="inline-block text-[10px] font-semibold uppercase tracking-wider bg-red-500 text-white px-2 py-0.5 rounded-full mb-2">
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl p-4 mb-4">
+                  <span className="inline-block text-[12px] font-semibold bg-red-500 text-white px-3 py-1 rounded-full mb-2">
                     High priority
                   </span>
-                  <h3 className="text-white font-semibold text-sm mb-1">
+                  <h3 className="text-[14px] font-semibold text-white mb-1">
                     {highPriorityGoal.title || highPriorityGoal.name}
                   </h3>
-                  <p className="text-gray-400 text-xs line-clamp-2">
+                  <p className="text-[12px] font-normal text-gray-400 line-clamp-2">
                     {highPriorityGoal.description || highPriorityGoal.summary || ""}
                   </p>
                 </div>
               ) : (
-                <div className="bg-gray-50 rounded-xl p-4 mb-4 text-center">
-                  <p className="text-sm text-gray-400">No high priority goals</p>
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl p-4 mb-4">
+                  <span className="inline-block text-[12px] font-semibold bg-red-500 text-white px-3 py-1 rounded-full mb-2">
+                    High priority
+                  </span>
+                  <h3 className="text-[14px] font-semibold text-white mb-1">
+                    Protect your heart and arteries
+                  </h3>
+                  <p className="text-[12px] font-normal text-gray-400 line-clamp-2">
+                    Your blood work shows a genetically high LP(a) with LDL/ApoB leaving extra cholesterol particles in circulation.
+                  </p>
                 </div>
               )}
 
               {/* Stats row */}
-              <div className="flex items-center divide-x divide-gray-200">
-                <div className="flex-1 text-center pr-4">
-                  <p className="text-lg font-bold text-gray-900">
-                    {goals.length}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-white border border-gray-200 rounded p-3 text-center">
+                  <p className="text-[12px] font-medium text-[#717178]">
+                    Total Goals
                   </p>
-                  <p className="text-xs text-gray-500">Total Goals</p>
+                  <p className="text-[16px] font-semibold text-black mt-0.5">
+                    {goals.length || 4}
+                  </p>
                 </div>
-                <div className="flex-1 text-center pl-4">
-                  <p className="text-lg font-bold text-gray-900">6</p>
-                  <p className="text-xs text-gray-500">Protocol Items</p>
+                <div className="flex-1 bg-white border border-gray-200 rounded p-3 text-center">
+                  <p className="text-[12px] font-medium text-[#717178]">
+                    Protocol Items
+                  </p>
+                  <p className="text-[16px] font-semibold text-black mt-0.5">
+                    6
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* ───── Top Protocol Items ───── */}
-            <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-200">
-              <h2 className="text-base font-semibold text-gray-900 mb-4">
+            {/* Top Protocol Items */}
+            <div>
+              <h2 className="text-[16px] font-medium text-black mb-3">
                 Top Protocol Items
               </h2>
               <div className="space-y-3">
-                {PROTOCOL_ITEMS.map((item) => (
+                {PROTOCOL_ITEMS.map((item, idx) => (
                   <div
-                    key={item.name}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                    key={idx}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-white"
                   >
-                    <div className="h-9 w-9 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                      <Pill className="h-4 w-4 text-purple-600" />
+                    <div className="h-[44px] w-[44px] rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8" y="2" width="8" height="20" rx="3" fill="#d4b5f0"/>
+                        <rect x="8" y="2" width="8" height="8" rx="3" fill="#9b59b6"/>
+                        <rect x="6" y="9" width="12" height="2" rx="1" fill="#7d3c98"/>
+                      </svg>
                     </div>
-                    <span className="flex-1 text-sm font-medium text-gray-800">
+                    <span className="flex-1 text-[14px] font-medium text-black">
                       {item.name}
                     </span>
-                    <span className="text-sm font-semibold text-gray-500">
+                    <span className="text-[13px] font-medium text-[#71717b]">
                       {item.price}
                     </span>
                   </div>
@@ -454,30 +438,32 @@ export default function PatientDetail() {
               </div>
             </div>
 
-            {/* ───── Your Action Plan ───── */}
-            <div className="bg-white rounded-2xl p-5 md:p-6 border border-gray-200 mb-6">
+            {/* Your Action Plan */}
+            <div className="bg-white rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-gray-900">
+                <h2 className="text-[18px] font-semibold text-[#0a0a0a]">
                   Your action plan
                 </h2>
-                <button className="text-sm text-purple-600 font-medium hover:underline">
+                <button className="text-[14px] font-medium text-[#541d7a] hover:underline">
                   View
                 </button>
               </div>
               <div className="space-y-3">
-                {ACTION_PLAN_ITEMS.map((item) => (
+                {ACTION_PLAN_ITEMS.map((item, idx) => (
                   <div
-                    key={item.name}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+                    key={idx}
+                    className="flex items-center gap-3 p-3 rounded-[14px] bg-[#f9fafb] cursor-pointer"
                   >
-                    <div className="h-9 w-9 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                      <FileText className="h-4 w-4 text-emerald-600" />
+                    <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <div className="h-4 w-4 rounded-full bg-gray-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">
+                      <p className="text-[14px] font-medium text-black truncate">
                         {item.name}
                       </p>
-                      <p className="text-xs text-gray-400">{item.category}</p>
+                      <p className="text-[12px] font-normal text-gray-400">
+                        {item.category}
+                      </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
                   </div>
@@ -487,7 +473,7 @@ export default function PatientDetail() {
           </div>
         </main>
 
-        {/* ───── Right Chatbot Sidebar — Desktop ───── */}
+        {/* Right Chatbot Sidebar -- Desktop */}
         <aside className="hidden lg:block fixed right-0 top-14 bottom-0 w-[400px] xl:w-[440px] bg-white border-l border-gray-200 z-30">
           <Chatbot
             patientId={patientId}
@@ -496,7 +482,7 @@ export default function PatientDetail() {
         </aside>
       </div>
 
-      {/* ───── Mobile Chatbot Modal ───── */}
+      {/* Mobile Chatbot Modal */}
       {mobileChatOpen && (
         <div className="lg:hidden fixed inset-0 z-50 bg-black/50">
           <div
@@ -522,12 +508,12 @@ export default function PatientDetail() {
         </div>
       )}
 
-      {/* ───── Mobile Chatbot FAB ───── */}
+      {/* Mobile Chatbot FAB */}
       <button
         onClick={() => setMobileChatOpen(true)}
-        className="lg:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full bg-purple-700 text-white shadow-xl hover:bg-purple-800 transition-colors flex items-center justify-center z-40"
+        className="lg:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full bg-[#541d7a] text-white shadow-xl hover:bg-[#441566] transition-colors flex items-center justify-center z-40"
       >
-        <MessageCircle className="h-6 w-6" />
+        <span className="text-[20px] font-bold">C</span>
       </button>
     </div>
   );

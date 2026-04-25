@@ -5,9 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import Cookie from "js-cookie";
 import {
-  ArrowLeft,
   Plus,
-  Check,
+  Pencil,
   Trash2,
   X,
   Search,
@@ -101,17 +100,17 @@ export default function GoalsProtocolPage() {
     fetchGoals();
   }, [patientId]);
 
-  // Helpers
-  const getPriorityBadge = (priority) => {
+  // Priority badge colors — exact Figma: tinted bg + colored text
+  const getPriorityBadgeStyle = (priority) => {
     switch (priority) {
       case "high":
-        return "bg-red-100 text-red-700";
+        return { backgroundColor: "#fde8e8", color: "#ef4444" };
       case "medium":
-        return "bg-orange-100 text-orange-700";
+        return { backgroundColor: "#fef3cd", color: "#f59e0b" };
       case "low":
-        return "bg-green-100 text-green-700";
+        return { backgroundColor: "#ecfccb", color: "#22c55e" };
       default:
-        return "bg-gray-100 text-gray-600";
+        return { backgroundColor: "#f3f4f6", color: "#9ca3af" };
     }
   };
 
@@ -197,32 +196,30 @@ export default function GoalsProtocolPage() {
 
   return (
     <div className="min-h-screen bg-[#F2F2F2] font-inter">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto flex items-center h-14 px-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5 text-gray-700" />
-          </button>
-          <h1 className="ml-2 text-lg font-bold text-black">
-            Goals & Protocol
-          </h1>
-        </div>
-      </header>
+      {/* Header — no bg, blends into page */}
+      <div className="max-w-2xl mx-auto px-4 pt-4">
+        <button
+          onClick={() => router.back()}
+          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          {/* Back arrow: 6x11 left angle, stroke #000000 */}
+          <svg width="6" height="11" viewBox="0 0 6 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5.5 1L1 5.5L5.5 10" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-4">
-        {/* Tab Bar */}
-        <div className="flex border-b border-gray-300 mb-4">
+      <div className="max-w-2xl mx-auto px-4 pb-4">
+        {/* Tab headings: active = large bold black, inactive = lighter gray */}
+        <div className="flex items-baseline gap-5 mb-5">
           {["goals", "protocol"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 pb-3 text-center text-sm font-medium transition-colors ${
+              className={`transition-colors ${
                 activeTab === tab
-                  ? "text-black font-bold border-b-2 border-black"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "text-[24px] font-bold text-black"
+                  : "text-[20px] font-normal text-[#c4c4c4]"
               }`}
             >
               {tab === "goals" ? "Goals" : "Protocol"}
@@ -233,16 +230,16 @@ export default function GoalsProtocolPage() {
         {/* Goals Tab */}
         {activeTab === "goals" && (
           <div>
-            {/* Priority Filter Pills */}
+            {/* Priority Filter Pills: 14px/500, r=full, active=black bg white text, inactive=white bg #495565 text */}
             <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide">
               {["all", "high", "medium", "low"].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setPriorityFilter(filter)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  className={`px-4 py-1.5 rounded-full text-[14px] font-medium whitespace-nowrap transition-colors ${
                     priorityFilter === filter
                       ? "bg-black text-white"
-                      : "bg-white text-gray-600 border border-gray-300 hover:bg-gray-50"
+                      : "bg-white text-[#495565] border border-gray-300 hover:bg-gray-50"
                   }`}
                 >
                   {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -266,27 +263,30 @@ export default function GoalsProtocolPage() {
                 {filteredGoals.map((goal) => (
                   <div
                     key={goal.id}
-                    className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
+                    className="bg-white rounded-lg p-4 border border-[#e8e8e8]"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-black mb-1 truncate">
+                        {/* Title: 14px/500 black */}
+                        <h3 className="text-[14px] font-medium text-black mb-1 truncate">
                           {goal.title}
                         </h3>
+                        {/* Priority badge: 10px/600, tinted bg + colored text */}
                         <span
-                          className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${getPriorityBadge(
-                            goal.priority
-                          )}`}
+                          className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold"
+                          style={getPriorityBadgeStyle(goal.priority)}
                         >
                           {goal.priority.charAt(0).toUpperCase() +
                             goal.priority.slice(1)}
                         </span>
-                        <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                        {/* Protocol link count: 12px/400 #717178 */}
+                        <p className="text-[12px] font-normal text-[#717178] mt-1.5 flex items-center gap-1">
                           <Link2 className="h-3 w-3" />
                           {getLinkedProtocolCount(goal)} protocol item
                           {getLinkedProtocolCount(goal) !== 1 ? "s" : ""}
                         </p>
                       </div>
+                      {/* Edit/Delete icons: #717178 */}
                       <div className="flex items-center gap-1 ml-3 flex-shrink-0">
                         <button
                           onClick={() => {
@@ -301,14 +301,14 @@ export default function GoalsProtocolPage() {
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Edit"
                         >
-                          <Check className="h-4 w-4 text-gray-500" />
+                          <Pencil className="h-4 w-4 text-[#717178]" />
                         </button>
                         <button
                           onClick={() => handleDeleteGoal(goal.id)}
                           className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
-                          <Trash2 className="h-4 w-4 text-gray-500" />
+                          <Trash2 className="h-4 w-4 text-[#717178]" />
                         </button>
                       </div>
                     </div>
@@ -317,17 +317,19 @@ export default function GoalsProtocolPage() {
               </div>
             )}
 
-            {/* Add Goal Button */}
-            <button
-              onClick={() => {
-                setGoalForm({ title: "", description: "", priority: "", linkedProtocols: [] });
-                setShowGoalModal(true);
-              }}
-              className="w-full mt-4 py-3 bg-black text-white rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Add a goal
-            </button>
+            {/* Add Goal Button: bg black, white text, 14px/500, r=full, centered */}
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => {
+                  setGoalForm({ title: "", description: "", priority: "", linkedProtocols: [] });
+                  setShowGoalModal(true);
+                }}
+                className="px-6 py-3 bg-black text-white rounded-full text-[14px] font-medium flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Add a goal
+              </button>
+            </div>
           </div>
         )}
 
@@ -343,19 +345,22 @@ export default function GoalsProtocolPage() {
                 {protocolItems.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
+                    className="bg-white rounded-lg p-4 border border-[#e8e8e8]"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-black mb-0.5 truncate">
+                        {/* Name: 14px/500 black */}
+                        <h3 className="text-[14px] font-medium text-black mb-0.5 truncate">
                           {item.name}
                         </h3>
                         <div className="flex items-center gap-3 mt-1">
-                          <span className="text-sm font-bold text-black">
+                          {/* Price: 14px/500 #717178 */}
+                          <span className="text-[14px] font-medium text-[#717178]">
                             {item.price}
                           </span>
+                          {/* Quantity: 12px/400 #717178 */}
                           {item.quantity && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-[12px] font-normal text-[#717178]">
                               {item.quantity}
                             </span>
                           )}
@@ -376,14 +381,14 @@ export default function GoalsProtocolPage() {
                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           title="Edit"
                         >
-                          <Check className="h-4 w-4 text-gray-500" />
+                          <Pencil className="h-4 w-4 text-[#717178]" />
                         </button>
                         <button
                           onClick={() => handleDeleteProtocol(item.id)}
                           className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
-                          <Trash2 className="h-4 w-4 text-gray-500" />
+                          <Trash2 className="h-4 w-4 text-[#717178]" />
                         </button>
                       </div>
                     </div>
@@ -392,18 +397,20 @@ export default function GoalsProtocolPage() {
               </div>
             )}
 
-            {/* Add Protocol Button */}
-            <button
-              onClick={() => {
-                setProtocolForm({ name: "", price: "", quantity: "", dosage: "", linkedGoals: [] });
-                setProtocolSearch("");
-                setShowProtocolModal(true);
-              }}
-              className="w-full mt-4 py-3 bg-black text-white rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Add more items
-            </button>
+            {/* Add Protocol Button: bg black, white text, centered */}
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={() => {
+                  setProtocolForm({ name: "", price: "", quantity: "", dosage: "", linkedGoals: [] });
+                  setProtocolSearch("");
+                  setShowProtocolModal(true);
+                }}
+                className="px-6 py-3 bg-black text-white rounded-full text-[14px] font-medium flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Add more items
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -412,18 +419,21 @@ export default function GoalsProtocolPage() {
       {showGoalModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/30"
             onClick={() => setShowGoalModal(false)}
           />
-          <div className="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+          {/* bg white, r=16 */}
+          <div className="relative bg-white w-full sm:max-w-lg sm:rounded-[16px] rounded-t-[16px] max-h-[90vh] overflow-y-auto shadow-xl">
             {/* Modal Header */}
             <div className="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-bold text-black">
+                  {/* 18px/600 black */}
+                  <h2 className="text-[18px] font-semibold text-black">
                     Add a New Goal
                   </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  {/* 14px/400 #717178 */}
+                  <p className="text-[14px] font-normal text-[#717178] mt-0.5">
                     Define a new health goal for the patient
                   </p>
                 </div>
@@ -439,23 +449,25 @@ export default function GoalsProtocolPage() {
             <div className="px-5 py-4 space-y-4">
               {/* Goal Title */}
               <div>
-                <label className="block text-sm font-medium text-black mb-1.5">
-                  Goal Title<span className="text-red-500">*</span>
+                {/* Label: 14px/500 black, required star #ef4444 */}
+                <label className="block text-[14px] font-medium text-black mb-1.5">
+                  Goal Title<span className="text-[#ef4444]">*</span>
                 </label>
+                {/* Input: border #e5e7eb, r=8, 14px/400 */}
                 <input
                   type="text"
                   value={goalForm.title}
                   onChange={(e) =>
                     setGoalForm((f) => ({ ...f, title: e.target.value }))
                   }
-                  placeholder="e.g. Protect your heart and arteries"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                  placeholder="Enter a name for the recipe"
+                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] font-normal focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-black mb-1.5">
+                <label className="block text-[14px] font-medium text-black mb-1.5">
                   Description
                 </label>
                 <textarea
@@ -463,47 +475,60 @@ export default function GoalsProtocolPage() {
                   onChange={(e) =>
                     setGoalForm((f) => ({ ...f, description: e.target.value }))
                   }
-                  placeholder="Add details about this goal..."
+                  placeholder="Detailed description of the goal..."
                   rows={3}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] font-normal resize-none focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                 />
               </div>
 
               {/* Priority Level */}
               <div>
-                <label className="block text-sm font-medium text-black mb-1.5">
-                  Priority Level<span className="text-red-500">*</span>
+                <label className="block text-[14px] font-medium text-black mb-1.5">
+                  Priority Level<span className="text-[#ef4444]">*</span>
                 </label>
+                {/* Priority buttons: active=solid bg white text, inactive=border only */}
                 <div className="flex gap-2">
                   {[
-                    { value: "high", label: "High Priority", color: "border-red-400 bg-red-50 text-red-700", activeColor: "border-red-500 bg-red-100 ring-2 ring-red-300" },
-                    { value: "medium", label: "Medium Priority", color: "border-orange-400 bg-orange-50 text-orange-700", activeColor: "border-orange-500 bg-orange-100 ring-2 ring-orange-300" },
-                    { value: "low", label: "Low Priority", color: "border-green-400 bg-green-50 text-green-700", activeColor: "border-green-500 bg-green-100 ring-2 ring-green-300" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() =>
-                        setGoalForm((f) => ({ ...f, priority: opt.value }))
-                      }
-                      className={`flex-1 py-2 px-2 rounded-lg border text-xs font-medium transition-all ${
-                        goalForm.priority === opt.value
-                          ? opt.activeColor
-                          : opt.color
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                    { value: "high", label: "High\nPriority", color: "#ef4444" },
+                    { value: "medium", label: "Medium\nPriority", color: "#f59e0b" },
+                    { value: "low", label: "Low\nPriority", color: "#22c55e" },
+                  ].map((opt) => {
+                    const isActive = goalForm.priority === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() =>
+                          setGoalForm((f) => ({ ...f, priority: opt.value }))
+                        }
+                        className="flex-1 py-3 px-2 rounded-lg text-[13px] font-medium transition-all whitespace-pre-line leading-tight text-center"
+                        style={
+                          isActive
+                            ? {
+                                backgroundColor: opt.color,
+                                color: "#ffffff",
+                                border: `1px solid ${opt.color}`,
+                              }
+                            : {
+                                backgroundColor: "transparent",
+                                color: "#9ca3af",
+                                border: "1px solid #e5e7eb",
+                              }
+                        }
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Link Protocol Items */}
               <div>
-                <label className="block text-sm font-medium text-black mb-1.5 flex items-center gap-1.5">
+                <label className="text-[14px] font-medium text-black mb-1.5 flex items-center gap-1.5">
                   <Link2 className="h-4 w-4" />
                   Link Protocol Items
                 </label>
-                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-40 overflow-y-auto">
+                <div className="border border-[#e5e7eb] rounded-lg divide-y divide-gray-100 max-h-40 overflow-y-auto">
                   {protocolItems.length === 0 ? (
                     <p className="text-xs text-gray-400 px-3 py-3 text-center">
                       No protocol items to link
@@ -515,44 +540,50 @@ export default function GoalsProtocolPage() {
                         <button
                           key={item.id}
                           onClick={() => toggleLinkedProtocol(item.id)}
-                          className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
                         >
-                          <span className="text-sm text-gray-800 truncate">
-                            {item.name}
-                          </span>
+                          {/* Radio-style circle indicator */}
                           <span
-                            className={`flex-shrink-0 ml-2 h-5 w-5 rounded-full flex items-center justify-center text-xs transition-colors ${
+                            className={`flex-shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                               isLinked
-                                ? "bg-black text-white"
-                                : "bg-gray-100 text-gray-400"
+                                ? "border-black bg-black"
+                                : "border-gray-300 bg-white"
                             }`}
                           >
-                            {isLinked ? (
-                              <Check className="h-3 w-3" />
-                            ) : (
-                              <Plus className="h-3 w-3" />
+                            {isLinked && (
+                              <span className="h-2 w-2 rounded-full bg-white" />
                             )}
+                          </span>
+                          <span className="text-[14px] text-black font-medium truncate">
+                            {item.name}
                           </span>
                         </button>
                       );
                     })
                   )}
                 </div>
+                {goalForm.linkedProtocols.length > 0 && (
+                  <p className="text-[12px] text-[#717178] mt-1.5">
+                    {goalForm.linkedProtocols.length} item{goalForm.linkedProtocols.length !== 1 ? "s" : ""} selected
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-white px-5 py-4 border-t border-gray-100 flex gap-3">
+            <div className="sticky bottom-0 bg-white px-5 py-4 border-t border-gray-100 flex items-center justify-end gap-4">
+              {/* Cancel: 14px/500 #717178, plain text */}
               <button
                 onClick={() => setShowGoalModal(false)}
-                className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="py-2.5 px-4 text-[14px] font-medium text-[#717178] hover:text-gray-900 transition-colors"
               >
                 Cancel
               </button>
+              {/* + Add a goal: bg black white text */}
               <button
                 onClick={handleAddGoal}
                 disabled={!goalForm.title || !goalForm.priority}
-                className="flex-1 py-2.5 bg-black text-white rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="py-2.5 px-6 bg-black text-white rounded-lg text-[14px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus className="h-4 w-4" />
                 Add a goal
@@ -566,18 +597,21 @@ export default function GoalsProtocolPage() {
       {showProtocolModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/30"
             onClick={() => setShowProtocolModal(false)}
           />
-          <div className="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+          {/* bg white, r=16 */}
+          <div className="relative bg-white w-full sm:max-w-lg sm:rounded-[16px] rounded-t-[16px] max-h-[90vh] overflow-y-auto shadow-xl">
             {/* Modal Header */}
             <div className="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-bold text-black">
+                  {/* 18px/600 black */}
+                  <h2 className="text-[18px] font-semibold text-black">
                     Add a New Protocol
                   </h2>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  {/* 14px/400 #717178 */}
+                  <p className="text-[14px] font-normal text-[#717178] mt-0.5">
                     Add a supplement, test, or treatment
                   </p>
                 </div>
@@ -593,8 +627,8 @@ export default function GoalsProtocolPage() {
             <div className="px-5 py-4 space-y-4">
               {/* Item Name */}
               <div>
-                <label className="block text-sm font-medium text-black mb-1.5">
-                  Item Name<span className="text-red-500">*</span>
+                <label className="block text-[14px] font-medium text-black mb-1.5">
+                  Item Name<span className="text-[#ef4444]">*</span>
                 </label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -605,7 +639,7 @@ export default function GoalsProtocolPage() {
                       setProtocolForm((f) => ({ ...f, name: e.target.value }))
                     }
                     placeholder="Search supplements, tests..."
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                    className="w-full pl-9 pr-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] font-normal focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                   />
                 </div>
               </div>
@@ -613,7 +647,7 @@ export default function GoalsProtocolPage() {
               {/* Price & Quantity */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1.5">
+                  <label className="block text-[14px] font-medium text-black mb-1.5">
                     Price
                   </label>
                   <input
@@ -623,11 +657,11 @@ export default function GoalsProtocolPage() {
                       setProtocolForm((f) => ({ ...f, price: e.target.value }))
                     }
                     placeholder="$0"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                    className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] font-normal focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-black mb-1.5">
+                  <label className="block text-[14px] font-medium text-black mb-1.5">
                     Quantity / Servings
                   </label>
                   <input
@@ -640,14 +674,14 @@ export default function GoalsProtocolPage() {
                       }))
                     }
                     placeholder="e.g. 90 Servings"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                    className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] font-normal focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                   />
                 </div>
               </div>
 
               {/* Dosage Instructions */}
               <div>
-                <label className="block text-sm font-medium text-black mb-1.5">
+                <label className="block text-[14px] font-medium text-black mb-1.5">
                   Dosage Instructions
                 </label>
                 <input
@@ -657,17 +691,17 @@ export default function GoalsProtocolPage() {
                     setProtocolForm((f) => ({ ...f, dosage: e.target.value }))
                   }
                   placeholder="e.g. Take 1 capsule daily with food"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] font-normal focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                 />
               </div>
 
               {/* Link to Goals */}
               <div>
-                <label className="block text-sm font-medium text-black mb-1.5 flex items-center gap-1.5">
+                <label className="text-[14px] font-medium text-black mb-1.5 flex items-center gap-1.5">
                   <Link2 className="h-4 w-4" />
                   Link to Goals
                 </label>
-                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-40 overflow-y-auto">
+                <div className="border border-[#e5e7eb] rounded-lg divide-y divide-gray-100 max-h-40 overflow-y-auto">
                   {goals.length === 0 ? (
                     <p className="text-xs text-gray-400 px-3 py-3 text-center">
                       No goals to link
@@ -679,34 +713,33 @@ export default function GoalsProtocolPage() {
                         <button
                           key={goal.id}
                           onClick={() => toggleLinkedGoal(goal.id)}
-                          className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
                         >
+                          {/* Radio-style circle indicator */}
+                          <span
+                            className={`flex-shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              isLinked
+                                ? "border-black bg-black"
+                                : "border-gray-300 bg-white"
+                            }`}
+                          >
+                            {isLinked && (
+                              <span className="h-2 w-2 rounded-full bg-white" />
+                            )}
+                          </span>
                           <div className="flex items-center gap-2 truncate">
-                            <span className="text-sm text-gray-800 truncate">
+                            <span className="text-[14px] text-black font-medium truncate">
                               {goal.title}
                             </span>
+                            {/* Priority badge with Figma colors */}
                             <span
-                              className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${getPriorityBadge(
-                                goal.priority
-                              )}`}
+                              className="inline-block px-1.5 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0"
+                              style={getPriorityBadgeStyle(goal.priority)}
                             >
                               {goal.priority.charAt(0).toUpperCase() +
                                 goal.priority.slice(1)}
                             </span>
                           </div>
-                          <span
-                            className={`flex-shrink-0 ml-2 h-5 w-5 rounded-full flex items-center justify-center text-xs transition-colors ${
-                              isLinked
-                                ? "bg-black text-white"
-                                : "bg-gray-100 text-gray-400"
-                            }`}
-                          >
-                            {isLinked ? (
-                              <Check className="h-3 w-3" />
-                            ) : (
-                              <Plus className="h-3 w-3" />
-                            )}
-                          </span>
                         </button>
                       );
                     })
@@ -716,17 +749,18 @@ export default function GoalsProtocolPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-white px-5 py-4 border-t border-gray-100 flex gap-3">
+            <div className="sticky bottom-0 bg-white px-5 py-4 border-t border-gray-100 flex items-center justify-end gap-4">
+              {/* Cancel: 14px/500 #717178, plain text */}
               <button
                 onClick={() => setShowProtocolModal(false)}
-                className="flex-1 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="py-2.5 px-4 text-[14px] font-medium text-[#717178] hover:text-gray-900 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddProtocol}
                 disabled={!protocolForm.name}
-                className="flex-1 py-2.5 bg-black text-white rounded-xl text-sm font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="py-2.5 px-6 bg-black text-white rounded-lg text-[14px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus className="h-4 w-4" />
                 Add Protocol

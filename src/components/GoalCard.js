@@ -3,8 +3,10 @@
 import Image from "next/image";
 
 export default function GoalCard({ goal, onClick, showCTA = true }) {
-  const getGradientBg = (priority) => {
-    switch (priority) {
+  const priority = (goal.priority || "").toLowerCase();
+
+  const getGradientBg = (p) => {
+    switch (p) {
       case "high":
         return "bg-gradient-to-br from-red-700 to-red-900";
       case "medium":
@@ -16,8 +18,8 @@ export default function GoalCard({ goal, onClick, showCTA = true }) {
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
+  const getPriorityColor = (p) => {
+    switch (p) {
       case "high":
         return "bg-red-900/50 text-white";
       case "medium":
@@ -29,12 +31,14 @@ export default function GoalCard({ goal, onClick, showCTA = true }) {
     }
   };
 
-  const getPriorityLabel = (priority) => {
-    return priority ? priority.charAt(0).toUpperCase() + priority.slice(1) : "None";
+  const getPriorityLabel = (p) => {
+    return p ? p.charAt(0).toUpperCase() + p.slice(1) : "None";
   };
 
-  // Alternate between two background images
-  const bgImage = goal.id % 2 === 1 ? "/assets/goal-theme-1.png" : "/assets/goal-theme-2.png";
+  // Alternate between two background images using goalId or id
+  const goalIndex = goal.goalId ? goal.goalId.length : (goal.id || 0);
+  const bgImage = goalIndex % 2 === 1 ? "/assets/goal-theme-1.png" : "/assets/goal-theme-2.png";
+  const description = goal.summary || goal.description || "";
 
   return (
     <div
@@ -52,15 +56,15 @@ export default function GoalCard({ goal, onClick, showCTA = true }) {
       <div className="relative z-10 flex flex-col h-full">
         {/* Priority Badge */}
         <div className="flex justify-end mb-auto">
-          <span className={`${getPriorityColor(goal.priority)} text-xs font-medium px-3 py-1 rounded-full`}>
-            {getPriorityLabel(goal.priority)} priority
+          <span className={`${getPriorityColor(priority)} text-xs font-medium px-3 py-1 rounded-full`}>
+            {getPriorityLabel(priority)} priority
           </span>
         </div>
 
         {/* Title and Description - centered in middle */}
         <div className="flex-1 flex flex-col justify-center mt-20 lg:mt-16">
           <h3 className="text-2xl font-semibold font-inter leading-tight mb-3 lg:text-[1.75rem]">{goal.title}</h3>
-          <p className="text-sm font-inter opacity-90 line-clamp-3 lg:text-base">{goal.description}</p>
+          <p className="text-sm font-inter opacity-90 line-clamp-3 lg:text-base">{description}</p>
         </div>
 
         {/* How to solve this - at bottom */}

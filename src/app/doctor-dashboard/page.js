@@ -19,9 +19,9 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
 // ─── Status badge colors ───
 const STATUS_STYLES = {
-  "Need Attention": "bg-[#FF6B35] text-white",
-  "Review Pending": "bg-[#FF6B35] text-white",
-  Normal: "bg-[#22C55E] text-white",
+  "Need Attention": "bg-[#ef4444] text-white",
+  "Review Pending": "bg-[#f59e0b] text-white",
+  Normal: "bg-[#22c55e] text-white",
 };
 
 // ─── Placeholder appointments (no backend yet) ───
@@ -39,15 +39,14 @@ function BioAgeBar({ value }) {
       {Array.from({ length: segments }).map((_, i) => {
         const ratio = i / segments;
         let color;
-        if (ratio < 0.3) color = "bg-green-500";
-        else if (ratio < 0.5) color = "bg-yellow-400";
-        else if (ratio < 0.7) color = "bg-orange-400";
-        else color = "bg-pink-500";
+        if (ratio < 0.3) color = "bg-[#05bc7e]";
+        else if (ratio < 0.5) color = "bg-[#d7d82e]";
+        else color = "bg-[#f865dd]";
         const filled = i < Math.round((value / 100) * segments);
         return (
           <div
             key={i}
-            className={`w-[6px] h-4 rounded-[1px] ${filled ? color : "bg-white/10"}`}
+            className={`w-[2px] h-[18px] rounded-[1px] ${filled ? color : "bg-white/10"}`}
           />
         );
       })}
@@ -88,7 +87,7 @@ function Sparkline({ values, color = "#F59E0B" }) {
 }
 
 // ─── Patient Card ───
-function PatientCard({ patient, onClick }) {
+function PatientCard({ patient, index = 0, onClick }) {
   const status = patient.status || "Normal";
   const bioAge = patient.scores?.bioAge;
   const chronoAge = patient.age;
@@ -102,39 +101,46 @@ function PatientCard({ patient, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="rounded-2xl overflow-hidden bg-[#1A1A2E] cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200"
+      className="rounded-3xl overflow-hidden bg-[#1a1a1a] cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200"
     >
-      {/* Avatar area */}
-      <div className="relative h-44 bg-gradient-to-b from-[#2D1B69] to-[#1A1A2E] flex items-end justify-center overflow-hidden">
-        <div className="w-28 h-28 rounded-full bg-white/10 flex items-center justify-center mb-2">
-          <span className="text-4xl font-bold text-white/40">
-            {(patient.firstName?.[0] || "?").toUpperCase()}
-          </span>
-        </div>
+      {/* Avatar area — image with gradient overlay */}
+      <div className="relative h-[192px] overflow-hidden">
+        {/* Purple gradient background behind avatar */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#541d7a] to-[#7a2fa0]" />
+        <img
+          src={`/assets/avatars/avatar-${(index % 5) + 1}.png`}
+          alt={patient.firstName || "Patient"}
+          className="relative w-full h-full object-cover"
+        />
+        {/* Bottom fade to card bg */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a]/20 to-transparent" />
         {/* Status badge */}
         <span
-          className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold ${
+          className={`absolute top-3 right-3 px-3 py-1 rounded text-xs font-semibold ${
             STATUS_STYLES[status] || STATUS_STYLES["Normal"]
           }`}
         >
           {status}
         </span>
+        {/* Name + Age badge at bottom-left over gradient */}
+        <div className="absolute bottom-3 left-4">
+          <h3 className="text-2xl font-bold text-white">
+            {patient.firstName || "Unknown"} {patient.lastName || ""}
+          </h3>
+          <span className="inline-block mt-1 px-2 py-0.5 rounded bg-white/10 text-sm font-normal text-white">
+            Age: {chronoAge || "N/A"}
+          </span>
+        </div>
       </div>
 
       {/* Info area */}
-      <div className="px-4 pb-4 -mt-2">
-        <h3 className="text-white text-xl font-bold">
-          {patient.firstName || "Unknown"} {patient.lastName || ""}
-        </h3>
-        <span className="inline-block mt-1 px-2 py-0.5 rounded bg-white/10 text-white/80 text-xs font-medium">
-          Age: {chronoAge || "N/A"}
-        </span>
+      <div className="px-4 pb-4">
 
         {/* Biological Age */}
         <div className="mt-4 flex items-center justify-between">
           <div>
-            <p className="text-white/50 text-xs font-medium">Biological Age</p>
-            <p className="text-white/30 text-[10px]">
+            <p className="text-white text-xs font-normal">Biological Age</p>
+            <p className="text-[#717178] text-sm font-normal">
               {bioAgeDiff != null
                 ? `≈ ${Math.abs(bioAgeDiff)} calendar years`
                 : "Not available"}
@@ -142,7 +148,7 @@ function PatientCard({ patient, onClick }) {
           </div>
           <div className="flex items-center gap-2">
             <BioAgeBar value={bioAgeBarValue} />
-            <span className="text-white text-xl font-bold">
+            <span className="text-2xl font-light text-white">
               {bioAge != null ? Math.round(bioAge) : "—"}
             </span>
             {bioAgeDiff != null && (
@@ -160,20 +166,20 @@ function PatientCard({ patient, onClick }) {
         {/* ApoB */}
         <div className="mt-3 flex items-center justify-between">
           <div>
-            <p className="text-white/50 text-xs font-medium">ApoB</p>
-            <p className="text-white/30 text-[10px]">Lowest % for Age Range</p>
+            <p className="text-white text-xs font-normal">ApoB</p>
+            <p className="text-[#717178] text-[10px] font-normal">Lowest % for Age Range</p>
           </div>
           <div className="flex items-center gap-2">
             <Sparkline values={apob ? [60, 55, 58, 52, apob.numericValue || 55] : [60, 55, 58, 52, 55]} />
-            <span className="text-white text-xl font-bold">
+            <span className="text-lg font-normal text-white">
               {apob?.numericValue != null ? Math.round(apob.numericValue) : "—"}
             </span>
-            <span className="w-2 h-2 rounded-full bg-orange-400" />
+            <span className="w-2 h-2 rounded-full bg-[#f865dd]" />
           </div>
         </div>
 
         {/* Watermark */}
-        <p className="text-white/15 text-[10px] mt-3">cyborg.com</p>
+        <p className="text-xs text-[#717178] mt-3">cyborg.com</p>
       </div>
     </div>
   );
@@ -192,23 +198,24 @@ function CalendarStrip() {
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="bg-[#1A1A2E] rounded-2xl p-4 shadow-sm">
-      <div className="mb-3">
-        <h3 className="text-sm font-semibold text-white">Upcoming</h3>
-        <p className="text-xs text-white/50">in the next 2 weeks</p>
+    <div className="bg-[#333333] rounded-[16px] p-5">
+      <div className="mb-4">
+        <h3 className="text-[20px] font-medium text-white">Upcoming</h3>
+        <p className="text-[14px] font-normal text-white/50">in the next 2 weeks</p>
       </div>
-      <div className="grid grid-cols-7 gap-1.5">
+      <div className="grid grid-cols-7 gap-2">
         {days.map((d, i) => {
           const isToday = i === 0;
+          const isWeekend = d.getDay() === 0 || d.getDay() === 6;
           return (
             <button
               key={i}
-              className={`w-9 h-9 rounded-full text-xs font-semibold flex items-center justify-center transition-colors mx-auto ${
+              className={`w-[30px] h-[30px] rounded-full text-[16px] font-bold flex items-center justify-center transition-colors mx-auto ${
                 isToday
-                  ? "bg-primary text-white ring-2 ring-primary/30"
-                  : d.getDay() === 0 || d.getDay() === 6
-                  ? "bg-orange-500/20 text-orange-400"
-                  : "bg-white/10 text-white/70 hover:bg-white/20"
+                  ? "bg-primary text-white"
+                  : isWeekend
+                  ? "bg-[#f59e0b]/20 text-[#f59e0b]"
+                  : "bg-[#444444] text-white hover:bg-[#555555]"
               }`}
             >
               {d.getDate()}
@@ -223,14 +230,14 @@ function CalendarStrip() {
 // ─── Appointment Item ───
 function AppointmentItem({ date, title, time }) {
   return (
-    <div className="flex items-start gap-4 py-3 border-b border-gray-100 last:border-0">
+    <div className="bg-white rounded-lg p-4 flex items-start gap-4">
       <div className="flex-shrink-0 text-center">
-        <p className="text-[10px] text-gray-400 uppercase">{date.split(" ")[0]}</p>
-        <p className="text-xl font-bold text-gray-900">{date.split(" ")[1]}</p>
+        <p className="text-[12px] font-medium text-[#717178]">{date.split(" ")[0]}</p>
+        <p className="text-[20px] font-medium text-[#717178]">{date.split(" ")[1]}</p>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{title}</p>
-        <p className="text-xs text-gray-400">{time}</p>
+      <div className="flex-1 min-w-0 border-l border-gray-200 pl-4">
+        <p className="text-[14px] font-medium text-black">{title}</p>
+        <p className="text-[12px] font-medium text-[#717178]">{time}</p>
       </div>
     </div>
   );
@@ -299,15 +306,15 @@ export default function DoctorDashboard() {
   }, [patients, activeTab, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-[#F2F2F2] font-inter">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <div className="min-h-screen bg-[#f2f2f2] font-sans">
+      {/* Header — no white bar per Figma, floats on gray bg */}
+      <header className="sticky top-0 z-40 bg-[#f2f2f2]">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
           <div>
-            <h1 className="text-lg font-bold text-gray-900">
+            <h1 className="text-[24px] font-semibold text-[#000000]">
               Dr. {user?.firstName || "Doctor"}
             </h1>
-            <p className="text-xs text-gray-400">Cyborg Longevity Physician</p>
+            <p className="text-[14px] font-normal text-[#717178]">Cyborg Longevity Physician</p>
           </div>
           <HeaderActions />
         </div>
@@ -322,12 +329,10 @@ export default function DoctorDashboard() {
             <CalendarStrip />
 
             {/* Appointments */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm">
-              <div className="px-0">
-                {MOCK_APPOINTMENTS.map((apt, i) => (
-                  <AppointmentItem key={i} {...apt} />
-                ))}
-              </div>
+            <div className="space-y-2">
+              {MOCK_APPOINTMENTS.map((apt, i) => (
+                <AppointmentItem key={i} {...apt} />
+              ))}
             </div>
           </div>
 
@@ -335,7 +340,7 @@ export default function DoctorDashboard() {
           <div className="flex-1">
             {/* Patients header */}
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Patients</h2>
+              <h2 className="text-[20px] font-semibold text-[#000000]">Patients</h2>
             </div>
 
             {/* Tab filters */}
@@ -344,10 +349,10 @@ export default function DoctorDashboard() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
                     activeTab === tab
-                      ? "bg-gray-900 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                      ? "bg-[#000000] text-white"
+                      : "bg-[#ffffff] text-[#495565] border border-[#e5e7eb] hover:bg-gray-100"
                   }`}
                 >
                   {tab}
@@ -384,10 +389,11 @@ export default function DoctorDashboard() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredPatients.map((patient) => (
+                {filteredPatients.map((patient, index) => (
                   <PatientCard
                     key={patient._id}
                     patient={patient}
+                    index={index}
                     onClick={() => router.push(`/doctor/patients/${patient._id}`)}
                   />
                 ))}

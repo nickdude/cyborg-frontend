@@ -7,11 +7,11 @@ import ProgressBar from "@/components/ProgressBar";
 import BiomarkersList from "@/components/BiomarkersList";
 import DropdownFilter from "@/components/DropdownFilter";
 import SearchBar from "@/components/SearchBar";
-import { biomarkersData } from "@/data/biomarkersData";
-import { userAPI } from "@/services/api";
+import { transformPanel, computeSummary } from "@/utils/biomarkerAdapter";
+import { userAPI, biomarkerAPI } from "@/services/api";
 
 export default function DataDashboard() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const userId = user?._id || user?.id;
   const userName = user?.firstName || "User";
 
@@ -29,10 +29,16 @@ export default function DataDashboard() {
   const [uploadElapsedSec, setUploadElapsedSec] = useState(0);
   const [twinError, setTwinError] = useState("");
   const [deletingReportId, setDeletingReportId] = useState(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const uploadRef = useRef(null);
+  const pollingRef = useRef(null);
 
-  // Phased progress: parsing a report via streaming AI takes ~60-120s.
-  // We surface that honestly instead of a silent "Uploading..." freeze.
+  const [biomarkers, setBiomarkers] = useState([]);
+  const [bioLoading, setBioLoading] = useState(false);
+  const [bioError, setBioError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  // Upload elapsed timer
   useEffect(() => {
     if (!twinUploading) {
       setUploadElapsedSec(0);
@@ -44,17 +50,49 @@ export default function DataDashboard() {
     return () => clearInterval(id);
   }, [twinUploading]);
 
-  const uploadPhaseLabel = useMemo(() => {
-    if (!twinUploading) return null;
-    const s = uploadElapsedSec;
-    if (s < 3) return "Uploading your file";
-    if (s < 15) return "Reading the document";
-    if (s < 60) return "Extracting biomarkers with AI";
-    if (s < 120) return "Analyzing your results";
-    return "Still working — almost there";
-  }, [twinUploading, uploadElapsedSec]);
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
   const staticBaseUrl = apiBaseUrl.replace(/\/api\/?$/, "");
+
+  const fetchBiomarkerPanel = useCallback(async () => {
+    try {
+      setBioLoading(true);
+      setBioError("");
+      const [panelRes, trendsRes] = await Promise.all([
+        biomarkerAPI.panel(),
+        biomarkerAPI.trends().catch(() => null),
+      ]);
+      const data = panelRes?.data || panelRes;
+      if (data?.biomarkerPanel) {
+        const panel = transformPanel(data.biomarkerPanel);
+        const trends = trendsRes?.data?.trends || {};
+        const withTrends = panel.map((bm) => {
+          const history = trends[bm.id];
+          if (history && history.length >= 1) {
+            return { ...bm, trend: history.map((p) => p.value) };
+          }
+          return bm;
+        });
+        setBiomarkers(withTrends);
+        setLastUpdated(data.reportDate);
+      } else {
+        setBiomarkers([]);
+      }
+    } catch (error) {
+      if (error?.statusCode === 404) {
+        setBiomarkers([]);
+      } else {
+        setBioError("Failed to load biomarker data");
+      }
+    } finally {
+      setBioLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "data") {
+      fetchBiomarkerPanel();
+    }
+  }, [activeTab, fetchBiomarkerPanel]);
 
   const rangeOptions = [
     { id: "all", label: "All ranges" },
@@ -64,15 +102,15 @@ export default function DataDashboard() {
   ];
 
   const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(biomarkersData.map((b) => b.category))];
+    const uniqueCategories = [...new Set(biomarkers.map((b) => b.category))];
     return [
       { id: "all", label: "Category" },
       ...uniqueCategories.map((cat) => ({ id: cat.toLowerCase().replace(/\s+/g, "-"), label: cat })),
     ];
-  }, []);
+  }, [biomarkers]);
 
   const filteredBiomarkers = useMemo(() => {
-    return biomarkersData.filter((biomarker) => {
+    return biomarkers.filter((biomarker) => {
       const matchesSearch = biomarker.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRange = rangeFilter === "all" || biomarker.status === rangeFilter;
       const matchesCategory =
@@ -80,16 +118,11 @@ export default function DataDashboard() {
 
       return matchesSearch && matchesRange && matchesCategory;
     });
-  }, [searchQuery, rangeFilter, categoryFilter]);
+  }, [biomarkers, searchQuery, rangeFilter, categoryFilter]);
 
   const stats = useMemo(() => {
-    return {
-      total: biomarkersData.length,
-      optimal: biomarkersData.filter((b) => b.status === "optimal").length,
-      normal: biomarkersData.filter((b) => b.status === "normal").length,
-      outOfRange: biomarkersData.filter((b) => b.status === "out_of_range").length,
-    };
-  }, []);
+    return computeSummary(biomarkers);
+  }, [biomarkers]);
 
   const groupedBiomarkers = useMemo(() => {
     const groups = {};
@@ -102,18 +135,18 @@ export default function DataDashboard() {
     return groups;
   }, [filteredBiomarkers]);
 
-  const fetchReports = useCallback(async () => {
+  const fetchReports = useCallback(async ({ silent = false } = {}) => {
     if (!userId) return;
 
     try {
-      setTwinLoading(true);
-      setTwinError("");
+      if (!silent) setTwinLoading(true);
+      if (!silent) setTwinError("");
       const response = await userAPI.getBloodReports(userId);
       setReports(response?.data || []);
     } catch (error) {
-      setTwinError("Failed to load healthcare records");
+      if (!silent) setTwinError("Failed to load healthcare records");
     } finally {
-      setTwinLoading(false);
+      if (!silent) setTwinLoading(false);
     }
   }, [userId]);
 
@@ -123,6 +156,24 @@ export default function DataDashboard() {
     }
   }, [activeTab, fetchReports]);
 
+  // Auto-refresh polling: re-fetch reports every 10s while any are still processing
+  useEffect(() => {
+    const hasProcessing = reports.some(
+      (r) => r.status === "uploaded" || r.status === "analyzing"
+    );
+    if (hasProcessing && activeTab === "twin" && userId) {
+      pollingRef.current = setInterval(() => {
+        fetchReports({ silent: true });
+      }, 10000);
+    }
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [reports, activeTab, userId, fetchReports]);
+
   const handleUploadFile = async (event) => {
     const file = event.target.files?.[0];
     if (!file || !userId) return;
@@ -130,17 +181,25 @@ export default function DataDashboard() {
     try {
       setTwinUploading(true);
       setTwinError("");
+      setUploadSuccess(false);
 
       const formData = new FormData();
       formData.append("file", file);
 
       await userAPI.uploadBloodReport(userId, formData);
+      setTwinUploading(false);
+      setUploadSuccess(true);
       await fetchReports();
+      if (!user?.latestReportReady) {
+        updateUser({ ...user, latestReportReady: true });
+      }
+      // Auto-dismiss the success message after 5 seconds
+      setTimeout(() => setUploadSuccess(false), 5000);
     } catch (error) {
       const serverMsg = error?.response?.data?.message;
       setTwinError(serverMsg || error?.message || "Failed to upload report");
-    } finally {
       setTwinUploading(false);
+    } finally {
       if (uploadRef.current) {
         uploadRef.current.value = "";
       }
@@ -194,7 +253,7 @@ export default function DataDashboard() {
     const normalizedSearch = reportSearch.trim().toLowerCase();
 
     return reports.filter((report) => {
-      const matchesSearch = !normalizedSearch || report.fileName?.toLowerCase().includes(normalizedSearch);
+      const matchesSearch = !normalizedSearch || report.filename?.toLowerCase().includes(normalizedSearch);
 
       if (reportFilter === "all") {
         return matchesSearch;
@@ -235,7 +294,7 @@ export default function DataDashboard() {
             <>
               <div className="flex items-end justify-between gap-4 lg:items-center">
                 <h2 className="text-2xl text-black lg:text-3xl font-semibold">{userName}</h2>
-                <p className="text-xs text-secondary lg:text-sm">Updated Dec 16, 2025</p>
+                <p className="text-xs text-secondary lg:text-sm">{lastUpdated ? `Updated ${new Date(lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}</p>
               </div>
               <p className="pt-2 text-xs text-secondary lg:max-w-[70ch] lg:text-base lg:leading-relaxed">
                 {userName}, you&apos;re doing quite well. While there&apos;s room for improvement in some areas, your overall health markers are good.
@@ -245,32 +304,43 @@ export default function DataDashboard() {
         </div>
 
         {activeTab === "data" ? (
-          <section className="lg:grid lg:grid-cols-12 lg:gap-7 lg:items-start">
-            <div className="bg-white rounded-2xl p-6 space-y-4 lg:col-span-3 lg:sticky lg:top-24 lg:p-8">
-              <div className="space-y-5">
-                <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Biomarkers</h2>
-                <StatsGrid stats={stats} />
-                <ProgressBar stats={stats} />
-              </div>
+          bioLoading ? (
+            <div className="py-12 text-center text-gray-500">Loading biomarker data...</div>
+          ) : bioError ? (
+            <div className="py-12 text-center text-red-500">{bioError}</div>
+          ) : biomarkers.length === 0 ? (
+            <div className="py-12 text-center">
+              <h3 className="text-2xl font-semibold text-gray-900">No biomarker data yet</h3>
+              <p className="mt-2 text-gray-500">Upload a blood report to see your biomarkers</p>
+            </div>
+          ) : (
+            <section className="lg:grid lg:grid-cols-12 lg:gap-7 lg:items-start">
+              <div className="bg-white rounded-2xl p-6 space-y-4 lg:col-span-3 lg:sticky lg:top-24 lg:p-8">
+                <div className="space-y-5">
+                  <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Biomarkers</h2>
+                  <StatsGrid stats={stats} />
+                  <ProgressBar stats={stats} />
+                </div>
 
-              <div className="border-t border-borderColor pt-5 space-y-3">
-                <SearchBar placeholder="Search..." value={searchQuery} onChange={setSearchQuery} />
+                <div className="border-t border-borderColor pt-5 space-y-3">
+                  <SearchBar placeholder="Search..." value={searchQuery} onChange={setSearchQuery} />
 
-                <div className="grid grid-cols-2 gap-3 lg:gap-2.5">
-                  <DropdownFilter label="All ranges" options={rangeOptions} value={rangeFilter} onChange={setRangeFilter} />
-                  <DropdownFilter label="Category" options={categories} value={categoryFilter} onChange={setCategoryFilter} />
+                  <div className="grid grid-cols-2 gap-3 lg:gap-2.5">
+                    <DropdownFilter label="All ranges" options={rangeOptions} value={rangeFilter} onChange={setRangeFilter} />
+                    <DropdownFilter label="Category" options={categories} value={categoryFilter} onChange={setCategoryFilter} />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-8 pt-6 lg:col-span-9 lg:pt-0">
-              {Object.entries(groupedBiomarkers).map(([category, biomarkers]) => (
-                <BiomarkersList key={category} title={category} biomarkers={biomarkers} />
-              ))}
+              <div className="space-y-8 pt-6 lg:col-span-9 lg:pt-0">
+                {Object.entries(groupedBiomarkers).map(([category, items]) => (
+                  <BiomarkersList key={category} title={category} biomarkers={items} />
+                ))}
 
-              {filteredBiomarkers.length === 0 && <div className="py-12 text-center text-gray-500">No biomarkers found</div>}
-            </div>
-          </section>
+                {filteredBiomarkers.length === 0 && <div className="py-12 text-center text-gray-500">No biomarkers found</div>}
+              </div>
+            </section>
+          )
         ) : (
           <section className="mx-auto w-full max-w-[760px]">
             {twinError && (
@@ -286,9 +356,23 @@ export default function DataDashboard() {
                   <span className="relative inline-flex h-3 w-3 rounded-full bg-black"></span>
                 </span>
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-[#1e2027]">{uploadPhaseLabel}…</div>
+                  <div className="text-sm font-medium text-[#1e2027]">Uploading your report…</div>
                   <div className="text-xs text-[#6d6f7b]">
-                    {uploadElapsedSec}s elapsed · typically 60–90s · keep this tab open
+                    {uploadElapsedSec}s elapsed · uploading your report
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {uploadSuccess && (
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+                <svg className="h-5 w-5 flex-shrink-0 text-green-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-green-800">Upload complete!</div>
+                  <div className="text-xs text-green-700">
+                    Feel free to explore other pages. We&apos;ll notify you when your report is ready.
                   </div>
                 </div>
               </div>
@@ -338,7 +422,7 @@ export default function DataDashboard() {
                       <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       <path d="M5 14V18C5 19.1046 5.89543 20 7 20H17C18.1046 20 19 19.1046 19 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    {twinUploading ? `${uploadPhaseLabel}…` : "Upload"}
+                    {twinUploading ? "Uploading…" : "Upload"}
                   </button>
                 </div>
               </div>
@@ -375,35 +459,61 @@ export default function DataDashboard() {
                     {filteredReports.map((report) => {
                       const fileName = report?.filename || report?.fileName || "Uploaded report";
                       const isDeleting = deletingReportId === report._id;
+                      const isProcessing = report.status === "uploaded" || report.status === "analyzing";
+                      const isFailed = report.status === "failed";
+                      const isReady = !report.status || report.status === "ready";
                       return (
                         <div
                           key={report._id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => handleViewReport(report._id)}
+                          role={isReady ? "button" : undefined}
+                          tabIndex={isReady ? 0 : undefined}
+                          onClick={() => isReady && handleViewReport(report._id)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
+                            if (isReady && (e.key === "Enter" || e.key === " ")) {
                               e.preventDefault();
                               handleViewReport(report._id);
                             }
                           }}
-                          className="w-full cursor-pointer rounded-2xl border border-[#cfd5e4] bg-white p-4 text-left transition hover:border-[#9ea3b1]"
+                          className={`w-full rounded-2xl border p-4 text-left transition ${
+                            isReady
+                              ? "cursor-pointer border-[#cfd5e4] bg-white hover:border-[#9ea3b1]"
+                              : isProcessing
+                              ? "border-[#e4e6ef] bg-[#fafbfc]"
+                              : "border-red-200 bg-red-50"
+                          }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[#f4f5f9] text-[#636776]">
-                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <path d="M7 3H13L19 9V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2"/>
-                                <path d="M13 3V9H19" stroke="currentColor" strokeWidth="2"/>
-                              </svg>
+                            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${
+                              isFailed ? "bg-red-100 text-red-500" : "bg-[#f4f5f9] text-[#636776]"
+                            }`}>
+                              {isProcessing ? (
+                                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
+                                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                              ) : (
+                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <path d="M7 3H13L19 9V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2"/>
+                                  <path d="M13 3V9H19" stroke="currentColor" strokeWidth="2"/>
+                                </svg>
+                              )}
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="truncate text-[17px] font-medium text-[#1e2027]">{fileName}</div>
                               <div className="text-xs text-[#787d8b]">
-                                {report.reportDate
-                                  ? new Date(report.reportDate).toISOString().slice(0, 10)
-                                  : ""}
-                                {report.testCount ? ` · ${report.testCount} tests` : ""}
-                                {report.flaggedCount ? ` · ${report.flaggedCount} flagged` : ""}
+                                {isProcessing ? (
+                                  <span className="text-[#6d6f7b]">Processing…</span>
+                                ) : isFailed ? (
+                                  <span className="font-medium text-red-600">Failed</span>
+                                ) : (
+                                  <>
+                                    {report.reportDate
+                                      ? new Date(report.reportDate).toISOString().slice(0, 10)
+                                      : ""}
+                                    {report.testCount ? ` · ${report.testCount} tests` : ""}
+                                    {report.flaggedCount ? ` · ${report.flaggedCount} flagged` : ""}
+                                  </>
+                                )}
                               </div>
                             </div>
                             <button
@@ -446,7 +556,7 @@ export default function DataDashboard() {
                         <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M5 14V18C5 19.1046 5.89543 20 7 20H17C18.1046 20 19 19.1046 19 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      {twinUploading ? `${uploadPhaseLabel}…` : "Upload another report"}
+                      {twinUploading ? "Uploading…" : "Upload another report"}
                     </button>
                   </div>
 

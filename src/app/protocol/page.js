@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { goalsAPI } from "@/services/api";
 import ProtocolProductItem from "@/components/ProtocolProductItem";
 import GoalCard from "@/components/GoalCard";
 import GoalDetail from "@/components/GoalDetail";
@@ -11,6 +12,33 @@ export default function Protocol() {
   const [activeTab, setActiveTab] = useState("protocol");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const [goals, setGoals] = useState([]);
+  const [goalsLoading, setGoalsLoading] = useState(false);
+  const [goalsError, setGoalsError] = useState("");
+
+  const fetchGoals = useCallback(async () => {
+    try {
+      setGoalsLoading(true);
+      setGoalsError("");
+      const response = await goalsAPI.list();
+      const data = response?.data || response;
+      setGoals(data?.goals || []);
+    } catch (err) {
+      if (err?.statusCode === 404 || err?.message?.includes("No report")) {
+        setGoalsError("Upload a blood report to see your health goals");
+      } else {
+        setGoalsError("Failed to load goals");
+      }
+    } finally {
+      setGoalsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "goals") {
+      fetchGoals();
+    }
+  }, [activeTab, fetchGoals]);
 
   // Sample protocol products
   const protocolProducts = [
@@ -43,38 +71,6 @@ export default function Protocol() {
       id: 6,
       name: "Advanced Blood Panel",
       price: 359,
-    },
-  ];
-
-  // Sample health goals
-  const healthGoals = [
-    {
-      id: 1,
-      title: "Protect your heart and arteries",
-      description: "Your blood work shows a genetically high LP(a) with LDL/ApoB leaving extra cholesterol particles in circulation. As a 4...",
-      priority: "high",
-      bgImage: "/assets/goal-bg-high.jpg",
-    },
-    {
-      id: 2,
-      title: "Lower atherogenic cholesterol to protect your heart",
-      description: "Your lipid profile shows elevated LDL cholesterol levels. This increases your risk of atherosclerosis...",
-      priority: "medium",
-      bgImage: "/assets/goal-bg-medium.jpg",
-    },
-    {
-      id: 3,
-      title: "Increase free testosterone by reducing SHBG",
-      description: "Your sex hormone-binding globulin (SHBG) levels are elevated, reducing your free testosterone availability...",
-      priority: "medium",
-      bgImage: "/assets/goal-bg-medium2.jpg",
-    },
-    {
-      id: 4,
-      title: "Raise vitamin D to the optimal zone",
-      description: "Your vitamin D levels are below optimal. Vitamin D is crucial for immune function, bone health...",
-      priority: "low",
-      bgImage: "/assets/goal-bg-low.jpg",
     },
   ];
 
@@ -152,13 +148,21 @@ export default function Protocol() {
 
         {/* Goals Tab */}
         {activeTab === "goals" && (
-          <div className="animate-fade-in grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-            {healthGoals.map((goal, index) => (
-              <div key={goal.id} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.1}s both` }}>
-                <GoalCard goal={goal} onClick={() => handleGoalClick(goal)} />
-              </div>
-            ))}
-          </div>
+          goalsLoading ? (
+            <div className="py-12 text-center text-gray-500">Loading goals...</div>
+          ) : goalsError ? (
+            <div className="py-12 text-center text-gray-500">{goalsError}</div>
+          ) : goals.length === 0 ? (
+            <div className="py-12 text-center text-gray-500">No health goals yet</div>
+          ) : (
+            <div className="animate-fade-in grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
+              {goals.map((goal, index) => (
+                <div key={goal.goalId} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.1}s both` }}>
+                  <GoalCard goal={goal} onClick={() => handleGoalClick(goal)} />
+                </div>
+              ))}
+            </div>
+          )
         )}
 
         {/* Protocol Tab */}

@@ -21,6 +21,8 @@ export function transformPanel(biomarkerPanel) {
         min: item.optimalMin ?? null,
         max: item.optimalMax ?? null,
       },
+      referenceMin: item.referenceMin ?? null,
+      referenceMax: item.referenceMax ?? null,
     }));
 }
 
