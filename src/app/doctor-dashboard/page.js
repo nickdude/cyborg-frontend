@@ -196,23 +196,21 @@ function CalendarStrip() {
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="bg-[#333333] rounded-[16px] px-5 pt-5 pb-6">
-      <div className="mb-10">
+    <div className="bg-[#333333] rounded-[16px] p-5 flex flex-col" style={{ minHeight: 320 }}>
+      <div>
         <h3 className="text-[20px] font-medium text-white">Upcoming</h3>
         <p className="text-[14px] font-normal text-white/40">in the next 2 weeks</p>
       </div>
-      <div className="grid grid-cols-7 gap-x-3 gap-y-3">
+      <div className="flex-1" />
+      <div className="grid grid-cols-7 gap-x-2 gap-y-3">
         {days.map((d, i) => {
           const isToday = i === 0;
-          const isWeekend = d.getDay() === 0 || d.getDay() === 6;
           return (
             <button
               key={i}
-              className={`w-[40px] h-[40px] rounded-full text-[16px] font-bold flex items-center justify-center transition-colors mx-auto ${
+              className={`w-[38px] h-[38px] rounded-full text-[16px] font-bold flex items-center justify-center transition-colors mx-auto ${
                 isToday
-                  ? "bg-white text-[#333333] ring-2 ring-white/20"
-                  : isWeekend
-                  ? "bg-[#5a5a5a] text-[#f59e0b]"
+                  ? "bg-white text-[#333333]"
                   : "bg-[#555555] text-white hover:bg-[#666666]"
               }`}
             >
