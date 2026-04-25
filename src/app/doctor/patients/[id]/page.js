@@ -270,7 +270,13 @@ export default function PatientDetail() {
         <main className="flex-1 w-full lg:pr-[400px] xl:pr-[440px]">
           <div className="px-4 md:px-6 py-4 space-y-4 max-w-2xl mx-auto lg:max-w-none">
             {/* Biological Age Card */}
-            <div className="relative rounded-lg overflow-hidden p-5 text-white bg-gradient-to-br from-[#6B2FA0] via-[#4A1F7A] to-[#1A1A2E]">
+            <div
+              className="relative rounded-lg overflow-hidden p-5 text-white bg-gradient-to-br from-[#6B2FA0] via-[#4A1F7A] to-[#1A1A2E]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 80% 30%, rgba(255,255,255,0.08) 0%, transparent 50%), radial-gradient(circle at 20% 70%, rgba(255,255,255,0.05) 0%, transparent 40%), radial-gradient(circle at 60% 80%, rgba(255,255,255,0.06) 0%, transparent 35%)",
+              }}
+            >
               <p className="text-[14px] font-medium text-white mb-1">
                 Biological Age
               </p>
@@ -279,13 +285,11 @@ export default function PatientDetail() {
                   {bioAge != null ? Math.round(bioAge) : "--"}
                 </span>
               </div>
-              {ageDiff != null ? (
+              {ageDiff != null && ageDiff !== 0 ? (
                 <p className="text-[14px] font-normal text-white">
                   {ageDiff > 0
                     ? `${ageDiff.toFixed(1)} years younger than your chronological age`
-                    : ageDiff < 0
-                    ? `${Math.abs(ageDiff).toFixed(1)} years older than your chronological age`
-                    : "Same as your chronological age"}
+                    : `${Math.abs(ageDiff).toFixed(1)} years older than your chronological age`}
                 </p>
               ) : (
                 <p className="text-[14px] font-normal text-white/70">
@@ -332,14 +336,22 @@ export default function PatientDetail() {
               </div>
               {/* Legend */}
               <div className="flex items-center gap-6 mt-4">
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#00d4a1]" />
+                <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-3 gap-[2px]" style={{ width: 13, height: 9 }}>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <span key={i} className="rounded-full bg-[#00d4a1]" style={{ width: 3, height: 3 }} />
+                    ))}
+                  </div>
                   <span className="text-[12px] font-normal text-black">
                     Optimal
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#f865dd]" />
+                <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-3 gap-[2px]" style={{ width: 13, height: 9 }}>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <span key={i} className="rounded-full bg-[#f865dd]" style={{ width: 3, height: 3 }} />
+                    ))}
+                  </div>
                   <span className="text-[12px] font-normal text-black">
                     In range
                   </span>
@@ -456,8 +468,8 @@ export default function PatientDetail() {
                     key={idx}
                     className="flex items-center gap-3 p-3 rounded-[14px] bg-[#f9fafb] cursor-pointer"
                   >
-                    <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                      <div className="h-4 w-4 rounded-full bg-gray-400" />
+                    <div className="flex items-center justify-center flex-shrink-0 rounded-full bg-[#f3f4f6]" style={{ width: 24, height: 24 }}>
+                      <div className="rounded-full" style={{ width: 8, height: 8, backgroundColor: idx === 0 ? "#00d4a1" : "#9ca3af" }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[14px] font-medium text-black truncate">

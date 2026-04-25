@@ -67,7 +67,7 @@ export default function GoalsProtocolPage() {
   useEffect(() => {
     const fetchGoals = async () => {
       try {
-        const token = Cookie.get("token");
+        const token = Cookie.get("authToken");
         if (!token) return;
 
         const res = await fetch(`${apiUrl}/api/doctor/patients/${patientId}`, {
@@ -265,29 +265,22 @@ export default function GoalsProtocolPage() {
                     key={goal.id}
                     className="bg-white rounded-lg p-4 border border-[#e8e8e8]"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        {/* Title: 14px/500 black */}
-                        <h3 className="text-[14px] font-medium text-black mb-1 truncate">
-                          {goal.title}
-                        </h3>
-                        {/* Priority badge: 10px/600, tinted bg + colored text */}
-                        <span
-                          className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold"
-                          style={getPriorityBadgeStyle(goal.priority)}
-                        >
-                          {goal.priority.charAt(0).toUpperCase() +
-                            goal.priority.slice(1)}
-                        </span>
-                        {/* Protocol link count: 12px/400 #717178 */}
-                        <p className="text-[12px] font-normal text-[#717178] mt-1.5 flex items-center gap-1">
-                          <Link2 className="h-3 w-3" />
-                          {getLinkedProtocolCount(goal)} protocol item
-                          {getLinkedProtocolCount(goal) !== 1 ? "s" : ""}
-                        </p>
-                      </div>
+                    {/* Title: 14px/500 black */}
+                    <h3 className="text-[14px] font-medium text-black mb-2 truncate">
+                      {goal.title}
+                    </h3>
+                    {/* Priority badge row with edit/delete icons */}
+                    <div className="flex items-center justify-between mb-2">
+                      {/* Priority badge: 12px/600, tinted bg + colored text */}
+                      <span
+                        className="inline-block px-3 py-1 rounded-full text-[12px] font-semibold"
+                        style={getPriorityBadgeStyle(goal.priority)}
+                      >
+                        {goal.priority.charAt(0).toUpperCase() +
+                          goal.priority.slice(1)}
+                      </span>
                       {/* Edit/Delete icons: #717178 */}
-                      <div className="flex items-center gap-1 ml-3 flex-shrink-0">
+                      <div className="flex items-center gap-1 flex-shrink-0">
                         <button
                           onClick={() => {
                             setGoalForm({
@@ -312,6 +305,12 @@ export default function GoalsProtocolPage() {
                         </button>
                       </div>
                     </div>
+                    {/* Protocol link count: 12px/400 #717178 */}
+                    <p className="text-[12px] font-normal text-[#717178] flex items-center gap-1">
+                      <Link2 className="h-3 w-3" />
+                      {getLinkedProtocolCount(goal)} protocol item
+                      {getLinkedProtocolCount(goal) !== 1 ? "s" : ""}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -487,7 +486,7 @@ export default function GoalsProtocolPage() {
                   Priority Level<span className="text-[#ef4444]">*</span>
                 </label>
                 {/* Priority buttons: active=solid bg white text, inactive=border only */}
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   {[
                     { value: "high", label: "High\nPriority", color: "#ef4444" },
                     { value: "medium", label: "Medium\nPriority", color: "#f59e0b" },
@@ -500,7 +499,7 @@ export default function GoalsProtocolPage() {
                         onClick={() =>
                           setGoalForm((f) => ({ ...f, priority: opt.value }))
                         }
-                        className="flex-1 py-3 px-2 rounded-lg text-[13px] font-medium transition-all whitespace-pre-line leading-tight text-center"
+                        className="flex-1 py-4 px-3 rounded-xl text-[14px] font-medium transition-all whitespace-pre-line leading-snug text-center"
                         style={
                           isActive
                             ? {
@@ -524,11 +523,11 @@ export default function GoalsProtocolPage() {
 
               {/* Link Protocol Items */}
               <div>
-                <label className="text-[14px] font-medium text-black mb-1.5 flex items-center gap-1.5">
+                <label className="text-[14px] font-medium text-black mb-2 flex items-center gap-1.5">
                   <Link2 className="h-4 w-4" />
                   Link Protocol Items
                 </label>
-                <div className="border border-[#e5e7eb] rounded-lg divide-y divide-gray-100 max-h-40 overflow-y-auto">
+                <div className="border border-[#e5e7eb] rounded-lg divide-y divide-gray-100 max-h-48 overflow-y-auto mt-2">
                   {protocolItems.length === 0 ? (
                     <p className="text-xs text-gray-400 px-3 py-3 text-center">
                       No protocol items to link
@@ -540,7 +539,7 @@ export default function GoalsProtocolPage() {
                         <button
                           key={item.id}
                           onClick={() => toggleLinkedProtocol(item.id)}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center gap-3 px-3 py-3.5 text-left hover:bg-gray-50 transition-colors"
                         >
                           {/* Radio-style circle indicator */}
                           <span
@@ -563,7 +562,7 @@ export default function GoalsProtocolPage() {
                   )}
                 </div>
                 {goalForm.linkedProtocols.length > 0 && (
-                  <p className="text-[12px] text-[#717178] mt-1.5">
+                  <p className="text-[12px] text-[#ef4444] mt-1.5">
                     {goalForm.linkedProtocols.length} item{goalForm.linkedProtocols.length !== 1 ? "s" : ""} selected
                   </p>
                 )}
@@ -579,11 +578,11 @@ export default function GoalsProtocolPage() {
               >
                 Cancel
               </button>
-              {/* + Add a goal: bg black white text */}
+              {/* + Add a goal: bg black white text, pill shape */}
               <button
                 onClick={handleAddGoal}
                 disabled={!goalForm.title || !goalForm.priority}
-                className="py-2.5 px-6 bg-black text-white rounded-lg text-[14px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="py-2.5 px-6 bg-black text-white rounded-full text-[14px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus className="h-4 w-4" />
                 Add a goal
@@ -760,7 +759,7 @@ export default function GoalsProtocolPage() {
               <button
                 onClick={handleAddProtocol}
                 disabled={!protocolForm.name}
-                className="py-2.5 px-6 bg-black text-white rounded-lg text-[14px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="py-2.5 px-6 bg-black text-white rounded-full text-[14px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus className="h-4 w-4" />
                 Add Protocol

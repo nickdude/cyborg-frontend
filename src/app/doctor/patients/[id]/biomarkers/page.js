@@ -39,17 +39,17 @@ function getStatusLabel(flag, optimalFlag) {
   return "out_of_range";
 }
 
-/* Mini gauge SVG for the top cards */
-function MiniGauge({ value, max = 100, color = "#fff" }) {
+/* Mini gauge SVG for the top cards — semicircular arc with needle, bottom-right */
+function MiniGauge({ value, max = 100, color = "#05bc7e" }) {
   const clamped = Math.min(Math.max(value || 0, 0), max);
   const pct = clamped / max;
   // Arc from -135deg to +135deg (270deg sweep)
   const startAngle = -135;
   const sweep = 270;
   const angle = startAngle + sweep * pct;
-  const r = 18;
-  const cx = 24;
-  const cy = 24;
+  const r = 22;
+  const cx = 30;
+  const cy = 28;
   const toRad = (d) => (d * Math.PI) / 180;
 
   // Arc path
@@ -68,11 +68,11 @@ function MiniGauge({ value, max = 100, color = "#fff" }) {
   };
 
   return (
-    <svg width="48" height="40" viewBox="0 0 48 40" fill="none">
+    <svg width="64" height="48" viewBox="0 0 64 48" fill="none">
       {/* Track */}
       <path
         d={`M ${arcStart.x} ${arcStart.y} A ${r} ${r} 0 1 1 ${arcEnd.x} ${arcEnd.y}`}
-        stroke="rgba(255,255,255,0.25)"
+        stroke="rgba(255,255,255,0.15)"
         strokeWidth="2.5"
         strokeLinecap="round"
         fill="none"
@@ -95,46 +95,65 @@ function MiniGauge({ value, max = 100, color = "#fff" }) {
         />
       )}
       {/* Needle dot */}
-      <circle cx={needle.x} cy={needle.y} r="3" fill="white" />
+      <circle cx={needle.x} cy={needle.y} r="3.5" fill="white" />
       {/* Labels */}
-      <text x="8" y="38" fontSize="6" fill="rgba(255,255,255,0.5)" fontFamily="sans-serif">
+      <text x="7" y="44" fontSize="7" fill="rgba(255,255,255,0.4)" fontFamily="sans-serif">
         {"< 10"}
       </text>
-      <text x="30" y="16" fontSize="6" fill="rgba(255,255,255,0.5)" fontFamily="sans-serif">
+      <text x="38" y="14" fontSize="7" fill="rgba(255,255,255,0.4)" fontFamily="sans-serif">
         100
       </text>
     </svg>
   );
 }
 
-/* Mini sparkline SVG for history column */
+/* Mini sparkline SVG for history column — line with dots and vertical end bar */
 function MiniSparkline({ dotColor }) {
   // Decorative sparkline with a few data points
   const points = [12, 10, 14, 11, 13, 12, 14];
-  const w = 48;
-  const h = 24;
+  const sparkW = 52;
+  const barGap = 10;
+  const barW = 3;
+  const totalW = sparkW + barGap + barW;
+  const h = 28;
   const maxVal = 18;
   const minVal = 6;
   const range = maxVal - minVal;
-  const step = w / (points.length - 1);
+  const step = sparkW / (points.length - 1);
 
   const pathD = points
     .map((v, i) => {
       const x = i * step;
-      const y = h - ((v - minVal) / range) * h;
+      const y = h - 4 - ((v - minVal) / range) * (h - 8);
       return `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
     })
     .join(" ");
 
   const lastX = (points.length - 1) * step;
-  const lastY = h - ((points[points.length - 1] - minVal) / range) * h;
+  const lastY = h - 4 - ((points[points.length - 1] - minVal) / range) * (h - 8);
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none">
-      <path d={pathD} stroke={dotColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.6" />
-      <circle cx={lastX} cy={lastY} r="2.5" fill={dotColor} />
-      {/* Vertical end line */}
-      <line x1={lastX + 6} y1="2" x2={lastX + 6} y2={h - 2} stroke={dotColor} strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+    <svg width={totalW} height={h} viewBox={`0 0 ${totalW} ${h}`} fill="none">
+      {/* Sparkline path */}
+      <path d={pathD} stroke={dotColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.45" />
+      {/* Small dots at each data point */}
+      {points.map((v, i) => {
+        const x = i * step;
+        const y = h - 4 - ((v - minVal) / range) * (h - 8);
+        return (
+          <circle key={i} cx={x} cy={y} r={i === points.length - 1 ? 3 : 1.5} fill={dotColor} opacity={i === points.length - 1 ? 1 : 0.4} />
+        );
+      })}
+      {/* Vertical colored bar on far right */}
+      <rect
+        x={sparkW + barGap}
+        y={4}
+        width={barW}
+        height={h - 8}
+        rx={1.5}
+        fill={dotColor}
+        opacity="0.6"
+      />
     </svg>
   );
 }
@@ -300,7 +319,9 @@ export default function BiomarkersPage() {
   const bioAgeRaw = scores?.bioAge;
   const bioAge = typeof bioAgeRaw === 'object' ? bioAgeRaw?.phenoAge : bioAgeRaw;
   const paceRaw = scores?.paceOfAging;
-  const paceOfAging = typeof paceRaw === 'object' ? paceRaw?.pace : (paceRaw ?? 46);
+  const paceValue = typeof paceRaw === 'object' ? paceRaw?.pace : paceRaw;
+  // Convert pace to percentage: 1.02 → 102, 0.92 → 92, fallback to 46
+  const paceOfAging = paceValue != null ? Math.round(paceValue * 100) : 46;
 
   // Compute progress bar widths
   const barTotal = stats.total || 1;
@@ -328,57 +349,57 @@ export default function BiomarkersPage() {
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-5 space-y-4">
-        {/* Biological Age + Pace of Aging Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Biological Age Card — purple gradient */}
-          <div className="rounded-2xl p-4 bg-gradient-to-br from-[#6B21A8] to-[#541D7A] text-white relative overflow-hidden min-h-[140px]">
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_20%,white_0%,transparent_60%)]" />
+        {/* Biological Age + Pace of Aging Cards — full-width stacked, dark bg */}
+        <div className="space-y-3">
+          {/* Biological Age Card */}
+          <div className="rounded-2xl p-5 bg-[#1e1e2a] text-white relative overflow-hidden min-h-[140px]">
             <div className="relative z-10">
               <div className="flex items-start justify-between">
-                <p className="text-[14px] font-medium text-white">
+                <p className="text-[14px] font-medium text-white/80">
                   Biological age
                 </p>
-                {/* Optimal badge with green dot */}
-                <span className="flex items-center gap-1 bg-white/20 text-white text-[12px] font-semibold px-2.5 py-0.5 rounded-full">
-                  <span className="inline-block w-[6px] h-[6px] rounded-full bg-[#05bc7e]" />
+                {/* Optimal badge — top-right, white pill with green dot */}
+                <span className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm text-white text-[12px] font-semibold px-3 py-1 rounded-full">
+                  <span className="inline-block w-[7px] h-[7px] rounded-full bg-[#05bc7e]" />
                   Optimal
                 </span>
               </div>
-              <div className="flex items-end justify-between mt-2">
-                <div>
-                  <p className="text-[40px] font-medium leading-none">
+              <div className="flex items-end justify-between mt-3">
+                <div className="flex items-baseline gap-2">
+                  <p className="text-[44px] font-semibold leading-none tracking-tight">
                     {bioAge != null ? Math.round(bioAge) : "--"}
                   </p>
-                  <p className="text-[14px] text-white/70 mt-1">years</p>
+                  <p className="text-[16px] text-white/50 font-normal">years</p>
                 </div>
-                <div className="mb-[-4px]">
-                  <MiniGauge value={bioAge != null ? bioAge : 26} color="#a78bfa" />
+                <div className="mb-[-2px]">
+                  <MiniGauge value={bioAge != null ? bioAge : 26} color="#05bc7e" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Pace of Aging Card — green gradient #059669 -> #047857 */}
-          <div className="rounded-2xl p-4 bg-gradient-to-br from-[#059669] to-[#047857] text-white relative overflow-hidden min-h-[140px]">
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_20%,white_0%,transparent_60%)]" />
+          {/* Pace of Aging Card */}
+          <div className="rounded-2xl p-5 bg-[#1e1e2a] text-white relative overflow-hidden min-h-[140px]">
             <div className="relative z-10">
               <div className="flex items-start justify-between">
-                <p className="text-[14px] font-medium text-white">
+                <p className="text-[14px] font-medium text-white/80">
                   Pace of aging
                 </p>
-                {/* Optimal badge with green dot */}
-                <span className="flex items-center gap-1 bg-white/20 text-white text-[12px] font-semibold px-2.5 py-0.5 rounded-full">
-                  <span className="inline-block w-[6px] h-[6px] rounded-full bg-[#05bc7e]" />
+                {/* Optimal badge — top-right, white pill with green dot */}
+                <span className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm text-white text-[12px] font-semibold px-3 py-1 rounded-full">
+                  <span className="inline-block w-[7px] h-[7px] rounded-full bg-[#05bc7e]" />
                   Optimal
                 </span>
               </div>
-              <div className="flex items-end justify-between mt-2">
-                <div>
-                  <p className="text-[40px] font-medium leading-none">{paceOfAging}</p>
-                  <p className="text-[14px] text-white/70 mt-1">%</p>
+              <div className="flex items-end justify-between mt-3">
+                <div className="flex items-baseline gap-1">
+                  <p className="text-[44px] font-semibold leading-none tracking-tight">
+                    {paceOfAging}
+                  </p>
+                  <p className="text-[16px] text-white/50 font-normal">%</p>
                 </div>
-                <div className="mb-[-4px]">
-                  <MiniGauge value={paceOfAging} color="#34d399" />
+                <div className="mb-[-2px]">
+                  <MiniGauge value={paceOfAging} color="#05bc7e" />
                 </div>
               </div>
             </div>
@@ -390,42 +411,42 @@ export default function BiomarkersPage() {
           <div>
             {/* 18px/600 */}
             <h2 className="text-[18px] font-semibold text-black mb-3">Biomarkers</h2>
-            <div className="grid grid-cols-4 gap-2 mb-2.5">
-              <div className="rounded-lg px-3 py-2.5 text-center">
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              <div className="px-1 py-1">
                 {/* 24px/700 black */}
-                <p className="text-[24px] font-bold text-black">{stats.total}</p>
+                <p className="text-[24px] font-bold text-black leading-tight">{stats.total}</p>
                 {/* 12px/400 #717178 */}
-                <p className="text-[12px] font-normal text-[#717178]">Total</p>
+                <p className="text-[12px] font-normal text-[#717178] mt-0.5">Total</p>
               </div>
-              <div className="rounded-lg px-3 py-2.5 text-center">
+              <div className="px-1 py-1">
                 {/* 24px/700 #05bc7e */}
-                <p className="text-[24px] font-bold text-[#05bc7e]">
+                <p className="text-[24px] font-bold text-[#05bc7e] leading-tight">
                   {stats.optimal}
                 </p>
-                <p className="text-[12px] font-normal text-[#717178]">Optimal</p>
+                <p className="text-[12px] font-normal text-[#717178] mt-0.5">Optimal</p>
               </div>
-              <div className="rounded-lg px-3 py-2.5 text-center">
+              <div className="px-1 py-1">
                 {/* 24px/700 #d7d82e */}
-                <p className="text-[24px] font-bold text-[#d7d82e]">
+                <p className="text-[24px] font-bold text-[#d7d82e] leading-tight">
                   {stats.normal}
                 </p>
-                <p className="text-[12px] font-normal text-[#717178]">Normal</p>
+                <p className="text-[12px] font-normal text-[#717178] mt-0.5">Normal</p>
               </div>
-              <div className="rounded-lg px-3 py-2.5 text-center">
+              <div className="px-1 py-1">
                 {/* 24px/700 #f865dd */}
-                <p className="text-[24px] font-bold text-[#f865dd]">
+                <p className="text-[24px] font-bold text-[#f865dd] leading-tight">
                   {stats.outOfRange}
                 </p>
-                <p className="text-[12px] font-normal text-[#717178]">
+                <p className="text-[12px] font-normal text-[#717178] mt-0.5">
                   Out of Range
                 </p>
               </div>
             </div>
-            {/* Colored progress bar */}
+            {/* Colored progress bar — proportional segments */}
             <div className="flex h-[6px] rounded-full overflow-hidden">
-              <div style={{ width: `${optimalPct}%`, backgroundColor: "#05bc7e" }} />
+              <div className="rounded-l-full" style={{ width: `${optimalPct}%`, backgroundColor: "#05bc7e" }} />
               <div style={{ width: `${normalPct}%`, backgroundColor: "#d7d82e" }} />
-              <div style={{ width: `${outOfRangePct}%`, backgroundColor: "#f865dd" }} />
+              <div className="rounded-r-full" style={{ width: `${outOfRangePct}%`, backgroundColor: "#f865dd" }} />
             </div>
           </div>
 
@@ -560,7 +581,7 @@ export default function BiomarkersPage() {
             <span className="text-[12px] font-semibold text-[#717178]">
               Name
             </span>
-            <span className="text-[12px] font-semibold text-[#717178] ml-6">
+            <span className="text-[12px] font-semibold text-[#717178] ml-12">
               Status
             </span>
             <span className="text-[12px] font-semibold text-[#717178] ml-auto">
@@ -589,17 +610,17 @@ export default function BiomarkersPage() {
                   return (
                     <div
                       key={b.canonicalName || idx}
-                      className="bg-white rounded-2xl px-4 py-3 mb-2"
+                      className="bg-white rounded-2xl px-4 py-3.5 mb-2 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
                     >
-                      {/* Category label: 10px/500 #717178 */}
-                      <p className="text-[10px] font-medium text-[#717178] mb-1">
+                      {/* Category label: small gray text at top */}
+                      <p className="text-[10px] font-medium text-[#9ca3af] mb-1.5 tracking-wide">
                         {group.category}
                       </p>
                       <div className="flex items-center">
-                        {/* Name: 14px/500 black with status dot */}
-                        <div className="flex-1 flex items-center gap-2 min-w-0">
+                        {/* Status dot + Name + Value */}
+                        <div className="flex-1 flex items-start gap-2.5 min-w-0">
                           <span
-                            className="inline-block rounded-full flex-shrink-0"
+                            className="inline-block rounded-full flex-shrink-0 mt-1.5"
                             style={{
                               width: "8px",
                               height: "8px",
@@ -607,14 +628,14 @@ export default function BiomarkersPage() {
                             }}
                           />
                           <div className="min-w-0">
-                            <span className="text-[14px] font-medium text-black truncate block">
+                            <span className="text-[14px] font-medium text-black truncate block leading-snug">
                               {b.displayName || b.canonicalName}
                             </span>
-                            {/* Value below name */}
-                            <span className="text-[13px] font-normal text-[#717178]">
+                            {/* Value + unit below name in gray */}
+                            <span className="text-[13px] font-normal text-[#717178] leading-snug">
                               {value}
                               {b.unit && (
-                                <span className="text-[11px] text-[#717178] ml-1">
+                                <span className="text-[11px] text-[#9ca3af] ml-1">
                                   {b.unit}
                                 </span>
                               )}
@@ -622,7 +643,7 @@ export default function BiomarkersPage() {
                           </div>
                         </div>
 
-                        {/* Mini sparkline history */}
+                        {/* Mini sparkline + vertical bar */}
                         <div className="flex-shrink-0 ml-2">
                           <MiniSparkline dotColor={dotColor} />
                         </div>
