@@ -196,24 +196,24 @@ function CalendarStrip() {
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="bg-[#333333] rounded-[16px] p-5">
-      <div className="mb-4">
+    <div className="bg-[#333333] rounded-[16px] px-5 pt-5 pb-6">
+      <div className="mb-10">
         <h3 className="text-[20px] font-medium text-white">Upcoming</h3>
-        <p className="text-[14px] font-normal text-white/50">in the next 2 weeks</p>
+        <p className="text-[14px] font-normal text-white/40">in the next 2 weeks</p>
       </div>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-x-3 gap-y-3">
         {days.map((d, i) => {
           const isToday = i === 0;
           const isWeekend = d.getDay() === 0 || d.getDay() === 6;
           return (
             <button
               key={i}
-              className={`w-[30px] h-[30px] rounded-full text-[16px] font-bold flex items-center justify-center transition-colors mx-auto ${
+              className={`w-[40px] h-[40px] rounded-full text-[16px] font-bold flex items-center justify-center transition-colors mx-auto ${
                 isToday
-                  ? "bg-primary text-white"
+                  ? "bg-white text-[#333333] ring-2 ring-white/20"
                   : isWeekend
-                  ? "bg-[#f59e0b]/20 text-[#f59e0b]"
-                  : "bg-[#444444] text-white hover:bg-[#555555]"
+                  ? "bg-[#5a5a5a] text-[#f59e0b]"
+                  : "bg-[#555555] text-white hover:bg-[#666666]"
               }`}
             >
               {d.getDate()}
