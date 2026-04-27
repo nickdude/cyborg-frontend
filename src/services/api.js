@@ -171,6 +171,16 @@ export const doctorAPI = {
   updateTitle: (chatId, title) =>
     API.patch(`/api/doctor/chats/${chatId}`, { title }),
   deleteChat: (chatId) => API.delete(`/api/doctor/chats/${chatId}`),
+  getPatientActionPlan: (patientId) =>
+    API.get(`/api/doctor/patients/${patientId}/action-plan`),
+  updatePatientGoals: (patientId, goals) =>
+    API.put(`/api/doctor/patients/${patientId}/goals`, { goals }),
+  addGoal: (patientId, goalData) =>
+    API.post(`/api/doctor/patients/${patientId}/goals`, goalData),
+  deleteGoal: (patientId, goalId) =>
+    API.delete(`/api/doctor/patients/${patientId}/goals/${goalId}`),
+  approveActionPlan: (patientId) =>
+    API.post(`/api/doctor/patients/${patientId}/action-plan/approve`),
 };
 
 export default API;

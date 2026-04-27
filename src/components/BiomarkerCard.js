@@ -1,10 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import BiomarkerDetail from "./BiomarkerDetail";
-
 export default function BiomarkerCard({ biomarker }) {
-  const [showDetail, setShowDetail] = useState(false);
   const { name, value, unit, category, status, trend } = biomarker;
 
   const getStatusDotColor = (status) => {
@@ -61,11 +57,7 @@ export default function BiomarkerCard({ biomarker }) {
   const trendSvgPoints = trendPoints.map(p => `${p.x},${100 - p.y}`).join(" ");
 
   return (
-    <>
-      <div
-        onClick={() => setShowDetail(true)}
-        className="bg-white rounded-xl p-4 lg:p-6 font-inter flex items-center gap-4 cursor-pointer hover:shadow-md transition lg:border lg:border-borderColor"
-      >
+    <div className="bg-white rounded-xl p-4 lg:p-6 font-inter flex items-center gap-4 lg:border lg:border-borderColor">
       {/* Left Section: Status Dot + Info */}
       <div className="flex items-start gap-3 flex-1">
         <div 
@@ -73,8 +65,8 @@ export default function BiomarkerCard({ biomarker }) {
           style={{ backgroundColor: getStatusDotColor(status) }}
         />
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-gray-900 text-sm lg:text-base leading-tight">{name}</p>
-          <p className="text-xs text-gray-500 mt-0.5 lg:text-sm">{value} <span className="text-gray-400">{unit}</span></p>
+          <p className="font-bold text-gray-900 text-sm lg:text-base leading-tight">{name || "N/A"}</p>
+          <p className="text-xs text-gray-500 mt-0.5 lg:text-sm">{value || "N/A"} <span className="text-gray-400">{unit || ""}</span></p>
         </div>
       </div>
 
@@ -149,11 +141,6 @@ export default function BiomarkerCard({ biomarker }) {
           </svg>
         </div>
       </div>
-      </div>
-
-      {showDetail && (
-        <BiomarkerDetail biomarker={biomarker} onClose={() => setShowDetail(false)} />
-      )}
-    </>
+    </div>
   );
 }

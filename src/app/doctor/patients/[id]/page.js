@@ -148,7 +148,7 @@ export default function PatientDetail() {
 
   // --- Segmented Donut Chart ---
   const DonutChart = () => {
-    const size = 140;
+    const size = 150;
     const strokeWidth = 14;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
@@ -212,54 +212,35 @@ export default function PatientDetail() {
     );
   };
 
-  // Color bar segments for biomarkers card
-  const ColorBar = () => {
-    const segmentCount = totalBiomarkers > 0
-      ? Math.min(Math.max(Math.round(totalBiomarkers / 20), 8), 20)
-      : 12;
-    const greenSegments = totalBiomarkers > 0
-      ? Math.round((optimalCount / totalBiomarkers) * segmentCount)
-      : segmentCount;
-
-    return (
-      <div className="flex gap-[2px] mt-3">
-        {Array.from({ length: segmentCount }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-[1px]"
-            style={{
-              width: 15,
-              height: 18,
-              backgroundColor: i < greenSegments ? "#05bc7e" : "#374151",
-            }}
-          />
-        ))}
-      </div>
-    );
-  };
+  const ColorBar = () => (
+    <img
+      src="/assets/doctor/biomarker-colorbar.svg"
+      alt="Biomarker range"
+      className="mt-3 w-full h-[24px]"
+      style={{ display: 'block' }}
+    />
+  );
 
   return (
     <div className="min-h-screen bg-[#f2f2f2]">
       {/* Header */}
-      <header className="bg-white sticky top-0 z-40">
-        <div className="flex items-center justify-between h-14 px-4 md:px-6 max-w-[1400px] mx-auto">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg width="6" height="11" viewBox="0 0 6 11" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 1L1 5.5L5 10" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <h1 className="text-[16px] font-medium text-[#000000] truncate max-w-[200px] sm:max-w-none">
-              {patientName}
-            </h1>
-          </div>
+      <header className="bg-[#f2f2f2] sticky top-0 z-40">
+        <div className="relative flex items-center justify-between h-14 px-5 md:px-6 max-w-[1400px] mx-auto">
+          <button
+            onClick={() => router.back()}
+            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors z-10"
+          >
+            <svg width="8" height="16" viewBox="0 0 8 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M7 1L1 8L7 15" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-[16px] font-medium text-black leading-[24px]">
+            {patientName}
+          </h1>
           <img
             src="/assets/avatars/avatar-1.png"
             alt={patientName}
-            className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+            className="h-8 w-8 rounded-full object-cover flex-shrink-0 z-10"
           />
         </div>
       </header>
@@ -270,32 +251,33 @@ export default function PatientDetail() {
         <main className="flex-1 w-full lg:pr-[400px] xl:pr-[440px]">
           <div className="px-4 md:px-6 py-4 space-y-4 max-w-2xl mx-auto lg:max-w-none">
             {/* Biological Age Card */}
-            <div
-              className="relative rounded-lg overflow-hidden p-5 text-white bg-gradient-to-br from-[#6B2FA0] via-[#4A1F7A] to-[#1A1A2E]"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 80% 30%, rgba(255,255,255,0.08) 0%, transparent 50%), radial-gradient(circle at 20% 70%, rgba(255,255,255,0.05) 0%, transparent 40%), radial-gradient(circle at 60% 80%, rgba(255,255,255,0.06) 0%, transparent 35%)",
-              }}
-            >
-              <p className="text-[14px] font-medium text-white mb-1">
-                Biological Age
-              </p>
-              <div className="flex items-end gap-2 mb-2">
-                <span className="text-[40px] font-medium text-white leading-none">
-                  {bioAge != null ? Math.round(bioAge) : "--"}
-                </span>
+            <div className="relative rounded-[12px] overflow-hidden h-[176px] border border-[#e6e6e8] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)]">
+              <img
+                src="/assets/doctor/bio-age-card-bg-figma.png"
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="relative z-10 p-4 h-full flex flex-col justify-between">
+                <p className="text-[14px] font-medium text-white">
+                  Biological Age
+                </p>
+                <div>
+                  <span className="text-[40px] font-medium text-white leading-[54px]">
+                    {bioAge != null ? Math.round(bioAge) : "--"}
+                  </span>
+                </div>
+                {ageDiff != null && ageDiff !== 0 ? (
+                  <p className="text-[14px] font-normal text-white leading-[18px]">
+                    {ageDiff > 0
+                      ? `${ageDiff.toFixed(1)} years younger than your chronological age`
+                      : `${Math.abs(ageDiff).toFixed(1)} years older than your chronological age`}
+                  </p>
+                ) : (
+                  <p className="text-[14px] font-normal text-white/70 leading-[18px]">
+                    Upload a report to calculate biological age
+                  </p>
+                )}
               </div>
-              {ageDiff != null && ageDiff !== 0 ? (
-                <p className="text-[14px] font-normal text-white">
-                  {ageDiff > 0
-                    ? `${ageDiff.toFixed(1)} years younger than your chronological age`
-                    : `${Math.abs(ageDiff).toFixed(1)} years older than your chronological age`}
-                </p>
-              ) : (
-                <p className="text-[14px] font-normal text-white/70">
-                  Upload a report to calculate biological age
-                </p>
-              )}
             </div>
 
             {/* Biomarkers Summary Card */}
@@ -303,7 +285,7 @@ export default function PatientDetail() {
               onClick={() =>
                 router.push(`/doctor/patients/${patientId}/biomarkers`)
               }
-              className="w-full text-left bg-[#1a1a1a] rounded-xl p-5 hover:shadow-md transition-shadow group"
+              className="w-full text-left bg-[#1a1a1a] rounded-[12px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] p-5 hover:shadow-md transition-shadow group"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -311,7 +293,7 @@ export default function PatientDetail() {
                     Biomarkers
                   </p>
                   <p className="text-[20px] font-normal text-white mt-0.5">
-                    {totalBiomarkers || 345} biomarkers tested
+                    {totalBiomarkers > 0 ? totalBiomarkers : "N/A"} biomarkers tested
                   </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-300 transition-colors" />
@@ -320,26 +302,22 @@ export default function PatientDetail() {
             </button>
 
             {/* Donut Chart Section */}
-            <div className="bg-white rounded-xl p-5">
-              <div className="flex items-start justify-between">
-                <div className="pt-2">
-                  <p className="text-[20px] font-normal text-black">
-                    {outOfRangeCount || 12} out of range
-                  </p>
-                  <p className="text-[20px] font-normal text-black mt-1">
-                    {inRangeCount || 71} in range
-                  </p>
-                </div>
-                <div className="flex-shrink-0">
-                  <DonutChart />
-                </div>
+            <div className="bg-white rounded-[12px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] p-5">
+              <h3 className="text-[18px] font-semibold text-black leading-[28px] tracking-[-0.44px]">
+                {totalBiomarkers > 0 ? outOfRangeCount : "N/A"} out of range
+              </h3>
+              <p className="text-[16px] font-normal text-[#717178] leading-[24px] tracking-[-0.31px]">
+                {totalBiomarkers > 0 ? inRangeCount : "N/A"} in range
+              </p>
+              <div className="flex justify-center my-4">
+                <DonutChart />
               </div>
               {/* Legend */}
-              <div className="flex items-center gap-6 mt-4">
+              <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <div className="grid grid-cols-3 gap-[2px]" style={{ width: 13, height: 9 }}>
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <span key={i} className="rounded-full bg-[#00d4a1]" style={{ width: 3, height: 3 }} />
+                  <div className="grid grid-cols-3 gap-[2px]">
+                    {Array.from({ length: 18 }).map((_, i) => (
+                      <span key={i} className="rounded-full bg-[#00d4a1]" style={{ width: 4, height: 4 }} />
                     ))}
                   </div>
                   <span className="text-[12px] font-normal text-black">
@@ -347,9 +325,9 @@ export default function PatientDetail() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="grid grid-cols-3 gap-[2px]" style={{ width: 13, height: 9 }}>
+                  <div className="grid grid-cols-3 gap-[2px]">
                     {Array.from({ length: 6 }).map((_, i) => (
-                      <span key={i} className="rounded-full bg-[#f865dd]" style={{ width: 3, height: 3 }} />
+                      <span key={i} className="rounded-full bg-[#f865dd]" style={{ width: 4, height: 4 }} />
                     ))}
                   </div>
                   <span className="text-[12px] font-normal text-black">
@@ -360,105 +338,98 @@ export default function PatientDetail() {
             </div>
 
             {/* Goals & Protocol */}
-            <div className="bg-white rounded-xl p-5">
+            <div className="bg-white rounded-[12px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] p-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[18px] font-semibold text-[#0a0a0a]">
+                <h2 className="text-[18px] font-semibold text-[#0a0a0a] leading-[28px] tracking-[-0.44px]">
                   Goals &amp; Protocol
                 </h2>
                 <button
                   onClick={() =>
                     router.push(`/doctor/patients/${patientId}/goals`)
                   }
-                  className="text-[14px] font-medium text-[#541d7a] hover:underline"
+                  className="text-[14px] font-medium text-[#541d7a] tracking-[-0.15px]"
                 >
                   View all
                 </button>
               </div>
 
               {/* High priority goal card */}
-              {highPriorityGoal ? (
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl p-4 mb-4">
-                  <span className="inline-block text-[12px] font-semibold bg-red-500 text-white px-3 py-1 rounded-full mb-2">
+              <div className="relative rounded-[8px] overflow-hidden h-[132px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] mb-4">
+                <img
+                  src="/assets/doctor/goals-card-bg-figma.png"
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="relative z-10 p-3">
+                  <span className="inline-block text-[12px] font-semibold bg-white/15 text-white px-3 py-1 rounded-[25px] mb-1">
                     High priority
                   </span>
-                  <h3 className="text-[14px] font-semibold text-white mb-1">
-                    {highPriorityGoal.title || highPriorityGoal.name}
+                  <h3 className="text-[14px] font-semibold text-white leading-[20px] tracking-[-0.15px] mb-1">
+                    {highPriorityGoal?.title || highPriorityGoal?.name || "Protect your heart and arteries"}
                   </h3>
-                  <p className="text-[12px] font-normal text-gray-400 line-clamp-2">
-                    {highPriorityGoal.description || highPriorityGoal.summary || ""}
+                  <p className="text-[12px] font-normal text-white leading-[16px] line-clamp-2">
+                    {highPriorityGoal?.description || highPriorityGoal?.summary || "Your blood work shows a genetically high LP(a) with LDL/ApoB leaving extra cholesterol particles in circulation."}
                   </p>
                 </div>
-              ) : (
-                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] rounded-xl p-4 mb-4">
-                  <span className="inline-block text-[12px] font-semibold bg-red-500 text-white px-3 py-1 rounded-full mb-2">
-                    High priority
-                  </span>
-                  <h3 className="text-[14px] font-semibold text-white mb-1">
-                    Protect your heart and arteries
-                  </h3>
-                  <p className="text-[12px] font-normal text-gray-400 line-clamp-2">
-                    Your blood work shows a genetically high LP(a) with LDL/ApoB leaving extra cholesterol particles in circulation.
-                  </p>
-                </div>
-              )}
+              </div>
 
               {/* Stats row */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 bg-white border border-gray-200 rounded p-3 text-center">
-                  <p className="text-[12px] font-medium text-[#717178]">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 bg-white border border-[#e6e6e8] rounded-[4px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)] p-3">
+                  <p className="text-[12px] font-medium text-[#717178] leading-[16px]">
                     Total Goals
                   </p>
-                  <p className="text-[16px] font-semibold text-black mt-0.5">
-                    {goals.length || 4}
+                  <p className="text-[16px] font-semibold text-black leading-[20px] mt-1">
+                    {goals.length}
                   </p>
                 </div>
-                <div className="flex-1 bg-white border border-gray-200 rounded p-3 text-center">
-                  <p className="text-[12px] font-medium text-[#717178]">
+                <div className="flex-1 bg-white border border-[#e6e6e8] rounded-[4px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)] p-3">
+                  <p className="text-[12px] font-medium text-[#717178] leading-[16px]">
                     Protocol Items
                   </p>
-                  <p className="text-[16px] font-semibold text-black mt-0.5">
+                  <p className="text-[16px] font-semibold text-black leading-[20px] mt-1">
                     6
                   </p>
                 </div>
               </div>
-            </div>
 
-            {/* Top Protocol Items */}
-            <div>
-              <h2 className="text-[16px] font-medium text-black mb-3">
+              {/* Top Protocol Items */}
+              <p className="text-[16px] font-medium text-black leading-[24px] mb-2">
                 Top Protocol Items
-              </h2>
-              <div className="space-y-3">
+              </p>
+              <div className="space-y-2">
                 {PROTOCOL_ITEMS.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-white"
+                    className="flex items-center gap-3 p-3 rounded-[8px] bg-white border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)]"
                   >
-                    <div className="h-[44px] w-[44px] rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="8" y="2" width="8" height="20" rx="3" fill="#d4b5f0"/>
-                        <rect x="8" y="2" width="8" height="8" rx="3" fill="#9b59b6"/>
-                        <rect x="6" y="9" width="12" height="2" rx="1" fill="#7d3c98"/>
-                      </svg>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-medium text-black leading-[20px]">
+                        {item.name}
+                      </p>
+                      <p className="text-[13px] font-medium text-[#71717b] leading-[18px]">
+                        {item.price}
+                      </p>
                     </div>
-                    <span className="flex-1 text-[14px] font-medium text-black">
-                      {item.name}
-                    </span>
-                    <span className="text-[13px] font-medium text-[#71717b]">
-                      {item.price}
-                    </span>
+                    <div className="h-[44px] w-[44px] rounded flex-shrink-0 overflow-hidden">
+                      <img
+                        src="/assets/doctor/protocol-item.png"
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Your Action Plan */}
-            <div className="bg-white rounded-3xl p-5 mb-6">
+            <div className="bg-white rounded-[24px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] pt-5 px-5 pb-5 mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[18px] font-semibold text-[#0a0a0a]">
+                <h2 className="text-[18px] font-semibold text-[#0a0a0a] leading-[28px] tracking-[-0.44px]">
                   Your action plan
                 </h2>
-                <button className="text-[14px] font-medium text-[#541d7a] hover:underline">
+                <button className="text-[14px] font-medium text-[#541d7a] tracking-[-0.15px]">
                   View
                 </button>
               </div>
@@ -466,20 +437,23 @@ export default function PatientDetail() {
                 {ACTION_PLAN_ITEMS.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-3 p-3 rounded-[14px] bg-[#f9fafb] cursor-pointer"
+                    className="flex items-center gap-3 px-3 h-[60px] rounded-[14px] bg-[#f9fafb] cursor-pointer"
                   >
-                    <div className="flex items-center justify-center flex-shrink-0 rounded-full bg-[#f3f4f6]" style={{ width: 24, height: 24 }}>
-                      <div className="rounded-full" style={{ width: 8, height: 8, backgroundColor: idx === 0 ? "#00d4a1" : "#9ca3af" }} />
+                    <div className="flex items-center justify-center flex-shrink-0 w-6 h-6">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke={idx === 0 ? "#00d4a1" : "#d1d5db"} strokeWidth="2" fill="none" />
+                        {idx === 0 && <path d="M8 12l3 3 5-5" stroke="#00d4a1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />}
+                      </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-medium text-black truncate">
+                      <p className={`text-[14px] font-medium leading-[20px] tracking-[-0.15px] ${idx === 0 ? "line-through text-[#99a1af]" : "text-black"}`}>
                         {item.name}
                       </p>
-                      <p className="text-[12px] font-normal text-gray-400">
+                      <p className="text-[12px] font-normal text-[#6a7282] leading-[16px]">
                         {item.category}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-gray-300 flex-shrink-0" />
+                    <ChevronRight className="h-5 w-5 text-gray-300 flex-shrink-0" />
                   </div>
                 ))}
               </div>
@@ -496,28 +470,24 @@ export default function PatientDetail() {
         </aside>
       </div>
 
-      {/* Mobile Chatbot Modal */}
+      {/* Mobile Chatbot Modal — full screen */}
       {mobileChatOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black/50">
-          <div
-            className="absolute inset-x-0 bottom-0 bg-white rounded-t-2xl shadow-2xl"
-            style={{ height: "85vh" }}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900">AI Assistant</h3>
-              <button
-                onClick={() => setMobileChatOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="h-5 w-5 text-gray-600" />
-              </button>
-            </div>
-            <div className="h-[calc(100%-4rem)]">
-              <Chatbot
-                patientId={patientId}
-                patientName={patientName}
-              />
-            </div>
+        <div className="lg:hidden fixed inset-0 z-50 bg-white flex flex-col">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+            <button
+              onClick={() => setMobileChatOpen(false)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+            <span className="text-sm font-semibold text-gray-900">{patientName}</span>
+            <div className="w-9" />
+          </div>
+          <div className="flex-1 min-h-0">
+            <Chatbot
+              patientId={patientId}
+              patientName={patientName}
+            />
           </div>
         </div>
       )}
@@ -525,9 +495,9 @@ export default function PatientDetail() {
       {/* Mobile Chatbot FAB */}
       <button
         onClick={() => setMobileChatOpen(true)}
-        className="lg:hidden fixed bottom-6 right-6 h-14 w-14 rounded-full bg-[#541d7a] text-white shadow-xl hover:bg-[#441566] transition-colors flex items-center justify-center z-40"
+        className="lg:hidden fixed bottom-5 right-5 h-14 w-14 rounded-full bg-[#541d7a] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] hover:bg-[#441566] transition-colors flex items-center justify-center z-40"
       >
-        <span className="text-[20px] font-bold">C</span>
+        <img src="/assets/doctor/cyborg-logo.png" alt="Chat" className="w-6 h-6 object-cover" />
       </button>
     </div>
   );

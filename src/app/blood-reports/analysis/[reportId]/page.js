@@ -161,11 +161,11 @@ export default function BloodReportAnalysis() {
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  <span>{report?.fileName}</span>
+                  <span>{report?.fileName || "N/A"}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span>{new Date(report?.uploadedAt).toLocaleDateString()}</span>
+                  <span>{report?.uploadedAt ? new Date(report.uploadedAt).toLocaleDateString() : "N/A"}</span>
                 </div>
               </div>
             </div>
@@ -359,7 +359,7 @@ export default function BloodReportAnalysis() {
             </div>
             <div>
               <span className="font-medium">Generated:</span>{" "}
-              {new Date(analysis.created_at).toLocaleString()}
+              {analysis.created_at ? new Date(analysis.created_at).toLocaleString() : "N/A"}
             </div>
             <div>
               <span className="font-medium">Biomarkers Analyzed:</span>{" "}

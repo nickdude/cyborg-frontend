@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, ClipboardList, Upload, FileCheck, CheckCircle, AlertTriangle, Activity, MessageSquare, Settings, LogOut } from "lucide-react";
+import { Bell, ClipboardList, Upload, FileCheck, CheckCircle, AlertTriangle, Activity, MessageSquare, Settings, LogOut, Clock } from "lucide-react";
 import { notificationAPI } from "@/services/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -51,6 +51,24 @@ function getNotificationDisplay(notification) {
         navigateTo: planId
           ? `/action-plan/${notification.userId}?planId=${planId}`
           : null,
+      };
+    }
+    case "goals:awaiting_review":
+      return {
+        title: "Goals Generated",
+        message: "Your health goals have been generated and are awaiting doctor approval.",
+        Icon: Clock,
+        navigateTo: null,
+      };
+    case "goals:approved": {
+      const pid = notification.metadata?.planId;
+      return {
+        title: "Health Plan Approved",
+        message: "Your doctor has approved your health goals. View them now.",
+        Icon: CheckCircle,
+        navigateTo: pid
+          ? `/action-plan/${notification.userId}?planId=${pid}`
+          : "/protocol",
       };
     }
     default:

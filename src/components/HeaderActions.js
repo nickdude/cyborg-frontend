@@ -16,6 +16,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Upload,
+  Clock,
+  FileText,
 } from "lucide-react";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
@@ -58,6 +60,36 @@ function getNotificationDisplay(notification) {
         title: "Action Plan Ready",
         message: "A personalized action plan has been generated.",
         Icon: ClipboardList,
+      };
+    case "doctor:report_uploaded":
+      return {
+        title: "Patient Report Uploaded",
+        message: `${notification.metadata?.patientName || "A patient"} uploaded a blood report.`,
+        Icon: FileText,
+      };
+    case "doctor:goals_ready_for_review":
+      return {
+        title: "Goals Ready for Review",
+        message: `${notification.metadata?.patientName || "A patient"}'s action plan is ready for your review.`,
+        Icon: ClipboardList,
+      };
+    case "doctor:generation_failed":
+      return {
+        title: "Plan Generation Failed",
+        message: `Action plan generation failed for ${notification.metadata?.patientName || "a patient"}.`,
+        Icon: AlertTriangle,
+      };
+    case "goals:awaiting_review":
+      return {
+        title: "Goals Generated",
+        message: "Your health goals have been generated and are awaiting doctor review.",
+        Icon: Clock,
+      };
+    case "goals:approved":
+      return {
+        title: "Health Plan Approved",
+        message: "Your doctor has approved your health goals. View them now.",
+        Icon: CheckCircle,
       };
     default:
       return {

@@ -10,6 +10,26 @@ import SearchBar from "@/components/SearchBar";
 import { transformPanel, computeSummary } from "@/utils/biomarkerAdapter";
 import { userAPI, biomarkerAPI } from "@/services/api";
 
+function ElapsedTimer({ since }) {
+  const [elapsed, setElapsed] = useState("");
+  useEffect(() => {
+    if (!since) return;
+    const start = new Date(since).getTime();
+    if (isNaN(start)) return;
+    function update() {
+      const diff = Math.max(0, Math.floor((Date.now() - start) / 1000));
+      const m = Math.floor(diff / 60);
+      const s = diff % 60;
+      setElapsed(m > 0 ? `${m}m ${s}s` : `${s}s`);
+    }
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [since]);
+  if (!elapsed) return null;
+  return <span className="ml-1 tabular-nums">{elapsed}</span>;
+}
+
 export default function DataDashboard() {
   const { user, updateUser } = useAuth();
   const userId = user?._id || user?.id;
@@ -502,7 +522,7 @@ export default function DataDashboard() {
                               <div className="truncate text-[17px] font-medium text-[#1e2027]">{fileName}</div>
                               <div className="text-xs text-[#787d8b]">
                                 {isProcessing ? (
-                                  <span className="text-[#6d6f7b]">Processing…</span>
+                                  <span className="text-[#6d6f7b]">Processing… <ElapsedTimer since={report.uploadedAt || report.createdAt} /></span>
                                 ) : isFailed ? (
                                   <span className="font-medium text-red-600">Failed</span>
                                 ) : (

@@ -209,7 +209,10 @@ export default function ActionPlanPage() {
 
       if (response.data) {
         const data = response.data;
-        if (data.status === "ready") {
+        if (data.status === "ready" || data.status === "approved") {
+          setPlan(data);
+          setError("");
+        } else if (data.status === "awaiting_review") {
           setPlan(data);
           setError("");
         } else if (data.status === "pending" || data.status === "generating") {
@@ -432,6 +435,16 @@ export default function ActionPlanPage() {
         <section className="space-y-4">
           <SectionHeader number={3} total={5} title="Monitored Issues" index={2} />
 
+          {plan?.status === "awaiting_review" ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+              <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <h3 className="text-base font-semibold text-gray-900 mb-1">Your doctor is reviewing your health plan</h3>
+              <p className="text-sm text-gray-500">You&apos;ll be notified when your personalized goals are ready.</p>
+            </div>
+          ) : (
+          <>
           <p className="text-sm text-gray-600">
             {monitoredIssues.length > 0
               ? `We detected ${monitoredIssues.length} monitored issue${monitoredIssues.length !== 1 ? "s" : ""} you should be aware of.`
@@ -500,9 +513,12 @@ export default function ActionPlanPage() {
               </div>
             ))}
           </div>
+          </>
+          )}
         </section>
 
         {/* ── Section 4: Protocol ── */}
+        {plan?.status !== "awaiting_review" && (
         <section className="space-y-4">
           <SectionHeader number={4} total={5} title="Protocol" index={3} />
 
@@ -598,8 +614,10 @@ export default function ActionPlanPage() {
             </AccordionSection>
           </div>
         </section>
+        )}
 
         {/* ── Section 5: Next Steps ── */}
+        {plan?.status !== "awaiting_review" && (
         <section className="space-y-4">
           <SectionHeader number={5} total={5} title="Next Steps" index={4} />
 
@@ -669,6 +687,7 @@ export default function ActionPlanPage() {
             </p>
           )}
         </section>
+        )}
 
         {/* ── Action Buttons ── */}
         <div className="flex gap-3">

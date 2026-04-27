@@ -22,6 +22,12 @@ import {
   MessageSquare,
   Database,
   Search,
+  Plus,
+  PanelLeftOpen,
+  PanelLeftClose,
+  Trash2,
+  Users,
+  User,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -613,6 +619,12 @@ export default function Chatbot({ patientId, patientName }) {
   const [input, setInput] = useState("");
   const [error, setError] = useState(null);
 
+  // Chat history state
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [chatList, setChatList] = useState([]);
+  const [chatListLoading, setChatListLoading] = useState(false);
+  const [showAllPatients, setShowAllPatients] = useState(false);
+
   const initRef = useRef(false);
   const textareaRef = useRef(null);
   const assistantIdRef = useRef(null);
@@ -635,7 +647,71 @@ export default function Chatbot({ patientId, patientName }) {
   }, [input]);
 
   // -----------------------------------------------------------------------
-  // Initialise: load existing chat or create one
+  // Load chat list when history panel opens
+  // -----------------------------------------------------------------------
+  const refreshChatList = useCallback(async () => {
+    setChatListLoading(true);
+    try {
+      const pid = showAllPatients ? undefined : patientId;
+      const res = await doctorAPI.listChats(pid);
+      setChatList(res.data || []);
+    } catch (err) {
+      console.error("[DoctorChat] listChats failed:", err);
+    } finally {
+      setChatListLoading(false);
+    }
+  }, [patientId, showAllPatients]);
+
+  useEffect(() => {
+    if (historyOpen) refreshChatList();
+  }, [historyOpen, refreshChatList]);
+
+  // -----------------------------------------------------------------------
+  // Switch to a different chat
+  // -----------------------------------------------------------------------
+  const switchChat = useCallback(async (targetChatId) => {
+    try {
+      const fullRes = await doctorAPI.getChat(targetChatId);
+      const full = fullRes.data;
+      setChatId(targetChatId);
+      setMessages(full?.messages?.length ? full.messages.map(hydrateMessage) : []);
+      setError(null);
+      setHistoryOpen(false);
+    } catch (err) {
+      console.error("[DoctorChat] switchChat failed:", err);
+    }
+  }, []);
+
+  // -----------------------------------------------------------------------
+  // Create a new chat — just reset state, actual creation on first send
+  // -----------------------------------------------------------------------
+  const handleNewChat = useCallback(() => {
+    if (streaming) return;
+    setChatId(null);
+    setMessages([]);
+    setError(null);
+    setHistoryOpen(false);
+    assistantIdRef.current = null;
+  }, [streaming]);
+
+  // -----------------------------------------------------------------------
+  // Delete a chat
+  // -----------------------------------------------------------------------
+  const handleDeleteChat = useCallback(async (targetChatId, e) => {
+    e.stopPropagation();
+    try {
+      await doctorAPI.deleteChat(targetChatId);
+      setChatList((prev) => prev.filter((c) => c._id !== targetChatId));
+      if (targetChatId === chatId) {
+        handleNewChat();
+      }
+    } catch (err) {
+      console.error("[DoctorChat] deleteChat failed:", err);
+    }
+  }, [chatId, handleNewChat]);
+
+  // -----------------------------------------------------------------------
+  // Initialise: load most recent chat (don't create if none exist)
   // -----------------------------------------------------------------------
   useEffect(() => {
     if (!patientId || initRef.current) return;
@@ -649,7 +725,6 @@ export default function Chatbot({ patientId, patientName }) {
           const chat = existing[0];
           setChatId(chat._id);
 
-          // Load full chat to get messages
           try {
             const fullRes = await doctorAPI.getChat(chat._id);
             const full = fullRes.data;
@@ -658,16 +733,10 @@ export default function Chatbot({ patientId, patientName }) {
             }
           } catch (loadErr) {
             console.error("[DoctorChat] loadChat failed:", loadErr);
-            // If we can't load messages but have the chat, just use empty
           }
-          return;
         }
-
-        const createRes = await doctorAPI.createChat(patientId);
-        setChatId(createRes.data._id);
       } catch (err) {
         console.error("[DoctorChat] Init failed:", err);
-        setError("Failed to initialise chat. Please reload.");
       }
     })();
   }, [patientId]);
@@ -894,24 +963,137 @@ export default function Chatbot({ patientId, patientName }) {
   // Render
   // -----------------------------------------------------------------------
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-white relative">
       {/* Header */}
-      <header className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-white">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center shadow-sm">
-          <Sparkles className="w-4 h-4 text-white" />
+      <header className="flex items-center gap-2 px-3 py-3 border-b border-gray-100 bg-white shrink-0">
+        <button
+          type="button"
+          onClick={() => setHistoryOpen((v) => !v)}
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label="Chat history"
+        >
+          {historyOpen ? (
+            <PanelLeftClose className="w-4 h-4 text-gray-600" />
+          ) : (
+            <PanelLeftOpen className="w-4 h-4 text-gray-600" />
+          )}
+        </button>
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center shadow-sm">
+          <Sparkles className="w-3.5 h-3.5 text-white" />
         </div>
-        <div>
-          <h3 className="text-sm font-bold text-gray-900">AI Assistant</h3>
-          <p className="text-xs text-gray-500">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-bold text-gray-900 truncate">AI Assistant</h3>
+          <p className="text-xs text-gray-500 truncate">
             {patientName
               ? `Insights for ${patientName}`
               : "Patient insights & guidance"}
           </p>
         </div>
-        <span className="ml-auto text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+        <button
+          type="button"
+          onClick={handleNewChat}
+          disabled={streaming}
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30"
+          aria-label="New chat"
+        >
+          <Plus className="w-4 h-4 text-gray-600" />
+        </button>
+        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
           BETA
         </span>
       </header>
+
+      {/* Chat history sidebar */}
+      {historyOpen && (
+        <div className="absolute inset-0 top-[52px] z-20 bg-white flex flex-col">
+          <div className="px-3 py-2 border-b border-gray-100">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setShowAllPatients(false)}
+                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md transition-colors ${
+                  !showAllPatients
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <User className="w-3 h-3" />
+                This patient
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAllPatients(true)}
+                className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md transition-colors ${
+                  showAllPatients
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Users className="w-3 h-3" />
+                All patients
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {chatListLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+              </div>
+            ) : chatList.length === 0 ? (
+              <div className="text-center py-8 text-sm text-gray-400">
+                No chats yet
+              </div>
+            ) : (
+              <div className="py-1">
+                {chatList.map((chat) => (
+                  <button
+                    key={chat._id}
+                    type="button"
+                    onClick={() => switchChat(chat._id)}
+                    className={`w-full text-left px-3 py-2.5 hover:bg-gray-50 transition-colors flex items-start gap-2 group ${
+                      chat._id === chatId ? "bg-primary/5" : ""
+                    }`}
+                  >
+                    <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {chat.title || chat.patientName || "Untitled chat"}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {chat.patientName && showAllPatients
+                          ? `${chat.patientName} · `
+                          : ""}
+                        {new Date(chat.updatedAt || chat.createdAt).toLocaleDateString(
+                          undefined,
+                          { month: "short", day: "numeric" }
+                        )}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteChat(chat._id, e)}
+                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded transition-all"
+                      aria-label="Delete chat"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    </button>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="px-3 py-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={handleNewChat}
+              className="w-full flex items-center justify-center gap-2 text-sm font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg py-2 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New chat
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Message area */}
       <div className="relative flex-1 min-h-0">

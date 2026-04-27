@@ -15,14 +15,18 @@ export default function Protocol() {
   const [goals, setGoals] = useState([]);
   const [goalsLoading, setGoalsLoading] = useState(false);
   const [goalsError, setGoalsError] = useState("");
+  const [goalsStatus, setGoalsStatus] = useState(null);
 
   const fetchGoals = useCallback(async () => {
     try {
       setGoalsLoading(true);
       setGoalsError("");
+      setGoalsStatus(null);
       const response = await goalsAPI.list();
       const data = response?.data || response;
+      const meta = data?.meta || {};
       setGoals(data?.goals || []);
+      setGoalsStatus(meta.status || null);
     } catch (err) {
       if (err?.statusCode === 404 || err?.message?.includes("No report")) {
         setGoalsError("Upload a blood report to see your health goals");
@@ -152,6 +156,26 @@ export default function Protocol() {
             <div className="py-12 text-center text-gray-500">Loading goals...</div>
           ) : goalsError ? (
             <div className="py-12 text-center text-gray-500">{goalsError}</div>
+          ) : goalsStatus === "awaiting_review" ? (
+            <div className="animate-fade-in py-8">
+              <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center max-w-md mx-auto">
+                <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">Your doctor is reviewing your health plan</h3>
+                <p className="text-sm text-gray-500">You&apos;ll be notified when your personalized goals are ready.</p>
+              </div>
+            </div>
+          ) : goalsStatus === "generating" ? (
+            <div className="animate-fade-in py-8">
+              <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center max-w-md mx-auto">
+                <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">Generating your health goals</h3>
+                <p className="text-sm text-gray-500">This may take a minute. We&apos;ll notify you when ready.</p>
+              </div>
+            </div>
           ) : goals.length === 0 ? (
             <div className="py-12 text-center text-gray-500">No health goals yet</div>
           ) : (
