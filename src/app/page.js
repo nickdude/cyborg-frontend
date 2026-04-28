@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import Button from "@/components/Button";
+import HeroSection from "@/components/home/HeroSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import MedicalProfessionalsSection from "@/components/home/MedicalProfessionalsSection";
 import MembershipSection from "@/components/home/MembershipSection";
 import MembershipPlanSection from "@/components/home/MembershipPlanSection";
+import AllInOneImageSwitcher from "@/components/home/AllInOneImageSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -22,6 +24,20 @@ export default function Home() {
       name: "Mito Heart",
       image: "/assets/preview/product-2.png",
     },
+    {
+      name: "Ozempic",
+      image: "/assets/preview/product-3.png",
+    },
+    {
+      name: "Mounjaro",
+      image: "/assets/preview/product-4.png",
+    },
+  ];
+  const allInOneImages = [
+    { src: "/assets/all-in-one/1.png" },
+    { src: "/assets/all-in-one/2.png" },
+    { src: "/assets/all-in-one/3.png" },
+    { src: "/assets/all-in-one/4.png" },
   ];
 
   useEffect(() => {
@@ -40,60 +56,7 @@ export default function Home() {
 
   return (
     <main className="overflow-x-hidden bg-black">
-      <section className="relative min-h-[100svh] overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/assets/preview/main-page.png')" }}
-        />
-
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/20" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
-
-        <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[430px] flex-col justify-end px-6 pb-10 pt-8 text-center text-white md:max-w-[720px] md:pb-14 lg:max-w-[920px]">
-          <h1 className="mx-auto max-w-[11ch] text-[clamp(2.75rem,9vw,4rem)] font-semibold leading-[1.08] tracking-[-0.02em]">
-            Unlock your new health intelligence
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-[18.5ch] text-[clamp(1.5rem,4.7vw,2rem)] font-normal leading-[1.32] md:max-w-[26ch] md:text-[clamp(1.5rem,3.5vw,2.1rem)]">
-            Clinician-guided semaglutide therapy. Every week. Target 50+ conditions tied to obesity and metabolic aging. Starting at $20/month
-          </p>
-
-          <Button
-            href="/login"
-            variant="secondary"
-            fullWidth
-            className="mx-auto mt-9 w-full max-w-[360px] rounded-2xl border-none bg-[#ECECEC] py-4 text-[clamp(1.55rem,4.8vw,2rem)] font-semibold text-[#101010] shadow-none hover:bg-[#e2e2e2]"
-          >
-            Join Today
-          </Button>
-
-          <div className="mt-5 flex items-center justify-center gap-2 text-[clamp(1rem,3.7vw,1.25rem)] font-normal">
-            <svg className="h-5 w-5 md:h-6 md:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>HSA/FSA eligible</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-[#ECECEC] px-5 pb-14 pt-16 text-center md:px-8 md:pb-20 md:pt-20">
-        <div className="mx-auto w-full max-w-[430px] md:max-w-[780px]">
-          <h2 className="mx-auto max-w-[13ch] text-[clamp(2.05rem,8.2vw,4rem)] font-medium leading-[1.08] tracking-[-0.02em] text-black">
-            The most complete picture of your health you&apos;ve ever had
-          </h2>
-
-          <img
-            src="/assets/preview/sub-main.png"
-            alt="Health dashboard app preview"
-            className="mx-auto mt-10 w-full max-w-[520px] md:mt-12"
-          />
-        </div>
-      </section>
+      <HeroSection />
 
       <section className="bg-[#5B2487] px-5 pb-14 pt-12 text-white md:px-8 md:pb-20 md:pt-16">
         <div className="mx-auto w-full max-w-[430px] md:max-w-[980px]">
@@ -155,35 +118,11 @@ export default function Home() {
             All in one app.
           </h2>
 
-          <img
-            src="/assets/preview/mobile-image.png"
-            alt="Cyborg mobile app preview"
-            className="mx-auto mt-3 w-full max-w-[610px]"
-          />
+          <AllInOneImageSwitcher images={allInOneImages} />
 
           <p className="mx-auto mt-8 max-w-[28ch] text-[clamp(1.2rem,4.2vw,1.75rem)] leading-[1.34] text-black/95 md:mt-10 md:max-w-[34ch]">
             Leverage the Cyborg&apos;s advanced, discreet and preventive health monitoring to guide your path toward vitality and a longer, healthier life
           </p>
-
-          <div className="mx-auto mt-10 grid w-full max-w-[540px] grid-cols-2 gap-4 md:mt-12 md:gap-6">
-            <a
-              href="#"
-              className="flex h-[56px] items-center justify-center gap-2 rounded-2xl bg-black px-4 text-white"
-              aria-label="Download on Playstore"
-            >
-              <img src="/assets/icons/playstore-icon.svg" alt="" aria-hidden="true" className="h-7 w-7" />
-              <span className="text-[clamp(1.1rem,2.8vw,1.4rem)] font-semibold leading-none">Playstore</span>
-            </a>
-
-            <a
-              href="#"
-              className="flex h-[56px] items-center justify-center gap-2 rounded-2xl bg-black px-4 text-white"
-              aria-label="Download on Appstore"
-            >
-              <img src="/assets/icons/apple-icon.svg" alt="" aria-hidden="true" className="h-7 w-7" />
-              <span className="text-[clamp(1.1rem,2.8vw,1.4rem)] font-semibold leading-none">Appstore</span>
-            </a>
-          </div>
         </div>
       </section>
 
@@ -297,11 +236,17 @@ export default function Home() {
               <img
                 src="/assets/preview/mobile-image-2.png"
                 alt="Labs by Cyborg app preview"
-                className="relative z-20 mx-auto mb-[-52px] mt-9 w-full max-w-[188px] sm:max-w-[205px] md:mb-[-66px] md:mt-12 md:max-w-[228px] lg:z-0 lg:mx-0 lg:mb-[-120px] lg:mt-12 lg:max-w-[310px]"
+                className="relative top-20 z-1 scale-150 mx-auto mb-[-52px] mt-9 w-full max-w-[388px] sm:max-w-[205px] md:mb-[-66px] md:mt-12 md:max-w-[228px] lg:z-0 lg:mx-0 lg:mb-[-120px] lg:mt-12 lg:max-w-[310px]"
               />
             </div>
 
-            <article className="relative z-10 mt-0 rounded-[30px] border border-white/30 bg-gradient-to-b from-white/18 to-white/8 p-5 pt-14 text-left shadow-[0_10px_26px_rgba(0,0,0,0.18)] backdrop-blur-[2px] md:pt-16 lg:mt-0 lg:self-end lg:p-7 lg:pt-7">
+            {/* <article className="relative z-10 mt-0 rounded-[30px] border border-white/30 bg-gradient-to-b from-white/18 to-white/8 p-5 pt-14 text-left shadow-[0_10px_26px_rgba(0,0,0,0.18)] backdrop-blur-[2px] md:pt-16 lg:mt-0 lg:self-end lg:p-7 lg:pt-7"> */}
+            <article className="relative z-10 mt-0 rounded-[30px] border border-white/25 
+                bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.18))] 
+                p-5 pt-14 text-white 
+                shadow-[0_10px_40px_rgba(0,0,0,0.25)] 
+                backdrop-blur-[70px]
+                md:pt-16 lg:mt-0 lg:self-end lg:p-7 lg:pt-7">
               <div className="flex items-start justify-between gap-4">
                 <h3 className="text-[clamp(1.05rem,4.9vw,1.55rem)] font-semibold leading-[1.05] lg:text-[clamp(1.45rem,2.4vw,2.25rem)]">Labs by CYBORG</h3>
                 <p className="text-right text-[clamp(1.05rem,4.9vw,1.45rem)] font-semibold leading-[1.05] lg:text-[clamp(1.4rem,2.3vw,2.1rem)]">Starts at $100</p>
