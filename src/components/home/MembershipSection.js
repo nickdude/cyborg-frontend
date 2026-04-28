@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useState } from "react";
+import TestimonialCarousel from "./TestimonialCarousel";
 
 const MEMBERSHIP_FEATURES = [
   {
@@ -36,51 +37,16 @@ const MEMBERSHIP_FEATURES = [
   },
 ];
 
-function MembershipFeatureCard({ item }) {
-  return (
-    <article className="relative w-full shrink-0 snap-start bg-[#ECECEC] px-5 pb-6 pt-5 text-center lg:w-[286px] lg:max-w-none xl:w-[300px]">
-      <div className="relative">
-        <button
-          type="button"
-          onClick={item.onPrev}
-          className="absolute left-[-12px] top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black text-white"
-          aria-label="Previous membership card"
-        >
-          <span className="text-[20px] leading-none">‹</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={item.onNext}
-          className="absolute right-[-12px] top-1/2 z-10 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black text-white"
-          aria-label="Next membership card"
-        >
-          <span className="text-[20px] leading-none">›</span>
-        </button>
-
-        <img src={item.image} alt={item.title} className="mx-auto h-[198px] w-full rounded-2xl object-cover lg:h-[205px] xl:h-[212px] rounded-lg" />
-      </div>
-
-      <h3 className="mt-4 text-[clamp(1.8rem,3.4vw,2rem)] font-semibold leading-[1.12] text-[#0d0d0f]">{item.title}</h3>
-      <p className="mx-auto mt-2.5 max-w-[24ch] text-[clamp(1.1rem,2.6vw,1.55rem)] leading-[1.32] text-[#666973]">{item.description}</p>
-    </article>
-  );
-}
-
 export default function MembershipSection() {
-  const scrollerRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const scrollByCards = (direction) => {
-    if (!scrollerRef.current) return;
+  const allInOneItems = MEMBERSHIP_FEATURES.map((item) => ({
+    src: item.image,
+    title: item.title,
+    description: item.description,
+  }));
 
-    const firstCard = scrollerRef.current.querySelector("article");
-    const cardWidth = firstCard?.getBoundingClientRect?.().width || 300;
-
-    scrollerRef.current.scrollBy({
-      left: direction === "next" ? cardWidth : -cardWidth,
-      behavior: "smooth",
-    });
-  };
+  const activeFeature = MEMBERSHIP_FEATURES[activeIndex];
 
   return (
     <section className="bg-[#ECECEC] text-black">
@@ -101,22 +67,17 @@ export default function MembershipSection() {
           Join Today <span className="text-[1.9rem] leading-none">›</span>
         </Link>
 
-        <div className="relative mt-8 md:mt-10">
-          <div
-            ref={scrollerRef}
-            className="mx-auto flex w-full max-w-[1920px] snap-x snap-mandatory gap-0 overflow-x-auto [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden"
-            >
-            {MEMBERSHIP_FEATURES.map((item) => (
-                <MembershipFeatureCard
-                key={item.id}
-                item={{
-                    ...item,
-                    onPrev: () => scrollByCards("prev"),
-                    onNext: () => scrollByCards("next"),
-                }}
-                />
-            ))}
-            </div>
+        <div className="mt-10">
+          <TestimonialCarousel items={allInOneItems} onChange={setActiveIndex} />
+
+          {/* <article className="mx-auto mt-6 max-w-[620px] rounded-[28px] bg-white px-5 py-6 text-center shadow-[0_16px_40px_rgba(0,0,0,0.06)] ring-1 ring-black/5 md:px-7 md:py-7">
+            <h3 className="text-[clamp(1.7rem,3.8vw,2.1rem)] font-semibold leading-[1.12] text-[#0d0d0f]">
+              {activeFeature.title}
+            </h3>
+            <p className="mx-auto mt-3 max-w-[26ch] text-[clamp(1.05rem,2.8vw,1.4rem)] leading-[1.35] text-[#666973]">
+              {activeFeature.description}
+            </p>
+          </article> */}
         </div>
       </div>
     </section>

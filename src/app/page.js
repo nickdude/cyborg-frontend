@@ -8,6 +8,8 @@ import MedicalProfessionalsSection from "@/components/home/MedicalProfessionalsS
 import MembershipSection from "@/components/home/MembershipSection";
 import MembershipPlanSection from "@/components/home/MembershipPlanSection";
 import AllInOneImageSwitcher from "@/components/home/AllInOneImageSwitcher";
+import TestimonialCarousel from "@/components/home/TestimonialCarousel";
+import TagOverlaySection from "@/components/home/TagOverlaySection";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -299,6 +301,7 @@ export default function Home() {
       <MembershipSection />
       <MedicalProfessionalsSection />
       <MembershipPlanSection />
+      <TagOverlaySection image="/assets/testinomial/test1.png" />
     </main>
   );
 }

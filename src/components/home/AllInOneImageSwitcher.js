@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from "react";
 
-export default function AllInOneImageSwitcher({ images, altPrefix = "Cyborg mobile app preview" }) {
+export default function AllInOneImageSwitcher({
+  images,
+  altPrefix = "Cyborg mobile app preview",
+  onChange,
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const activeImage = useMemo(() => images?.[activeIndex], [images, activeIndex]);
@@ -11,12 +15,25 @@ export default function AllInOneImageSwitcher({ images, altPrefix = "Cyborg mobi
     return null;
   }
 
+  const setActiveSlide = (nextIndex) => {
+    setActiveIndex(nextIndex);
+    onChange?.(nextIndex);
+  };
+
   const goToPrevious = () => {
-    setActiveIndex((currentIndex) => (currentIndex - 1 + images.length) % images.length);
+    setActiveIndex((currentIndex) => {
+      const nextIndex = (currentIndex - 1 + images.length) % images.length;
+      onChange?.(nextIndex);
+      return nextIndex;
+    });
   };
 
   const goToNext = () => {
-    setActiveIndex((currentIndex) => (currentIndex + 1) % images.length);
+    setActiveIndex((currentIndex) => {
+      const nextIndex = (currentIndex + 1) % images.length;
+      onChange?.(nextIndex);
+      return nextIndex;
+    });
   };
 
   return (
@@ -47,7 +64,7 @@ export default function AllInOneImageSwitcher({ images, altPrefix = "Cyborg mobi
               <button
                 key={image.src}
                 type="button"
-                onClick={() => setActiveIndex(index)}
+                onClick={() => setActiveSlide(index)}
                 className={`h-3.5 rounded-full transition-all ${
                   isActive ? "w-8 bg-black" : "w-3.5 bg-black/20"
                 }`}
