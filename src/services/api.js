@@ -23,11 +23,11 @@ API.interceptors.request.use((config) => {
 });
 
 const PUBLIC_ROUTES = [
-  "/",
   "/login",
   "/register",
   "/forgot-password",
   "/reset-password",
+  "/verify-otp",
 ];
 
 API.interceptors.response.use(
@@ -38,15 +38,16 @@ API.interceptors.response.use(
       if (typeof window !== "undefined") {
         localStorage.removeItem("user");
         const path = window.location.pathname;
-        const onPublicRoute = PUBLIC_ROUTES.some(
-          (r) => path === r || path.startsWith(`${r}/`)
-        );
+        const onPublicRoute =
+          path === "/" ||
+          PUBLIC_ROUTES.some((r) => path === r || path.startsWith(`${r}/`));
         if (!onPublicRoute) {
           window.location.href = "/login";
         }
       }
     }
-    throw error.response?.data || error;
+    const msg = error.response?.data?.message || error.message || "Request failed";
+    throw new Error(msg);
   }
 );
 
@@ -71,9 +72,11 @@ export const userAPI = {
   getHearAboutUs: (userId) => API.get(`/api/users/${userId}/hear-about-us`),
   saveHearAboutUs: (userId, data) => API.post(`/api/users/${userId}/hear-about-us`, data),
   markWelcomeSeen: (userId) => API.post(`/api/users/${userId}/welcome-seen`),
-  uploadBloodReport: (userId, formData) =>
+  uploadBloodReport: (userId, formData, { onUploadProgress } = {}) =>
     API.post(`/api/users/${userId}/blood-reports`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
+      timeout: 180000,
+      onUploadProgress,
     }),
   getBloodReports: (userId) => API.get(`/api/users/${userId}/blood-reports`),
   getBloodReport: (reportId) => API.get(`/api/users/blood-reports/${reportId}`),

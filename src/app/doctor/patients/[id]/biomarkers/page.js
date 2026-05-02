@@ -75,12 +75,21 @@ export default function BiomarkersPage() {
   const [rangeFilter, setRangeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
+  // Auth guard: redirect non-doctors away
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
       router.push("/login");
       return;
     }
+    if (user?.userType !== "doctor") {
+      router.push("/dashboard");
+      return;
+    }
+  }, [authLoading, user, router]);
+
+  useEffect(() => {
+    if (authLoading || !user || user?.userType !== "doctor") return;
 
     const fetchData = async () => {
       try {

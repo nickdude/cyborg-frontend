@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import HomeScheduledSection from "@/components/home/HomeScheduledSection";
 import InsightsDashboard from "@/components/home/InsightsDashboard";
@@ -13,9 +13,16 @@ import { transformPanel, computeSummary, extractScores } from "@/utils/biomarker
 import { biomarkerAPI } from "@/services/api";
 
 export default function Dashboard() {
-    const { user } = useAuth();
+    const { user, token, loading: authLoading } = useAuth();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const userName = user?.firstName || "User";
+
+    useEffect(() => {
+        if (!authLoading && !token) {
+            router.push("/login");
+        }
+    }, [authLoading, token, router]);
 
     const hasInsightsSignals =
         user?.dashboardVariant === "insights" ||

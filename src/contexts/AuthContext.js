@@ -12,12 +12,17 @@ export const AuthProvider = ({ children }) => {
 
   // Restore session on mount
   useEffect(() => {
-    const savedToken = Cookie.get("authToken");
-    const savedUser = localStorage.getItem("user");
+    try {
+      const savedToken = Cookie.get("authToken");
+      const savedUser = typeof window !== "undefined" ? localStorage.getItem("user") : null;
 
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      }
+    } catch {
+      Cookie.remove("authToken");
+      if (typeof window !== "undefined") localStorage.removeItem("user");
     }
     setLoading(false);
   }, []);

@@ -2,20 +2,127 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { goalsAPI } from "@/services/api";
-import ProtocolProductItem from "@/components/ProtocolProductItem";
+import { goalsAPI, actionPlanAPI } from "@/services/api";
 import GoalCard from "@/components/GoalCard";
 import GoalDetail from "@/components/GoalDetail";
+
+const TIMING_LABELS = {
+  morning_fasted: "Morning (Fasted)",
+  with_breakfast: "With Breakfast",
+  with_food: "With Food",
+  pre_workout: "Pre-Workout",
+  post_workout: "Post-Workout",
+  with_dinner: "With Dinner",
+  bedtime: "Bedtime",
+};
+
+const PRIORITY_COLORS = {
+  High: "bg-red-50 text-red-700 border-red-200",
+  Medium: "bg-amber-50 text-amber-700 border-amber-200",
+  Low: "bg-green-50 text-green-700 border-green-200",
+};
+
+function TimingBadge({ timing }) {
+  const label = TIMING_LABELS[timing] || timing || "With Food";
+  return (
+    <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 border border-blue-200">
+      {label}
+    </span>
+  );
+}
+
+function PriorityBadge({ priority }) {
+  const colorClass = PRIORITY_COLORS[priority] || PRIORITY_COLORS.Medium;
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${colorClass}`}>
+      {priority || "Medium"}
+    </span>
+  );
+}
+
+function ProtocolItemCard({ item }) {
+  const [expanded, setExpanded] = useState(false);
+  const goalCount = item.drivingGoals?.length || 0;
+
+  return (
+    <div className="rounded-2xl border border-borderColor bg-white font-inter lg:px-5">
+      <div className="px-4 py-4 lg:px-0 lg:py-5">
+        {/* Main row */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-semibold text-black lg:text-base">{item.productName}</h3>
+            {item.dosing && (
+              <p className="mt-1 text-sm text-secondary">{item.dosing}</p>
+            )}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <TimingBadge timing={item.timing} />
+              {goalCount > 0 && (
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors"
+                >
+                  Supports {goalCount} goal{goalCount !== 1 ? "s" : ""}
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+          <button className="flex-shrink-0 rounded-lg bg-black px-6 py-2 text-xs font-medium text-white hover:bg-gray-900 transition lg:px-7 lg:py-2.5 lg:text-sm">
+            Buy
+          </button>
+        </div>
+
+        {/* Expanded: driving goals */}
+        {expanded && goalCount > 0 && (
+          <div className="mt-3 border-t border-gray-100 pt-3">
+            <p className="mb-2 text-xs font-medium text-secondary uppercase tracking-wide">Driving Goals</p>
+            <div className="space-y-1.5">
+              {item.drivingGoals.map((goal, i) => (
+                <div key={goal.goalId || i} className="flex items-center gap-2">
+                  <span className="text-sm text-gray-800">{goal.title}</span>
+                  <PriorityBadge priority={goal.priority} />
+                </div>
+              ))}
+            </div>
+            {item.triggerBiomarkers?.length > 0 && (
+              <div className="mt-2">
+                <p className="text-xs text-secondary">
+                  Biomarkers: {item.triggerBiomarkers.join(", ")}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function Protocol() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("protocol");
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [goals, setGoals] = useState([]);
   const [goalsLoading, setGoalsLoading] = useState(false);
   const [goalsError, setGoalsError] = useState("");
   const [goalsStatus, setGoalsStatus] = useState(null);
+
+  // Protocol state
+  const [protocolItems, setProtocolItems] = useState([]);
+  const [protocolLoading, setProtocolLoading] = useState(false);
+  const [protocolError, setProtocolError] = useState("");
 
   const fetchGoals = useCallback(async () => {
     try {
@@ -38,49 +145,35 @@ export default function Protocol() {
     }
   }, []);
 
+  const fetchProtocol = useCallback(async () => {
+    try {
+      setProtocolLoading(true);
+      setProtocolError("");
+      const response = await actionPlanAPI.getLatest();
+      const data = response?.data || response;
+      setProtocolItems(data?.deduplicatedProtocol || []);
+    } catch (err) {
+      if (err?.statusCode === 404 || err?.message?.includes("No action plan")) {
+        setProtocolError("Generate an action plan from your blood report first");
+      } else {
+        setProtocolError("Failed to load protocol items");
+      }
+    } finally {
+      setProtocolLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === "goals") {
       fetchGoals();
     }
   }, [activeTab, fetchGoals]);
 
-  // Sample protocol products
-  const protocolProducts = [
-    {
-      id: 1,
-      name: "Zinc Bisglycinate 15 mg",
-      price: 14,
-    },
-    {
-      id: 2,
-      name: "NAC - N-Acetylcysteine - 90 Servings",
-      price: 31,
-    },
-    {
-      id: 3,
-      name: "Pro-Resolve Omega",
-      price: 76,
-    },
-    {
-      id: 4,
-      name: "Creatine - 90 Servings",
-      price: 43,
-    },
-    {
-      id: 5,
-      name: "Vitamin D + K2 Liquid",
-      price: 32,
-    },
-    {
-      id: 6,
-      name: "Advanced Blood Panel",
-      price: 359,
-    },
-  ];
-
-  const handleBuyClick = (product) => {
-    setSelectedProduct(product);
-  };
+  useEffect(() => {
+    if (activeTab === "protocol") {
+      fetchProtocol();
+    }
+  }, [activeTab, fetchProtocol]);
 
   const handleGoalClick = (goal) => {
     setSelectedGoal(goal);
@@ -191,23 +284,37 @@ export default function Protocol() {
 
         {/* Protocol Tab */}
         {activeTab === "protocol" && (
-          <div className="animate-fade-in grid grid-cols-1 gap-0 lg:grid-cols-2 lg:gap-4">
-            {protocolProducts.map((product, index) => (
-              <div key={product.id} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
-                <ProtocolProductItem
-                  product={product}
-                  onBuyClick={handleBuyClick}
-                />
+          protocolLoading ? (
+            <div className="py-12 text-center text-gray-500">Loading protocol...</div>
+          ) : protocolError ? (
+            <div className="animate-fade-in py-8">
+              <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center max-w-md mx-auto">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">{protocolError}</h3>
+                <p className="text-sm text-gray-500">Your personalized supplement protocol will appear here once your action plan is ready.</p>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Buy confirmation (can expand this later) */}
-        {selectedProduct && (
-          <div className="animate-fade-in fixed bottom-32 right-4 rounded-full bg-black p-4 text-white shadow-lg lg:bottom-8 lg:right-8">
-            <span className="text-sm">✓ Item added: {selectedProduct.name}</span>
-          </div>
+            </div>
+          ) : protocolItems.length === 0 ? (
+            <div className="animate-fade-in py-8">
+              <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center max-w-md mx-auto">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">No protocol items yet</h3>
+                <p className="text-sm text-gray-500">Protocol items will appear once your action plan includes supplement recommendations.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="animate-fade-in grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4">
+              {protocolItems.map((item, index) => (
+                <div key={item.productName + index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
+                  <ProtocolItemCard item={item} />
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>

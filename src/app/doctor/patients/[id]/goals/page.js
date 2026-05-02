@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import { doctorAPI } from "@/services/api";
 import {
   Plus,
@@ -16,14 +17,18 @@ import {
   Check,
   Loader2,
   AlertCircle,
+  Pause,
+  Archive,
+  Target,
+  CheckCircle2,
+  XCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  ArrowRight,
+  AlertTriangle,
+  FileText,
 } from "lucide-react";
-
-const DUMMY_PROTOCOL_ITEMS = [
-  { id: "p1", name: "Zinc Bisglycinate 15 mg", price: "$14", quantity: "", dosage: "" },
-  { id: "p2", name: "NAC – N-Acetylcysteine – 90 Servings", price: "$31", quantity: "90 Servings", dosage: "" },
-  { id: "p3", name: "Pro-Resolve Omega", price: "$76", quantity: "", dosage: "" },
-  { id: "p4", name: "Creatine – 90 Servings", price: "$43", quantity: "90 Servings", dosage: "" },
-];
 
 const PRIORITY_STYLES = {
   High: { bg: "#FEE2E2", color: "#DC2626", border: "#EF4444" },
@@ -35,14 +40,319 @@ function getPriorityStyle(priority) {
   return PRIORITY_STYLES[priority] || PRIORITY_STYLES.Medium;
 }
 
+const STATUS_STYLES = {
+  active: { bg: "#EFF6FF", color: "#2563EB", label: "Active" },
+  achieved: { bg: "#F0FDF4", color: "#16A34A", label: "Achieved" },
+  paused: { bg: "#F3F4F6", color: "#6B7280", label: "Paused" },
+  archived: { bg: "#E5E7EB", color: "#6B7280", label: "Archived" },
+};
+
+const DELTA_STYLES = {
+  improved: { color: "#16A34A", label: "Improved", icon: "up" },
+  worsened: { color: "#DC2626", label: "Worsened", icon: "down" },
+  unchanged: { color: "#9CA3AF", label: "Unchanged", icon: "right" },
+  resolved: { color: "#2563EB", label: "Resolved", icon: "check" },
+  new: { color: "#9CA3AF", label: "New", icon: null },
+};
+
+const OPERATOR_DISPLAY = {
+  "<=": "≤",
+  ">=": "≥",
+  "<": "<",
+  ">": ">",
+  "==": "=",
+  "=": "=",
+};
+
 function autoResize(el) {
   if (!el) return;
   el.style.height = "auto";
   el.style.height = el.scrollHeight + "px";
 }
 
+function DeltaBadge({ delta }) {
+  if (!delta?.status) return null;
+  const style = DELTA_STYLES[delta.status];
+  if (!style) return null;
+
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 text-[10px] font-semibold flex-shrink-0"
+      style={{ color: style.color }}
+    >
+      {style.icon === "up" && <TrendingUp className="h-2.5 w-2.5" />}
+      {style.icon === "down" && <TrendingDown className="h-2.5 w-2.5" />}
+      {style.icon === "right" && <ArrowRight className="h-2.5 w-2.5" />}
+      {style.icon === "check" && <Check className="h-2.5 w-2.5" />}
+      {style.label}
+    </span>
+  );
+}
+
+function StatusBadge({ status }) {
+  const style = STATUS_STYLES[status];
+  if (!style) return null;
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0"
+      style={{ backgroundColor: style.bg, color: style.color }}
+    >
+      {status === "achieved" && <Check className="h-2.5 w-2.5" />}
+      {status === "paused" && <Pause className="h-2.5 w-2.5" />}
+      {status === "archived" && <Archive className="h-2.5 w-2.5" />}
+      {style.label}
+    </span>
+  );
+}
+
+function ClinicalThesisCard({ thesis }) {
+  const [expanded, setExpanded] = useState(true);
+
+  if (!thesis?.title && !thesis?.reasoning) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E5E7EB] mb-4 overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-3 cursor-pointer"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <FileText className="h-4 w-4 text-[#6B7280] flex-shrink-0" />
+          <span className="text-[13px] font-semibold text-black truncate">
+            Clinical Thesis
+          </span>
+        </div>
+        {expanded ? (
+          <ChevronUp className="h-4 w-4 text-[#9CA3AF] flex-shrink-0" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-[#9CA3AF] flex-shrink-0" />
+        )}
+      </button>
+      {expanded && (
+        <div className="px-4 pb-4 border-t border-[#F3F4F6]">
+          {thesis.title && (
+            <h4 className="text-[14px] font-semibold text-black mt-3 mb-1.5">
+              {thesis.title}
+            </h4>
+          )}
+          {thesis.reasoning && (
+            <p className="text-[12px] text-[#4B5563] leading-relaxed">
+              {thesis.reasoning}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CheckpointTimeline({ checkpoints }) {
+  if (!checkpoints || checkpoints.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <p className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mb-2 px-1">
+        Checkpoints
+      </p>
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+        {checkpoints.map((cp, idx) => (
+          <div
+            key={idx}
+            className="flex-shrink-0 bg-white border border-[#E5E7EB] rounded-lg px-3 py-2 min-w-[140px] max-w-[180px]"
+          >
+            <div className="text-[10px] font-semibold text-[#6B7280] mb-0.5">
+              Wk {cp.weekNumber}
+            </div>
+            <div className="text-[12px] font-medium text-black leading-tight truncate">
+              {cp.label}
+            </div>
+            {cp.description && (
+              <div className="text-[10px] text-[#9CA3AF] mt-0.5 line-clamp-2">
+                {cp.description}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WatchOutsBanner({ watchOuts }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!watchOuts || watchOuts.length === 0) return null;
+
+  const severityColor = {
+    high: { bg: "#FEF2F2", border: "#FECACA", text: "#991B1B", icon: "#DC2626" },
+    medium: { bg: "#FFFBEB", border: "#FDE68A", text: "#92400E", icon: "#D97706" },
+    low: { bg: "#F0FDF4", border: "#BBF7D0", text: "#166534", icon: "#16A34A" },
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E5E7EB] mb-4 overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-3 cursor-pointer"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+          <span className="text-[13px] font-semibold text-black">
+            Watch-Outs
+          </span>
+          <span className="text-[11px] text-[#9CA3AF] font-medium">
+            ({watchOuts.length})
+          </span>
+        </div>
+        {expanded ? (
+          <ChevronUp className="h-4 w-4 text-[#9CA3AF] flex-shrink-0" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-[#9CA3AF] flex-shrink-0" />
+        )}
+      </button>
+      {expanded && (
+        <div className="px-4 pb-4 border-t border-[#F3F4F6] space-y-2 pt-3">
+          {watchOuts.map((wo, idx) => {
+            const sev = severityColor[wo.severity?.toLowerCase()] || severityColor.medium;
+            return (
+              <div
+                key={idx}
+                className="rounded-lg px-3 py-2.5"
+                style={{ backgroundColor: sev.bg, border: `1px solid ${sev.border}` }}
+              >
+                <div className="flex items-start gap-2">
+                  <AlertTriangle
+                    className="h-3.5 w-3.5 mt-0.5 flex-shrink-0"
+                    style={{ color: sev.icon }}
+                  />
+                  <div className="min-w-0">
+                    <p
+                      className="text-[12px] font-semibold"
+                      style={{ color: sev.text }}
+                    >
+                      {wo.title}
+                    </p>
+                    {wo.risk && (
+                      <p className="text-[11px] mt-0.5" style={{ color: sev.text }}>
+                        <span className="font-medium">Risk:</span> {wo.risk}
+                      </p>
+                    )}
+                    {wo.mitigation && (
+                      <p className="text-[11px] mt-0.5" style={{ color: sev.text }}>
+                        <span className="font-medium">Mitigation:</span> {wo.mitigation}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AchievementCriteria({ criteria }) {
+  if (!criteria || criteria.length === 0) return null;
+
+  return (
+    <div>
+      <label className="text-[9px] uppercase tracking-wider text-[#B0B0B0] block mb-1.5">
+        Achievement Criteria
+      </label>
+      <div className="space-y-1">
+        {criteria.map((c, idx) => {
+          const op = OPERATOR_DISPLAY[c.operator] || c.operator || "=";
+          return (
+            <div
+              key={idx}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md"
+              style={{
+                backgroundColor: c.currentlyMet ? "#F0FDF4" : "#FEF2F2",
+              }}
+            >
+              {c.currentlyMet ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+              ) : (
+                <XCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+              )}
+              <span
+                className="text-[11px] font-medium"
+                style={{ color: c.currentlyMet ? "#166534" : "#991B1B" }}
+              >
+                {c.biomarkerName} {op} {c.threshold}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function GoalStatusActions({ goal, isEditable, onStatusChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  if (!isEditable) return null;
+
+  const currentStatus = goal.status || "active";
+  const actions = [
+    { value: "active", label: "Set Active", icon: Target },
+    { value: "paused", label: "Pause Goal", icon: Pause },
+    { value: "archived", label: "Archive Goal", icon: Archive },
+  ].filter((a) => a.value !== currentStatus);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+        aria-label="Change goal status"
+      >
+        <Minus className="h-3.5 w-3.5 text-[#9CA3AF]" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-20 py-1 min-w-[150px]">
+          {actions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={action.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusChange(goal._id, action.value);
+                  setOpen(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-[#374151] hover:bg-gray-50 transition-colors text-left"
+              >
+                <Icon className="h-3.5 w-3.5 text-[#6B7280]" />
+                {action.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function GoalsProtocolPage() {
   const router = useRouter();
+  const { user, token, loading: authLoading } = useAuth();
   const params = useParams();
   const patientId = params.id;
 
@@ -59,6 +369,11 @@ export default function GoalsProtocolPage() {
   const [draftSavedAt, setDraftSavedAt] = useState(null);
   const [approvedAt, setApprovedAt] = useState(null);
 
+  // New state for clinical thesis, checkpoints, watchOuts
+  const [clinicalThesis, setClinicalThesis] = useState(null);
+  const [checkpoints, setCheckpoints] = useState([]);
+  const [watchOuts, setWatchOuts] = useState([]);
+
   // UI state
   const [expandedGoalId, setExpandedGoalId] = useState(null);
   const [editedGoals, setEditedGoals] = useState({});
@@ -66,8 +381,10 @@ export default function GoalsProtocolPage() {
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
 
-  // Protocol tab (unchanged — out of scope)
-  const [protocolItems, setProtocolItems] = useState(DUMMY_PROTOCOL_ITEMS);
+  // Protocol tab
+  const [protocol, setProtocol] = useState(null);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [protocolItems, setProtocolItems] = useState([]);
   const [showProtocolModal, setShowProtocolModal] = useState(false);
   const [protocolForm, setProtocolForm] = useState({
     name: "", price: "", quantity: "", dosage: "", linkedGoals: [],
@@ -85,6 +402,19 @@ export default function GoalsProtocolPage() {
     editedGoalsRef.current = editedGoals;
   }, [editedGoals]);
 
+  // Auth guard: redirect non-doctors away
+  useEffect(() => {
+    if (authLoading) return;
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    if (user?.userType !== "doctor") {
+      router.push("/dashboard");
+      return;
+    }
+  }, [authLoading, token, user, router]);
+
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -101,8 +431,13 @@ export default function GoalsProtocolPage() {
       setPlanStatus(data.status);
       setHealthReport(data.healthReport);
       setGoals(data.goals || []);
+      setProtocol(data.protocol || null);
+      setRecommendedProducts(data.nextSteps?.recommendedProducts || []);
       setDraftSavedAt(data.draftSavedAt);
       setApprovedAt(data.approvedAt);
+      setClinicalThesis(data.clinicalThesis || null);
+      setCheckpoints(data.checkpoints || []);
+      setWatchOuts(data.watchOuts || []);
       if (data.goals?.length > 0 && !expandedGoalId) {
         setExpandedGoalId(data.goals[0]._id);
       }
@@ -171,6 +506,39 @@ export default function GoalsProtocolPage() {
     await saveDraft();
   }, [saveDraft]);
 
+  // ── Change goal status ──
+  const handleGoalStatusChange = async (goalId, newStatus) => {
+    try {
+      setSaving(true);
+      setSaveStatus("saving");
+      const goalsPayload = [{ _id: goalId, status: newStatus }];
+      const res = await doctorAPI.updatePatientGoals(patientId, goalsPayload);
+      const savedGoals = res.data?.data?.goals || res.data?.goals || [];
+      if (savedGoals.length > 0) {
+        setGoals((prev) =>
+          prev.map((g) => {
+            const updated = savedGoals.find((s) => s._id === g._id);
+            return updated || g;
+          })
+        );
+      } else {
+        // Optimistic update if backend doesn't return updated goals
+        setGoals((prev) =>
+          prev.map((g) => (g._id === goalId ? { ...g, status: newStatus } : g))
+        );
+      }
+      setPlanStatus("draft");
+      setDraftSavedAt(new Date().toISOString());
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (err) {
+      console.error("Status change failed:", err);
+      setSaveStatus("error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // ── Add goal ──
   const handleAddGoal = async () => {
     if (!goalForm.title || !goalForm.priority) return;
@@ -221,6 +589,7 @@ export default function GoalsProtocolPage() {
     : goals.filter((g) => g.priority === priorityFilter);
 
   const isEditable = planStatus === "pending_review" || planStatus === "draft";
+  const canApprove = isEditable && goals.length > 0;
 
   // ── Protocol handlers (unchanged) ──
   const handleAddProtocol = () => {
@@ -237,6 +606,17 @@ export default function GoalsProtocolPage() {
   };
 
   // ── Render ──
+  if (authLoading || (!token && !authLoading)) {
+    return (
+      <div className="min-h-screen bg-[#F2F2F2] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F2F2F2] font-inter">
       {/* Header */}
@@ -281,6 +661,15 @@ export default function GoalsProtocolPage() {
             <span className="text-[13px] text-gray-600">This plan was superseded by a newer report.</span>
           </div>
         )}
+
+        {/* Clinical Thesis */}
+        <ClinicalThesisCard thesis={clinicalThesis} />
+
+        {/* Checkpoints timeline */}
+        <CheckpointTimeline checkpoints={checkpoints} />
+
+        {/* Watch-Outs */}
+        <WatchOutsBanner watchOuts={watchOuts} />
 
         {/* Health Report scores (read-only) */}
         {healthReport && (
@@ -379,28 +768,30 @@ export default function GoalsProtocolPage() {
                           className="bg-white rounded-lg overflow-hidden"
                           style={{ borderLeft: `3px solid ${ps.border}` }}
                         >
-                          {/* Header row — always visible */}
+                          {/* Header row -- always visible */}
                           <div
                             className="flex items-center justify-between px-4 py-3 cursor-pointer"
                             onClick={() => setExpandedGoalId(isExpanded ? null : goal._id)}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                               <span
                                 className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0"
                                 style={{ backgroundColor: ps.bg, color: ps.color }}
                               >
                                 {getGoalField(goal, "priority")}
                               </span>
+                              <StatusBadge status={goal.status} />
+                              <DeltaBadge delta={goal.delta} />
                               <span className="text-[14px] font-semibold text-black truncate">
                                 {getGoalField(goal, "title")}
                               </span>
-                              {goal.delta?.status && (
-                                <span className="text-[10px] text-[#9CA3AF] font-medium uppercase flex-shrink-0">
-                                  {goal.delta.status}
-                                </span>
-                              )}
                             </div>
                             <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                              <GoalStatusActions
+                                goal={goal}
+                                isEditable={isEditable}
+                                onStatusChange={handleGoalStatusChange}
+                              />
                               {isEditable && (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); handleDeleteGoal(goal._id); }}
@@ -543,30 +934,66 @@ export default function GoalsProtocolPage() {
                                 )}
                               </div>
 
-                              {/* Read-only: Biomarker Evidence */}
+                              {/* Read-only: Biomarker Evidence with targets and trends */}
                               {goal.biomarkerEvidence?.length > 0 && (
                                 <div>
                                   <label className="text-[9px] uppercase tracking-wider text-[#B0B0B0] block mb-1">Biomarker Evidence (from report)</label>
-                                  <div className="flex flex-wrap gap-1">
+                                  <div className="space-y-1">
                                     {goal.biomarkerEvidence.map((bm, i) => {
                                       const isElevated = bm.flag?.toLowerCase().includes("high") || bm.flag?.toLowerCase().includes("elevated");
                                       const isLow = bm.flag?.toLowerCase().includes("low");
+                                      const bgColor = isElevated ? "#FEE2E2" : isLow ? "#FEF3C7" : "#DCFCE7";
+                                      const textColor = isElevated ? "#DC2626" : isLow ? "#D97706" : "#16A34A";
+
+                                      const hasTarget = bm.targetValue != null;
+                                      const hasTrend = bm.trend;
+
                                       return (
-                                        <span
+                                        <div
                                           key={i}
-                                          className="text-[10px] font-medium px-2 py-0.5 rounded"
-                                          style={{
-                                            backgroundColor: isElevated ? "#FEE2E2" : isLow ? "#FEF3C7" : "#DCFCE7",
-                                            color: isElevated ? "#DC2626" : isLow ? "#D97706" : "#16A34A",
-                                          }}
+                                          className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded"
+                                          style={{ backgroundColor: bgColor }}
                                         >
-                                          {bm.name || bm.canonicalName} {bm.value}{bm.unit ? ` ${bm.unit}` : ""}
-                                        </span>
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            <span
+                                              className="text-[10px] font-medium"
+                                              style={{ color: textColor }}
+                                            >
+                                              {bm.name || bm.canonicalName}: {bm.value}{bm.unit ? ` ${bm.unit}` : ""}
+                                            </span>
+                                            {hasTarget && (
+                                              <span className="text-[10px] text-[#6B7280] flex-shrink-0">
+                                                {"→"} Target: {bm.targetValue}{bm.unit ? ` ${bm.unit}` : ""}
+                                              </span>
+                                            )}
+                                            {bm.targetDate && (
+                                              <span className="text-[9px] text-[#9CA3AF] flex-shrink-0">
+                                                by {new Date(bm.targetDate).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {hasTrend && (
+                                            <span className="flex items-center gap-0.5 flex-shrink-0">
+                                              {bm.trend === "improving" && (
+                                                <TrendingUp className="h-3 w-3 text-green-600" />
+                                              )}
+                                              {bm.trend === "stable" && (
+                                                <ArrowRight className="h-3 w-3 text-gray-400" />
+                                              )}
+                                              {bm.trend === "worsening" && (
+                                                <TrendingDown className="h-3 w-3 text-red-500" />
+                                              )}
+                                            </span>
+                                          )}
+                                        </div>
                                       );
                                     })}
                                   </div>
                                 </div>
                               )}
+
+                              {/* Achievement Criteria */}
+                              <AchievementCriteria criteria={goal.achievementCriteria} />
 
                               {/* Read-only: Protocol items */}
                               {goal.protocolItems?.length > 0 && (
@@ -610,22 +1037,37 @@ export default function GoalsProtocolPage() {
           </div>
         )}
 
-        {/* Protocol Tab (unchanged — out of scope) */}
+        {/* Protocol Tab */}
         {activeTab === "protocol" && (
           <div>
-            {protocolItems.length === 0 ? (
+            {recommendedProducts.length === 0 && protocolItems.length === 0 ? (
               <div className="text-center py-12 text-gray-400 text-sm">
-                No protocol items yet. Add one below.
+                No protocol items yet.
               </div>
             ) : (
               <div className="space-y-3">
+                {/* Recommended products from action plan */}
+                {recommendedProducts.map((item, idx) => (
+                  <div key={`rp-${idx}`} className="bg-white rounded-lg p-4 border border-[#e8e8e8]">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-[14px] font-medium text-black mb-0.5 truncate">{item.productName}</h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          {item.price && <span className="text-[14px] font-medium text-[#717178]">{item.price}</span>}
+                          {item.dose && <span className="text-[12px] font-normal text-[#717178]">{item.dose}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {/* Manually added protocol items */}
                 {protocolItems.map((item) => (
                   <div key={item.id} className="bg-white rounded-lg p-4 border border-[#e8e8e8]">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-[14px] font-medium text-black mb-0.5 truncate">{item.name}</h3>
                         <div className="flex items-center gap-3 mt-1">
-                          <span className="text-[14px] font-medium text-[#717178]">{item.price}</span>
+                          {item.price && <span className="text-[14px] font-medium text-[#717178]">{item.price}</span>}
                           {item.quantity && <span className="text-[12px] font-normal text-[#717178]">{item.quantity}</span>}
                         </div>
                       </div>
@@ -677,13 +1119,15 @@ export default function GoalsProtocolPage() {
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save Draft
             </button>
-            <button
-              onClick={() => setShowApproveConfirm(true)}
-              className="flex-1 py-3 rounded-xl text-[14px] font-semibold bg-[#059669] text-white hover:bg-[#047857] transition-colors flex items-center justify-center gap-2"
-            >
-              <Check className="h-4 w-4" />
-              Approve & Publish
-            </button>
+            {canApprove && (
+              <button
+                onClick={() => setShowApproveConfirm(true)}
+                className="flex-1 py-3 rounded-xl text-[14px] font-semibold bg-[#059669] text-white hover:bg-[#047857] transition-colors flex items-center justify-center gap-2"
+              >
+                <Check className="h-4 w-4" />
+                Approve & Publish
+              </button>
+            )}
           </div>
         </div>
       )}

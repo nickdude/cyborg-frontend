@@ -12,23 +12,9 @@ import {
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
-// Dummy protocol items (only 2 shown in Figma)
-const PROTOCOL_ITEMS = [
-  { name: "Zinc Bisglycinate 15 mg", price: "$14" },
-  { name: "Zinc Bisglycinate 15 mg", price: "$14" },
-];
-
-// Dummy action plan items
-const ACTION_PLAN_ITEMS = [
-  { name: "Ashwagandha", category: "Stress reduction supplement" },
-  { name: "BHR12", category: "Metabolic function" },
-  { name: "Peptide RJY3", category: "Muscle stress protocol" },
-  { name: "Testosterone Replacement", category: "Hormone therapy" },
-];
-
 export default function PatientDetail() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const params = useParams();
   const patientId = params.id;
 
@@ -39,18 +25,33 @@ export default function PatientDetail() {
   const [goals, setGoals] = useState([]);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
 
+  // Auth guard: redirect non-doctors away
   useEffect(() => {
+    if (authLoading) return;
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    if (user?.userType !== "doctor") {
+      router.push("/dashboard");
+      return;
+    }
+  }, [authLoading, token, user, router]);
+
+  useEffect(() => {
+    if (authLoading || !token || user?.userType !== "doctor") return;
+
     const fetchPatientData = async () => {
       try {
         setLoading(true);
-        const token = Cookie.get("authToken");
-        if (!token) {
+        const cookieToken = Cookie.get("authToken");
+        if (!cookieToken) {
           router.push("/login");
           return;
         }
 
         const res = await fetch(`${apiUrl}/api/doctor/patients/${patientId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${cookieToken}` },
         });
 
         if (!res.ok) throw new Error("Failed to fetch patient data");
@@ -69,7 +70,7 @@ export default function PatientDetail() {
     };
 
     if (patientId) fetchPatientData();
-  }, [patientId]);
+  }, [patientId, authLoading, token, user, router]);
 
   // Derive biomarker stats from latestReport
   const biomarkerPanel = latestReport?.biomarkerPanel || [];
@@ -112,12 +113,19 @@ export default function PatientDetail() {
     (g) => g.priority === "high" || g.priority === "High"
   );
 
+  // Derive protocol and action plan items from goals
+  const protocolItems = goals.flatMap((g) => g.protocolItems || []);
+  const actionPlanItems = goals.map((g) => ({
+    name: g.title,
+    category: g.category || g.priority,
+  }));
+
   const patientName = patient
     ? `${patient.firstName || ""} ${patient.lastName || ""}`.trim()
     : "Patient";
 
   // --- Loading & Error States ---
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-[#f2f2f2] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -388,7 +396,7 @@ export default function PatientDetail() {
                     Protocol Items
                   </p>
                   <p className="text-[16px] font-semibold text-black leading-[20px] mt-1">
-                    6
+                    {protocolItems.length}
                   </p>
                 </div>
               </div>
@@ -398,28 +406,32 @@ export default function PatientDetail() {
                 Top Protocol Items
               </p>
               <div className="space-y-2">
-                {PROTOCOL_ITEMS.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-3 p-3 rounded-[8px] bg-white border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)]"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[14px] font-medium text-black leading-[20px]">
-                        {item.name}
-                      </p>
-                      <p className="text-[13px] font-medium text-[#71717b] leading-[18px]">
-                        {item.price}
-                      </p>
+                {protocolItems.length > 0 ? (
+                  protocolItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 rounded-[8px] bg-white border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)]"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] font-medium text-black leading-[20px]">
+                          {item.name}
+                        </p>
+                        <p className="text-[13px] font-medium text-[#71717b] leading-[18px]">
+                          {item.price}
+                        </p>
+                      </div>
+                      <div className="h-[44px] w-[44px] rounded flex-shrink-0 overflow-hidden">
+                        <img
+                          src="/assets/doctor/protocol-item.png"
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
-                    <div className="h-[44px] w-[44px] rounded flex-shrink-0 overflow-hidden">
-                      <img
-                        src="/assets/doctor/protocol-item.png"
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-[13px] text-[#71717b] py-2">No data yet</p>
+                )}
               </div>
             </div>
 
@@ -429,33 +441,40 @@ export default function PatientDetail() {
                 <h2 className="text-[18px] font-semibold text-[#0a0a0a] leading-[28px] tracking-[-0.44px]">
                   Your action plan
                 </h2>
-                <button className="text-[14px] font-medium text-[#541d7a] tracking-[-0.15px]">
+                <button
+                  onClick={() => router.push(`/doctor/patients/${patientId}/goals`)}
+                  className="text-[14px] font-medium text-[#541d7a] tracking-[-0.15px]"
+                >
                   View
                 </button>
               </div>
               <div className="space-y-3">
-                {ACTION_PLAN_ITEMS.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-3 px-3 h-[60px] rounded-[14px] bg-[#f9fafb] cursor-pointer"
-                  >
-                    <div className="flex items-center justify-center flex-shrink-0 w-6 h-6">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke={idx === 0 ? "#00d4a1" : "#d1d5db"} strokeWidth="2" fill="none" />
-                        {idx === 0 && <path d="M8 12l3 3 5-5" stroke="#00d4a1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />}
-                      </svg>
+                {actionPlanItems.length > 0 ? (
+                  actionPlanItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 px-3 h-[60px] rounded-[14px] bg-[#f9fafb] cursor-pointer"
+                    >
+                      <div className="flex items-center justify-center flex-shrink-0 w-6 h-6">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="10" stroke={idx === 0 ? "#00d4a1" : "#d1d5db"} strokeWidth="2" fill="none" />
+                          {idx === 0 && <path d="M8 12l3 3 5-5" stroke="#00d4a1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />}
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[14px] font-medium leading-[20px] tracking-[-0.15px] ${idx === 0 ? "line-through text-[#99a1af]" : "text-black"}`}>
+                          {item.name}
+                        </p>
+                        <p className="text-[12px] font-normal text-[#6a7282] leading-[16px]">
+                          {item.category}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-gray-300 flex-shrink-0" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[14px] font-medium leading-[20px] tracking-[-0.15px] ${idx === 0 ? "line-through text-[#99a1af]" : "text-black"}`}>
-                        {item.name}
-                      </p>
-                      <p className="text-[12px] font-normal text-[#6a7282] leading-[16px]">
-                        {item.category}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-gray-300 flex-shrink-0" />
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-[13px] text-[#6a7282] py-2">No data yet</p>
+                )}
               </div>
             </div>
           </div>

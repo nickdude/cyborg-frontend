@@ -17,6 +17,8 @@ export default function BloodReports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadPhase, setUploadPhase] = useState(null); // "uploading" | "processing"
   const [error, setError] = useState("");
   const [file, setFile] = useState(null);
   const [toast, setToast] = useState(null);
@@ -64,18 +66,25 @@ export default function BloodReports() {
     }
 
     setUploading(true);
+    setUploadProgress(0);
+    setUploadPhase("uploading");
     setError("");
 
     try {
       const formData = new FormData();
       formData.append("file", file);
 
-      await userAPI.uploadBloodReport(userId, formData);
+      await userAPI.uploadBloodReport(userId, formData, {
+        onUploadProgress: (e) => {
+          if (e.total) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(pct);
+            if (pct >= 100) setUploadPhase("processing");
+          }
+        },
+      });
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
-      // Flip the dashboard to Insights view immediately — backend has set
-      // user.latestReportReady = true, but the AuthContext copy is stale
-      // until the next login, so update it locally.
       if (user && !user.latestReportReady) {
         updateUser({ ...user, latestReportReady: true });
       }
@@ -84,6 +93,8 @@ export default function BloodReports() {
       setError(err.message || "Failed to upload report");
     } finally {
       setUploading(false);
+      setUploadPhase(null);
+      setUploadProgress(0);
     }
   };
 
@@ -198,6 +209,31 @@ export default function BloodReports() {
             />
           </label>
 
+          {uploading && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-700 font-medium">
+                  {uploadPhase === "processing"
+                    ? "Processing with AI..."
+                    : `Uploading... ${uploadProgress}%`}
+                </span>
+                {uploadPhase === "processing" && (
+                  <span className="text-xs text-gray-500">This may take up to 90 seconds</span>
+                )}
+              </div>
+              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                {uploadPhase === "processing" ? (
+                  <div className="h-full bg-purple-500 rounded-full animate-pulse w-full" />
+                ) : (
+                  <div
+                    className="h-full bg-black rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <p className="text-xs text-gray-500">Max file size 10MB. Supported: PDF, JPG, PNG.</p>
             <Button
@@ -205,7 +241,11 @@ export default function BloodReports() {
               disabled={uploading || !file}
               className="bg-black hover:bg-gray-900 text-white"
             >
-              {uploading ? "Uploading..." : "Upload report"}
+              {uploading
+                ? uploadPhase === "processing"
+                  ? "Processing..."
+                  : "Uploading..."
+                : "Upload report"}
             </Button>
           </div>
         </form>
@@ -227,7 +267,10 @@ export default function BloodReports() {
                 const uploadedDate = report.uploadedAt
                   ? new Date(report.uploadedAt).toLocaleDateString()
                   : "";
-                const hasPlan = Boolean(report.actionPlan);
+                const planStatus = report.actionPlanStatus;
+                const isGenerating = planStatus === "pending" || planStatus === "generating";
+                const isPlanViewable = planStatus === "ready" || planStatus === "approved" || planStatus === "pending_review" || planStatus === "draft";
+                const isPlanFailed = planStatus === "failed";
 
                 return (
                   <div
@@ -238,9 +281,19 @@ export default function BloodReports() {
                       <div className="space-y-1">
                         <h3 className="font-semibold text-lg leading-tight">{report.filename || "Untitled report"}</h3>
                         <p className="text-sm text-gray-600">Uploaded {uploadedDate}</p>
-                        {hasPlan && (
+                        {isPlanViewable && (
                           <span className="inline-flex items-center gap-1 text-green-700 text-sm font-medium">
                             ✓ Action plan ready
+                          </span>
+                        )}
+                        {isGenerating && (
+                          <span className="inline-flex items-center gap-1 text-blue-600 text-sm font-medium">
+                            ⏳ Generating action plan...
+                          </span>
+                        )}
+                        {isPlanFailed && (
+                          <span className="inline-flex items-center gap-1 text-red-600 text-sm font-medium">
+                            ✗ Plan generation failed
                           </span>
                         )}
                       </div>
@@ -259,17 +312,19 @@ export default function BloodReports() {
                         fullWidth
                         size="md"
                         className="bg-black hover:bg-gray-900 text-white"
-                        disabled={generatingReportId === report._id}
+                        disabled={generatingReportId === report._id || isGenerating}
                         onClick={() =>
-                          hasPlan
+                          isPlanViewable
                             ? router.push(`/action-plan/${userId}?planId=${report.actionPlanId}`)
                             : handleGeneratePlan(report._id)
                         }
                       >
-                        {generatingReportId === report._id
+                        {generatingReportId === report._id || isGenerating
                           ? "Generating..."
-                          : hasPlan
+                          : isPlanViewable
                           ? "View plan"
+                          : isPlanFailed
+                          ? "Retry plan"
                           : "Generate plan"}
                       </Button>
                       <Button
