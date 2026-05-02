@@ -5,9 +5,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import Cookie from "js-cookie";
 import Chatbot from "@/components/Chatbot";
+import { doctorAPI } from "@/services/api";
 import {
   ChevronRight,
   X,
+  Clock,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
@@ -24,6 +28,8 @@ export default function PatientDetail() {
   const [latestReport, setLatestReport] = useState(null);
   const [goals, setGoals] = useState([]);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const [planStatus, setPlanStatus] = useState(null);
+  const [planGoalCount, setPlanGoalCount] = useState(0);
 
   // Auth guard: redirect non-doctors away
   useEffect(() => {
@@ -61,6 +67,15 @@ export default function PatientDetail() {
         setPatient(data.patient || null);
         setLatestReport(data.latestReport || null);
         setGoals(data.goals || []);
+
+        try {
+          const planRes = await doctorAPI.getPatientActionPlan(patientId);
+          const planData = planRes?.data || planRes;
+          setPlanStatus(planData.status || null);
+          setPlanGoalCount((planData.goals || []).length);
+        } catch {
+          setPlanStatus(null);
+        }
       } catch (err) {
         console.error("Error fetching patient:", err);
         setError(err.message);
@@ -180,9 +195,9 @@ export default function PatientDetail() {
       if (i < optimalSegments) {
         color = "#00d4a1";
       } else if (i < optimalSegments + inRangeSegments) {
-        color = "#f865dd";
-      } else {
         color = "#e5e7eb";
+      } else {
+        color = "#f865dd";
       }
 
       const startAngle = i * segmentAngle - 90;
@@ -321,26 +336,18 @@ export default function PatientDetail() {
                 <DonutChart />
               </div>
               {/* Legend */}
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="grid grid-cols-3 gap-[2px]">
-                    {Array.from({ length: 18 }).map((_, i) => (
-                      <span key={i} className="rounded-full bg-[#00d4a1]" style={{ width: 4, height: 4 }} />
-                    ))}
-                  </div>
-                  <span className="text-[12px] font-normal text-black">
-                    Optimal
-                  </span>
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#00d4a1]" />
+                  <span className="text-[12px] font-normal text-black">Optimal</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="grid grid-cols-3 gap-[2px]">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <span key={i} className="rounded-full bg-[#f865dd]" style={{ width: 4, height: 4 }} />
-                    ))}
-                  </div>
-                  <span className="text-[12px] font-normal text-black">
-                    In range
-                  </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#e5e7eb]" />
+                  <span className="text-[12px] font-normal text-black">In range</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#f865dd]" />
+                  <span className="text-[12px] font-normal text-black">Out of range</span>
                 </div>
               </div>
             </div>
@@ -434,6 +441,58 @@ export default function PatientDetail() {
                 )}
               </div>
             </div>
+
+            {/* Review Status Card */}
+            {planStatus && (
+              <div
+                onClick={() => router.push(`/doctor/patients/${patientId}/goals`)}
+                className={`rounded-[24px] border shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] p-5 mb-6 cursor-pointer transition-colors ${
+                  planStatus === "pending_review"
+                    ? "bg-amber-50 border-amber-200 hover:bg-amber-100"
+                    : planStatus === "draft"
+                    ? "bg-orange-50 border-orange-200 hover:bg-orange-100"
+                    : planStatus === "approved"
+                    ? "bg-green-50 border-green-200 hover:bg-green-100"
+                    : "bg-white border-[#e6e6e8] hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {planStatus === "pending_review" && <Clock className="h-5 w-5 text-amber-600" />}
+                    {planStatus === "draft" && <AlertCircle className="h-5 w-5 text-orange-600" />}
+                    {planStatus === "approved" && <CheckCircle className="h-5 w-5 text-green-600" />}
+                    {planStatus !== "pending_review" && planStatus !== "draft" && planStatus !== "approved" && (
+                      <Clock className="h-5 w-5 text-gray-400" />
+                    )}
+                    <div>
+                      <p className={`text-[15px] font-semibold ${
+                        planStatus === "pending_review" ? "text-amber-800"
+                        : planStatus === "draft" ? "text-orange-800"
+                        : planStatus === "approved" ? "text-green-800"
+                        : "text-gray-800"
+                      }`}>
+                        {planStatus === "pending_review" && "Review Pending"}
+                        {planStatus === "draft" && "Draft — Review Incomplete"}
+                        {planStatus === "approved" && "Approved"}
+                        {planStatus !== "pending_review" && planStatus !== "draft" && planStatus !== "approved" && "Action Plan"}
+                      </p>
+                      <p className="text-[12px] text-gray-500 mt-0.5">
+                        {planStatus === "pending_review" && `${planGoalCount} goal${planGoalCount !== 1 ? "s" : ""} awaiting your review`}
+                        {planStatus === "draft" && "You have unsaved edits"}
+                        {planStatus === "approved" && "Patient can see goals & protocol"}
+                        {planStatus !== "pending_review" && planStatus !== "draft" && planStatus !== "approved" && "Tap to view"}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className={`h-5 w-5 ${
+                    planStatus === "pending_review" ? "text-amber-400"
+                    : planStatus === "draft" ? "text-orange-400"
+                    : planStatus === "approved" ? "text-green-400"
+                    : "text-gray-400"
+                  }`} />
+                </div>
+              </div>
+            )}
 
             {/* Your Action Plan */}
             <div className="bg-white rounded-[24px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] pt-5 px-5 pb-5 mb-6">

@@ -98,7 +98,8 @@ export default function DataDashboard() {
         setBiomarkers([]);
       }
     } catch (error) {
-      if (error?.statusCode === 404) {
+      const msg = error?.message || "";
+      if (error?.statusCode === 404 || msg.includes("not found") || msg.includes("No ") || msg.includes("404")) {
         setBiomarkers([]);
       } else {
         setBioError("Failed to load biomarker data");

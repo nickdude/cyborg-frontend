@@ -47,7 +47,7 @@ export default function TagOverlaySection({ images, tags, interval = 3000 }) {
     <section className="relative bg-white px-0">
       <div className="mx-auto w-full max-w-[980px]">
         <div className="relative overflow-hidden">
-            <p className="px-6 py-8 font-medium text-base font-inter ">"Day-to-day life silently disrupts your metabolic signaling — blunting your body's critical appetite and energy regulator, GLP-1."</p>
+            <p className="px-6 py-8 font-medium text-base font-inter ">&ldquo;Day-to-day life silently disrupts your metabolic signaling — blunting your body&apos;s critical appetite and energy regulator, GLP-1.&rdquo;</p>
           <div className="relative w-full h-[80vh] sm:h-[360px] md:h-[420px] lg:h-[480px]">
             {imgs.map((src, i) => (
               <img

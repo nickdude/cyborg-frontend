@@ -50,7 +50,7 @@ export default function InsightsDashboard({ userName, data, scores, reportDate, 
             <div className="mx-auto mt-2 grid max-w-[440px] grid-cols-2 gap-4 text-center lg:mx-0 lg:mt-0 lg:max-w-none">
               <div>
                 <p className="text-3xl font-semibold text-black lg:text-4xl">{scores?.cyborgScore?.final ?? scores?.cyborgScore ?? "—"}</p>
-                <p className="text-sm text-secondary lg:text-base">superpower score</p>
+                <p className="text-sm text-secondary lg:text-base">cyborg score</p>
               </div>
               <Link
                 href="/dashboard/biological-age"

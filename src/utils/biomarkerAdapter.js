@@ -47,9 +47,9 @@ export function extractScores(scores) {
   if (!scores) return { cyborgScore: null, bioAge: null, paceOfAging: null, categoryGrades: {} };
 
   return {
-    cyborgScore: scores.cyborgScore?.score ?? null,
-    bioAge: scores.bioAge?.bioAge ?? null,
-    paceOfAging: scores.paceOfAging?.pace ?? null,
+    cyborgScore: scores.cyborgScore?.final ?? scores.cyborgScore?.score ?? scores.cyborgScore ?? null,
+    bioAge: scores.bioAge?.bioAge ?? scores.bioAge?.phenoAge ?? scores.bioAge ?? null,
+    paceOfAging: scores.paceOfAging?.pace ?? scores.paceOfAging ?? null,
     categoryGrades: scores.categoryGrades ?? {},
   };
 }

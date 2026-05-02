@@ -2,281 +2,826 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { actionPlanAPI } from "@/services/api";
 import Navbar from "@/components/Navbar";
-import Image from "next/image";
+import {
+  ChevronDown,
+  ChevronRight,
+  Download,
+  Share2,
+  Brain,
+  AlertTriangle,
+  Info,
+  AlertCircle,
+  Check,
+  Circle,
+  Sun,
+  Coffee,
+  Zap,
+  Clock,
+  Moon,
+  Heart,
+  Dumbbell,
+  Target,
+  Activity,
+  FileText,
+  Beaker,
+  Shield,
+  Pill,
+  Utensils,
+  BedDouble,
+  Flame,
+  ArrowRight,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 
-const SECTION_IMAGES = [
-  "/images/action-plan/section-1.png",
-  "/images/action-plan/section-2.png",
-  "/images/action-plan/section-3.png",
-  "/images/action-plan/section-4.png",
-  "/images/action-plan/section-5.png",
-];
+/* ══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM TOKENS
+   ══════════════════════════════════════════════════════════════ */
 
-const SECTION_FALLBACKS = [
-  "from-[#F4A261] via-[#F9C49B] to-[#F5B8A0]",
-  "from-[#C5B3CC] via-[#D9CDA5] to-[#D4C89B]",
-  "from-[#5A4A3F] via-[#6B5B50] to-[#3D5A5A]",
-  "from-[#8B0000] via-[#C41E1E] to-[#DC2626]",
-  "from-[#F4A261] via-[#F9C49B] to-[#F5C89B]",
-];
+const FLAG_COLORS = {
+  "Out of range": { dot: "bg-red-500", text: "text-red-600", ring: "ring-red-500/20" },
+  Elevated:       { dot: "bg-amber-500", text: "text-amber-600", ring: "ring-amber-500/20" },
+  Low:            { dot: "bg-red-500", text: "text-red-600", ring: "ring-red-500/20" },
+  High:           { dot: "bg-amber-500", text: "text-amber-600", ring: "ring-amber-500/20" },
+  Normal:         { dot: "bg-yellow-500", text: "text-yellow-600", ring: "ring-yellow-500/20" },
+  Optimal:        { dot: "bg-emerald-500", text: "text-emerald-600", ring: "ring-emerald-500/20" },
+};
 
-/* ── Section Banner Card (image includes text from Figma) ── */
-function SectionBanner({ number, total, title, index = 0 }) {
-  const [imgError, setImgError] = useState(false);
+const GRADE_COLORS = {
+  A: { bg: "bg-emerald-500", text: "text-white", ring: "ring-emerald-400/30", label: "text-emerald-700" },
+  B: { bg: "bg-yellow-400", text: "text-yellow-900", ring: "ring-yellow-400/30", label: "text-yellow-700" },
+  C: { bg: "bg-orange-500", text: "text-white", ring: "ring-orange-400/30", label: "text-orange-700" },
+  D: { bg: "bg-red-500", text: "text-white", ring: "ring-red-400/30", label: "text-red-700" },
+  F: { bg: "bg-red-700", text: "text-white", ring: "ring-red-600/30", label: "text-red-800" },
+};
 
-  if (!imgError) {
-    return (
-      <div className="rounded-2xl overflow-hidden">
-        <Image
-          src={SECTION_IMAGES[index]}
-          alt={`${number} of ${total} — ${title}`}
-          width={320}
-          height={112}
-          className="w-full h-auto rounded-2xl"
-          onError={() => setImgError(true)}
-          priority={index === 0}
-        />
-      </div>
-    );
-  }
+const PRIORITY_BORDERS = {
+  High: "border-l-red-500",
+  Medium: "border-l-amber-500",
+  Low: "border-l-emerald-500",
+};
 
+/* ══════════════════════════════════════════════════════════════
+   SHARED ACCORDION COMPONENT
+   ══════════════════════════════════════════════════════════════ */
+
+function Accordion({ title, children, defaultOpen = false, icon }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className={`rounded-2xl overflow-hidden h-28 bg-gradient-to-r ${SECTION_FALLBACKS[index]}`}>
-      <div className="px-6 py-5 h-full flex flex-col justify-center">
-        <p className="text-sm font-semibold text-white/80">{number} of {total}</p>
-        <h2 className="text-2xl font-bold text-white mt-1">{title}</h2>
+    <div className="border-b border-gray-100 last:border-b-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-3.5 cursor-pointer group"
+      >
+        <div className="flex items-center gap-2.5">
+          {icon && <span className="text-slate-400 group-hover:text-cyan-600 transition-colors duration-200">{icon}</span>}
+          <span className="text-[15px] font-semibold text-slate-900">{title}</span>
+        </div>
+        <ChevronDown
+          size={16}
+          className={`text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          open ? "max-h-[8000px] opacity-100 pb-5" : "max-h-0 opacity-0"
+        }`}
+      >
+        {children}
       </div>
     </div>
   );
 }
 
-/* ── Biomarker Evidence Card ─────────────────────────────── */
-function BiomarkerCard({ biomarker }) {
-  const { name, value, unit, flag, referenceMin, referenceMax, optimalMin, optimalMax } = biomarker;
+/* ══════════════════════════════════════════════════════════════
+   SECTION HEADER
+   ══════════════════════════════════════════════════════════════ */
 
-  const flagColors = {
-    "Out of range": { dot: "bg-red-500", text: "text-red-600" },
-    "Elevated": { dot: "bg-amber-500", text: "text-amber-600" },
-    "Low": { dot: "bg-red-500", text: "text-red-600" },
-    "High": { dot: "bg-amber-500", text: "text-amber-600" },
-    "Normal": { dot: "bg-emerald-500", text: "text-emerald-600" },
-    "Optimal": { dot: "bg-blue-500", text: "text-blue-600" },
-  };
+function SectionHeader({ icon, label, title, subtitle }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        {icon && <span className="text-cyan-600">{icon}</span>}
+        {label && (
+          <span className="text-xs font-semibold text-cyan-600 uppercase tracking-wider">{label}</span>
+        )}
+      </div>
+      {title && <h2 className="text-xl font-bold text-slate-900">{title}</h2>}
+      {subtitle && <p className="text-[15px] text-slate-500 leading-relaxed">{subtitle}</p>}
+    </div>
+  );
+}
 
-  const style = flagColors[flag] || { dot: "bg-gray-400", text: "text-gray-500" };
+/* ══════════════════════════════════════════════════════════════
+   HERO SECTION
+   ══════════════════════════════════════════════════════════════ */
 
-  const lo = referenceMin ?? 0;
-  const hi = referenceMax ?? (value * 2 || 100);
-  const span = hi - lo || 1;
-  const pct = Math.max(2, Math.min(98, ((value - lo) / span) * 100));
-
-  const optLo = optimalMin != null ? Math.max(0, ((optimalMin - lo) / span) * 100) : null;
-  const optHi = optimalMax != null ? Math.min(100, ((optimalMax - lo) / span) * 100) : null;
+function HeroSection({ userName, plan, healthReport }) {
+  const cyborgScore = healthReport.cyborgScore;
+  const bioAge = healthReport.bioAge;
+  const markerCounts = healthReport.markerCounts;
 
   return (
-    <div className="rounded-xl bg-white border border-gray-100 p-4">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${style.dot} shrink-0`} />
-          <span className="text-sm font-medium text-gray-900">{name}</span>
+    <div className="-mx-5 px-5 pt-8 pb-8 bg-white border-b border-gray-100">
+      {/* Title */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+          {userName}&apos;s Action Plan
+        </h1>
+        {plan?.generatedAt && (
+          <p className="text-sm text-gray-500 mt-1.5">
+            Generated{" "}
+            {new Date(plan.generatedAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
+        )}
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        {/* Cyborg Score */}
+        <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Cyborg Score</p>
+          <p className="text-[32px] font-bold text-gray-900 leading-none tracking-tight">
+            {cyborgScore ?? "--"}
+          </p>
+          {cyborgScore != null && cyborgScore >= 80 && (
+            <p className="text-xs text-emerald-600 mt-1.5">Excellent</p>
+          )}
+          {cyborgScore != null && cyborgScore < 80 && cyborgScore >= 60 && (
+            <p className="text-xs text-amber-600 mt-1.5">Good</p>
+          )}
+          {cyborgScore != null && cyborgScore < 60 && (
+            <p className="text-xs text-red-600 mt-1.5">Needs work</p>
+          )}
+        </div>
+
+        {/* Bio-Age */}
+        <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Bio-Age</p>
+          <div className="flex items-end gap-2">
+            <p className="text-[32px] font-bold text-gray-900 leading-none tracking-tight">
+              {bioAge?.phenoAge != null ? bioAge.phenoAge.toFixed(1) : "--"}
+            </p>
+            {bioAge?.delta != null && (
+              <span
+                className={`text-xs font-semibold px-2 py-0.5 rounded-full mb-1 ${
+                  bioAge.delta <= 0
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {bioAge.delta <= 0 ? "-" : "+"}
+                {Math.abs(bioAge.delta).toFixed(1)}y
+              </span>
+            )}
+          </div>
+          {bioAge?.delta != null && (
+            <p className="text-xs text-gray-500 mt-1.5">
+              {bioAge.delta <= 0 ? "Younger than actual" : "Older than actual"}
+            </p>
+          )}
         </div>
       </div>
-      <p className="text-xs text-gray-500 mt-1 ml-4">{value} {unit}</p>
-      <div className="relative h-1.5 bg-gray-100 rounded-full mt-3 overflow-hidden">
-        {optLo != null && optHi != null && (
-          <div
-            className="absolute inset-y-0 bg-emerald-100 rounded-full"
-            style={{ left: `${optLo}%`, width: `${optHi - optLo}%` }}
-          />
-        )}
-        <div
-          className={`absolute w-2.5 h-2.5 rounded-full ${style.dot} -top-[2px] ring-2 ring-white`}
-          style={{ left: `calc(${pct}% - 5px)` }}
-        />
-      </div>
+
+      {/* Biomarker Summary Bar */}
+      {markerCounts && markerCounts.total > 0 && (
+        <div className="rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3.5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Biomarkers</p>
+            <p className="text-xs text-gray-400">{markerCounts.total} tested</p>
+          </div>
+          <div className="flex items-center gap-5">
+            {[
+              { label: "Optimal", value: markerCounts.optimal, color: "text-emerald-600" },
+              { label: "Normal", value: markerCounts.inRange, color: "text-yellow-600" },
+              { label: "Out of Range", value: markerCounts.outOfRange, color: "text-red-600" },
+            ].map(({ label, value: v, color }) => (
+              <div key={label}>
+                <p className={`text-lg font-bold ${color}`}>{v}</p>
+                <p className="text-[11px] text-gray-500">{label}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex h-1.5 rounded-full overflow-hidden mt-3 bg-gray-200">
+            <div
+              className="bg-emerald-500 transition-all duration-500"
+              style={{ width: `${(markerCounts.optimal / markerCounts.total) * 100}%` }}
+            />
+            <div
+              className="bg-yellow-500 transition-all duration-500"
+              style={{ width: `${(markerCounts.inRange / markerCounts.total) * 100}%` }}
+            />
+            <div
+              className="bg-red-500 transition-all duration-500"
+              style={{ width: `${(markerCounts.outOfRange / markerCounts.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ── Grade Circle ────────────────────────────────────────── */
-function GradeCircle({ grade, label }) {
-  const colors = {
-    A: { ring: "border-emerald-400", text: "text-emerald-600", bg: "bg-emerald-50" },
-    B: { ring: "border-yellow-400", text: "text-yellow-600", bg: "bg-yellow-50" },
-    C: { ring: "border-orange-400", text: "text-orange-600", bg: "bg-orange-50" },
-    D: { ring: "border-red-400", text: "text-red-600", bg: "bg-red-50" },
-    F: { ring: "border-red-600", text: "text-red-700", bg: "bg-red-50" },
-  };
-  const c = colors[grade] || { ring: "border-gray-300", text: "text-gray-500", bg: "bg-gray-50" };
-  const displayLabel = label.replace(/_/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase());
+/* ══════════════════════════════════════════════════════════════
+   CLINICAL THESIS CARD
+   ══════════════════════════════════════════════════════════════ */
+
+function ClinicalThesisCard({ clinicalThesis }) {
+  if (!clinicalThesis?.title) return null;
+  return (
+    <div className="rounded-2xl bg-white border-l-4 border-l-cyan-500 border border-gray-100 shadow-sm p-5">
+      <div className="flex items-center gap-2.5 mb-3">
+        <Brain size={18} className="text-cyan-600" />
+        <span className="text-xs font-semibold text-cyan-600 uppercase tracking-wider">
+          Treatment Strategy
+        </span>
+      </div>
+      <h3 className="text-[17px] font-bold text-slate-900 leading-snug mb-2">
+        {clinicalThesis.title}
+      </h3>
+      {clinicalThesis.reasoning && (
+        <p className="text-[15px] text-slate-500 leading-relaxed">{clinicalThesis.reasoning}</p>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CATEGORY GRADE PILLS (horizontal scroll)
+   ══════════════════════════════════════════════════════════════ */
+
+function CategoryGradePills({ categoryGrades }) {
+  if (!categoryGrades || Object.keys(categoryGrades).length === 0) return null;
 
   return (
-    <div className="flex items-center gap-3">
-      <div className={`relative w-10 h-10 rounded-full ${c.bg} flex items-center justify-center`}>
-        <div className={`absolute inset-0 rounded-full border-2 ${c.ring}`} />
-        <span className={`text-sm font-bold ${c.text} relative z-10`}>{grade}</span>
+    <div className="space-y-3">
+      <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Category Grades</p>
+      <div className="flex gap-3 overflow-x-auto pt-2 pb-2 -mx-5 px-5 scrollbar-hide">
+        {Object.entries(categoryGrades).map(([key, val]) => {
+          const grade = val?.grade || "--";
+          const c = GRADE_COLORS[grade] || { bg: "bg-gray-300", text: "text-gray-700", ring: "ring-gray-300/30", label: "text-gray-600" };
+          const displayLabel = key.replace(/_/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase());
+          return (
+            <div key={key} className="flex flex-col items-center gap-1.5 shrink-0 min-w-[56px]">
+              <div className={`w-11 h-11 rounded-full ${c.bg} ring-4 ${c.ring} flex items-center justify-center`}>
+                <span className={`text-sm font-bold ${c.text}`}>{grade}</span>
+              </div>
+              <span className="text-[11px] font-medium text-slate-500 text-center leading-tight max-w-[64px]">
+                {displayLabel}
+              </span>
+            </div>
+          );
+        })}
       </div>
-      <span className="text-sm text-gray-800">{displayLabel}</span>
     </div>
   );
 }
 
-/* ── Priority Badge ──────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   PRIORITY / DELTA / STATUS BADGES
+   ══════════════════════════════════════════════════════════════ */
+
 function PriorityBadge({ priority }) {
   const styles = {
-    High: "text-red-600 bg-red-50 border-red-200",
-    Medium: "text-amber-600 bg-amber-50 border-amber-200",
-    Low: "text-emerald-600 bg-emerald-50 border-emerald-200",
+    High: "text-red-700 bg-red-50 border-red-200",
+    Medium: "text-amber-700 bg-amber-50 border-amber-200",
+    Low: "text-emerald-700 bg-emerald-50 border-emerald-200",
   };
   return (
-    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${styles[priority] || "text-gray-500 bg-gray-50 border-gray-200"}`}>
-      {priority} priority
+    <span
+      className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+        styles[priority] || "text-slate-500 bg-slate-50 border-slate-200"
+      }`}
+    >
+      {priority}
     </span>
   );
 }
 
-/* ── Delta Badge ─────────────────────────────────────────── */
 function DeltaBadge({ delta }) {
   if (!delta || delta.status === "new") return null;
   const map = {
-    improved: { text: "Improved", cls: "text-emerald-600 bg-emerald-50 border-emerald-200" },
-    worsened: { text: "Worsened", cls: "text-red-600 bg-red-50 border-red-200" },
-    unchanged: { text: "Unchanged", cls: "text-gray-500 bg-gray-50 border-gray-200" },
-    resolved: { text: "Resolved", cls: "text-blue-600 bg-blue-50 border-blue-200" },
+    improved: { text: "Improved", cls: "text-emerald-700 bg-emerald-50 border-emerald-200", Icon: TrendingDown },
+    worsened: { text: "Worsened", cls: "text-red-700 bg-red-50 border-red-200", Icon: TrendingUp },
+    unchanged: { text: "Unchanged", cls: "text-slate-500 bg-slate-50 border-slate-200", Icon: null },
+    resolved: { text: "Resolved", cls: "text-cyan-700 bg-cyan-50 border-cyan-200", Icon: Check },
   };
   const b = map[delta.status];
   if (!b) return null;
   return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${b.cls}`}>
+    <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${b.cls}`}>
+      {b.Icon && <b.Icon size={10} />}
       {b.text}
     </span>
   );
 }
 
-/* ── Goal Status Badge ──────────────────────────────────── */
 function GoalStatusBadge({ status }) {
   if (!status || status === "active") return null;
   const map = {
     achieved: { label: "Achieved", cls: "text-emerald-700 bg-emerald-50 border-emerald-200" },
     paused: { label: "Paused", cls: "text-amber-700 bg-amber-50 border-amber-200" },
-    archived: { label: "Archived", cls: "text-gray-500 bg-gray-50 border-gray-200" },
+    archived: { label: "Archived", cls: "text-slate-500 bg-slate-50 border-slate-200" },
   };
   const b = map[status];
   if (!b) return null;
   return (
-    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${b.cls}`}>
-      {b.label}
-    </span>
+    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${b.cls}`}>{b.label}</span>
   );
 }
 
-/* ── Clinical Thesis Card ───────────────────────────────── */
-function ClinicalThesisCard({ clinicalThesis }) {
-  if (!clinicalThesis?.title) return null;
+/* ══════════════════════════════════════════════════════════════
+   MONITORED ISSUE CARD (Goal Card)
+   ══════════════════════════════════════════════════════════════ */
+
+function MonitoredIssueCard({ issue, index }) {
+  const [expandedSections, setExpandedSections] = useState({});
+
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const borderColor = PRIORITY_BORDERS[issue.priority] || "border-l-gray-300";
+
   return (
-    <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-[#1a1f2e] via-[#1e293b] to-[#0f172a] p-6 shadow-lg">
-      <div className="flex items-center gap-2.5 mb-3">
-        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-          <svg className="w-4 h-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
+    <div className={`rounded-2xl bg-white shadow-sm border border-gray-100 border-l-4 ${borderColor} overflow-hidden`}>
+      <div className="p-5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <h3 className="text-[17px] font-bold text-slate-900 leading-snug flex-1">
+            {issue.title}
+          </h3>
+          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+            <PriorityBadge priority={issue.priority} />
+          </div>
         </div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-cyan-400/80">Clinical Thesis</p>
+
+        {/* Badge row */}
+        <div className="flex items-center gap-2 mb-3">
+          <DeltaBadge delta={issue.delta} />
+          <GoalStatusBadge status={issue.status} />
+        </div>
+
+        {/* Description */}
+        {issue.description && (
+          <p className="text-[15px] text-slate-500 leading-relaxed mb-4">{issue.description}</p>
+        )}
+
+        {/* Biomarker evidence rows */}
+        {issue.biomarkerEvidence?.length > 0 && (
+          <div className="rounded-xl bg-slate-50 overflow-hidden mb-4">
+            {issue.biomarkerEvidence.map((bm, i) => {
+              const flagStyle = FLAG_COLORS[bm.flag] || { dot: "bg-gray-400", text: "text-gray-500" };
+              const target =
+                bm.optimalMin != null && bm.optimalMax != null
+                  ? `${bm.optimalMin}–${bm.optimalMax}`
+                  : bm.optimalMax != null
+                  ? `< ${bm.optimalMax}`
+                  : bm.optimalMin != null
+                  ? `> ${bm.optimalMin}`
+                  : null;
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center gap-3 px-4 py-3 ${
+                    i < issue.biomarkerEvidence.length - 1 ? "border-b border-gray-100" : ""
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${flagStyle.dot} shrink-0`} />
+                  <span className="text-[13px] font-medium text-slate-800 flex-1 min-w-0 truncate">
+                    {bm.name}
+                  </span>
+                  <span className={`text-[13px] font-semibold ${flagStyle.text} shrink-0`}>
+                    {bm.value}
+                    {bm.unit ? ` ${bm.unit}` : ""}
+                  </span>
+                  {target && (
+                    <>
+                      <ArrowRight size={12} className="text-slate-300 shrink-0" />
+                      <span className="text-[13px] text-emerald-600 font-medium shrink-0">
+                        {target}
+                      </span>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Achievement criteria */}
+        {issue.achievementCriteria?.length > 0 && (
+          <div className="mb-2">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              Criteria
+            </p>
+            <div className="space-y-1.5">
+              {issue.achievementCriteria.map((c, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div
+                    className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${
+                      c.currentlyMet
+                        ? "bg-emerald-500 text-white"
+                        : "bg-slate-100 text-slate-400"
+                    }`}
+                  >
+                    {c.currentlyMet ? <Check size={10} /> : <Circle size={8} />}
+                  </div>
+                  <span
+                    className={`text-[13px] ${
+                      c.currentlyMet ? "text-emerald-700" : "text-slate-500"
+                    }`}
+                  >
+                    {c.biomarkerName} {c.operator} {c.threshold}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      <h3 className="text-lg font-bold text-white leading-snug mb-2">{clinicalThesis.title}</h3>
-      {clinicalThesis.reasoning && (
-        <p className="text-sm text-gray-300 leading-relaxed">{clinicalThesis.reasoning}</p>
-      )}
+
+      {/* Expandable sections */}
+      <div className="border-t border-gray-100">
+        {issue.whatThisMeans && (
+          <button
+            onClick={() => toggleSection("what")}
+            className="w-full flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
+          >
+            <span className="text-[13px] font-semibold text-slate-700">What this means</span>
+            <ChevronDown
+              size={14}
+              className={`text-slate-400 transition-transform duration-200 ${
+                expandedSections.what ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+        )}
+        {expandedSections.what && issue.whatThisMeans && (
+          <div className="px-5 pb-4">
+            <p className="text-[14px] text-slate-500 leading-relaxed">{issue.whatThisMeans}</p>
+          </div>
+        )}
+
+        {issue.potentialCauses && (
+          <button
+            onClick={() => toggleSection("causes")}
+            className="w-full flex items-center justify-between px-5 py-3 border-t border-gray-100 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
+          >
+            <span className="text-[13px] font-semibold text-slate-700">Potential causes</span>
+            <ChevronDown
+              size={14}
+              className={`text-slate-400 transition-transform duration-200 ${
+                expandedSections.causes ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+        )}
+        {expandedSections.causes && issue.potentialCauses && (
+          <div className="px-5 pb-4">
+            <p className="text-[14px] text-slate-500 leading-relaxed">{issue.potentialCauses}</p>
+          </div>
+        )}
+
+        {issue.recommendedActions?.length > 0 && (
+          <button
+            onClick={() => toggleSection("actions")}
+            className="w-full flex items-center justify-between px-5 py-3 border-t border-gray-100 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
+          >
+            <span className="text-[13px] font-semibold text-slate-700">Recommended actions</span>
+            <ChevronDown
+              size={14}
+              className={`text-slate-400 transition-transform duration-200 ${
+                expandedSections.actions ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+        )}
+        {expandedSections.actions && issue.recommendedActions?.length > 0 && (
+          <div className="px-5 pb-4 space-y-2.5">
+            {issue.recommendedActions.map((action, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <ChevronRight size={14} className="text-cyan-500 mt-0.5 shrink-0" />
+                <p className="text-[14px] text-slate-600 leading-relaxed">
+                  <span className="font-semibold text-slate-800">{action.label}: </span>
+                  {action.detail}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-/* ── Phased Timeline (Checkpoints) ──────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   PHASED TIMELINE (vertical)
+   ══════════════════════════════════════════════════════════════ */
+
 function PhasedTimeline({ checkpoints }) {
-  const [activeIdx, setActiveIdx] = useState(null);
-  const scrollRef = useRef(null);
+  const [expandedIdx, setExpandedIdx] = useState(null);
 
   if (!checkpoints?.length) return null;
 
-  const getStepColor = (idx) => {
-    if (idx < 0) return { circle: "bg-gray-200 border-gray-300", text: "text-gray-400", line: "bg-gray-200" };
-    // For now: first step = completed (green), second = current (amber), rest = future (gray)
-    // In real usage, backend would provide a `completed` flag
-    if (idx === 0) return { circle: "bg-emerald-500 border-emerald-600", text: "text-white", line: "bg-emerald-300" };
-    if (idx === 1) return { circle: "bg-amber-400 border-amber-500", text: "text-white", line: "bg-gray-200" };
-    return { circle: "bg-gray-200 border-gray-300", text: "text-gray-400", line: "bg-gray-200" };
+  const getStepStyle = (idx) => {
+    if (idx === 0)
+      return {
+        circle: "bg-emerald-500 border-emerald-500 text-white",
+        line: "bg-emerald-300",
+        label: "text-emerald-700",
+        badge: "Completed",
+      };
+    if (idx === 1)
+      return {
+        circle: "bg-cyan-500 border-cyan-500 text-white",
+        line: "bg-slate-200",
+        label: "text-cyan-700",
+        badge: "Current",
+      };
+    return {
+      circle: "bg-slate-100 border-slate-300 text-slate-400",
+      line: "bg-slate-200",
+      label: "text-slate-500",
+      badge: null,
+    };
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-bold text-gray-900">Progress Checkpoints</h3>
-      <p className="text-sm text-gray-600 leading-relaxed">
-        Your plan is broken into checkpoints. Tap a milestone to see target biomarkers.
-      </p>
+    <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-5">
+      <SectionHeader
+        icon={<Target size={20} />}
+        label="Timeline"
+        title="Progress Checkpoints"
+        subtitle="Your plan is broken into checkpoints. Tap a milestone to see target biomarkers."
+      />
 
-      {/* Horizontal Stepper */}
-      <div ref={scrollRef} className="overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
-        <div className="flex items-start gap-0 min-w-max">
-          {checkpoints.map((cp, idx) => {
-            const colors = getStepColor(idx);
-            const isActive = activeIdx === idx;
-            return (
-              <div key={idx} className="flex items-start">
+      <div className="mt-5 space-y-0">
+        {checkpoints.map((cp, idx) => {
+          const style = getStepStyle(idx);
+          const isExpanded = expandedIdx === idx;
+          const isLast = idx === checkpoints.length - 1;
+
+          return (
+            <div key={idx} className="flex gap-4">
+              {/* Rail */}
+              <div className="flex flex-col items-center">
                 <button
-                  onClick={() => setActiveIdx(isActive ? null : idx)}
-                  className="flex flex-col items-center w-20 cursor-pointer group"
+                  onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                  className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shrink-0 cursor-pointer transition-all duration-200 ${style.circle} ${
+                    isExpanded ? "ring-4 ring-cyan-400/20 scale-110" : "hover:scale-105"
+                  }`}
                 >
-                  <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${colors.circle} ${isActive ? "ring-2 ring-offset-2 ring-cyan-400" : ""} group-hover:scale-105`}>
-                    <span className={`text-xs font-bold ${colors.text}`}>{cp.weekNumber || idx + 1}</span>
-                  </div>
-                  <p className="text-[11px] font-medium text-gray-700 mt-1.5 text-center leading-tight">
-                    {cp.label || `Week ${cp.weekNumber}`}
-                  </p>
+                  {idx === 0 ? (
+                    <Check size={14} />
+                  ) : (
+                    <span className="text-xs font-bold">{cp.weekNumber || idx + 1}</span>
+                  )}
                 </button>
-                {idx < checkpoints.length - 1 && (
-                  <div className={`h-0.5 w-8 mt-[18px] ${colors.line} shrink-0`} />
+                {!isLast && (
+                  <div className={`w-0.5 flex-1 min-h-[24px] ${style.line}`} />
                 )}
               </div>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Expanded Detail */}
-      {activeIdx != null && checkpoints[activeIdx] && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-bold text-gray-900">
-              {checkpoints[activeIdx].label || `Week ${checkpoints[activeIdx].weekNumber}`}
-            </h4>
-            <span className="text-xs text-gray-400">Week {checkpoints[activeIdx].weekNumber}</span>
-          </div>
-          {checkpoints[activeIdx].description && (
-            <p className="text-sm text-gray-600 leading-relaxed">{checkpoints[activeIdx].description}</p>
-          )}
-          {checkpoints[activeIdx].targetBiomarkers?.length > 0 && (
-            <div className="space-y-2 pt-1">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Target Biomarkers</p>
-              <div className="grid grid-cols-1 gap-2">
-                {checkpoints[activeIdx].targetBiomarkers.map((tb, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2.5">
-                    <span className="text-xs font-medium text-gray-800">{tb.name}</span>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-gray-500">{tb.currentValue}{tb.unit ? ` ${tb.unit}` : ""}</span>
-                      <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                      <span className="font-semibold text-emerald-600">{tb.targetValue}{tb.unit ? ` ${tb.unit}` : ""}</span>
+              {/* Content */}
+              <div className={`flex-1 ${!isLast ? "pb-5" : "pb-0"}`}>
+                <button
+                  onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                  className="text-left w-full cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-[15px] font-bold text-slate-900">
+                      {cp.label || `Week ${cp.weekNumber}`}
+                    </h4>
+                    {style.badge && (
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                          style.badge === "Completed"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : "bg-cyan-50 text-cyan-600"
+                        }`}
+                      >
+                        {style.badge}
+                      </span>
+                    )}
+                  </div>
+                  {cp.description && (
+                    <p className="text-[13px] text-slate-500 mt-0.5 leading-relaxed">{cp.description}</p>
+                  )}
+                </button>
+
+                {/* Expanded biomarkers */}
+                {isExpanded && cp.targetBiomarkers?.length > 0 && (
+                  <div className="mt-3 rounded-xl bg-slate-50 p-3 space-y-2">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Target Biomarkers
+                    </p>
+                    {cp.targetBiomarkers.map((tb, i) => (
+                      <div key={i} className="flex items-center justify-between py-1.5">
+                        <span className="text-[13px] font-medium text-slate-800">{tb.name}</span>
+                        <div className="flex items-center gap-2 text-[13px]">
+                          <span className="text-slate-400">
+                            {tb.currentValue}
+                            {tb.unit ? ` ${tb.unit}` : ""}
+                          </span>
+                          <ArrowRight size={12} className="text-slate-300" />
+                          <span className="font-semibold text-emerald-600">
+                            {tb.targetValue}
+                            {tb.unit ? ` ${tb.unit}` : ""}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DAILY SCHEDULE
+   ══════════════════════════════════════════════════════════════ */
+
+function DailyScheduleSection({ dailySchedule }) {
+  if (!dailySchedule) return null;
+
+  const slots = [
+    {
+      key: "morningFasted",
+      label: "Morning (Fasted)",
+      Icon: Sun,
+      accent: "border-l-amber-400",
+      iconColor: "text-amber-500",
+    },
+    {
+      key: "withBreakfast",
+      label: "With Breakfast",
+      Icon: Coffee,
+      accent: "border-l-orange-400",
+      iconColor: "text-orange-500",
+    },
+    {
+      key: "preWorkout",
+      label: "Pre-Workout",
+      Icon: Zap,
+      accent: "border-l-yellow-500",
+      iconColor: "text-yellow-600",
+    },
+    {
+      key: "withDinner",
+      label: "With Dinner",
+      Icon: Clock,
+      accent: "border-l-blue-400",
+      iconColor: "text-blue-500",
+    },
+    {
+      key: "bedtime",
+      label: "Bedtime",
+      Icon: Moon,
+      accent: "border-l-indigo-400",
+      iconColor: "text-indigo-500",
+    },
+  ];
+
+  const filledSlots = slots.filter((s) => dailySchedule[s.key]?.length > 0);
+  if (filledSlots.length === 0) return null;
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader
+        icon={<Pill size={20} />}
+        label="Schedule"
+        title="Your Daily Schedule"
+        subtitle="When and how to take your supplements for maximum absorption and effect."
+      />
+
+      <div className="space-y-3">
+        {filledSlots.map((slot) => {
+          const SlotIcon = slot.Icon;
+          const items = dailySchedule[slot.key];
+          return (
+            <div
+              key={slot.key}
+              className={`rounded-2xl bg-white shadow-sm border border-gray-100 border-l-4 ${slot.accent} p-4`}
+            >
+              <div className="flex items-center gap-2.5 mb-3">
+                <SlotIcon size={16} className={slot.iconColor} />
+                <h4 className="text-[15px] font-bold text-slate-900 flex-1">{slot.label}</h4>
+                <span className="text-[11px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">
+                  {items.length} item{items.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {items.map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 py-1.5">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-[14px] font-semibold text-slate-800">
+                          {item.productName}
+                        </span>
+                        {item.dose && (
+                          <span className="text-[13px] text-slate-400 shrink-0">{item.dose}</span>
+                        )}
+                      </div>
+                      {item.reason && (
+                        <p className="text-[13px] text-slate-400 italic mt-0.5 leading-relaxed">
+                          {item.reason}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   WATCH-OUT CARDS
+   ══════════════════════════════════════════════════════════════ */
+
+function WatchOutCard({ watchOut }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const severityMap = {
+    critical: {
+      bg: "bg-red-50",
+      border: "border-red-200",
+      iconColor: "text-red-600",
+      titleColor: "text-red-900",
+      Icon: AlertTriangle,
+    },
+    warning: {
+      bg: "bg-amber-50",
+      border: "border-amber-200",
+      iconColor: "text-amber-600",
+      titleColor: "text-amber-900",
+      Icon: AlertCircle,
+    },
+    info: {
+      bg: "bg-cyan-50",
+      border: "border-cyan-200",
+      iconColor: "text-cyan-600",
+      titleColor: "text-cyan-900",
+      Icon: Info,
+    },
+  };
+
+  const s = severityMap[watchOut.severity] || severityMap.info;
+  const SeverityIcon = s.Icon;
+  const hasDetails = watchOut.risk || watchOut.mitigation;
+
+  return (
+    <div className={`rounded-2xl border ${s.border} ${s.bg} overflow-hidden`}>
+      <button
+        onClick={() => hasDetails && setExpanded(!expanded)}
+        className={`w-full flex items-center gap-3 p-4 ${hasDetails ? "cursor-pointer" : ""}`}
+      >
+        <SeverityIcon size={18} className={s.iconColor} />
+        <span className={`text-[14px] font-semibold ${s.titleColor} flex-1 text-left`}>
+          {watchOut.title}
+        </span>
+        {hasDetails && (
+          <ChevronDown
+            size={14}
+            className={`text-slate-400 transition-transform duration-200 ${
+              expanded ? "rotate-180" : ""
+            }`}
+          />
+        )}
+      </button>
+      {expanded && hasDetails && (
+        <div className="px-4 pb-4 pt-0 space-y-2.5">
+          {watchOut.risk && (
+            <div>
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Risk</p>
+              <p className="text-[14px] text-slate-600 leading-relaxed">{watchOut.risk}</p>
+            </div>
+          )}
+          {watchOut.mitigation && (
+            <div>
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">What to do</p>
+              <p className="text-[14px] text-slate-600 leading-relaxed">{watchOut.mitigation}</p>
+            </div>
           )}
         </div>
       )}
@@ -284,146 +829,10 @@ function PhasedTimeline({ checkpoints }) {
   );
 }
 
-/* ── Daily Schedule Section ─────────────────────────────── */
-function DailyScheduleSection({ dailySchedule }) {
-  if (!dailySchedule) return null;
+/* ══════════════════════════════════════════════════════════════
+   TRAINING PROTOCOL
+   ══════════════════════════════════════════════════════════════ */
 
-  const slots = [
-    { key: "morningFasted", label: "Morning (Fasted)", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
-    ), gradient: "from-amber-50 to-orange-50", border: "border-amber-200", iconColor: "text-amber-500" },
-    { key: "withBreakfast", label: "With Breakfast", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h18v2a4 4 0 01-4 4H7a4 4 0 01-4-4V3zm4 9h10m-5 0v8m-4 0h8" />
-      </svg>
-    ), gradient: "from-orange-50 to-yellow-50", border: "border-orange-200", iconColor: "text-orange-500" },
-    { key: "preWorkout", label: "Pre-Workout", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ), gradient: "from-yellow-50 to-lime-50", border: "border-yellow-200", iconColor: "text-yellow-600" },
-    { key: "withDinner", label: "With Dinner", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ), gradient: "from-blue-50 to-indigo-50", border: "border-blue-200", iconColor: "text-blue-500" },
-    { key: "bedtime", label: "Bedtime", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-      </svg>
-    ), gradient: "from-indigo-50 to-slate-100", border: "border-indigo-200", iconColor: "text-indigo-500" },
-  ];
-
-  const filledSlots = slots.filter(s => dailySchedule[s.key]?.length > 0);
-  if (filledSlots.length === 0) return null;
-
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-bold text-gray-900">Your Daily Schedule</h3>
-      <p className="text-sm text-gray-600 leading-relaxed">
-        When and how to take your supplements for maximum absorption and effect.
-      </p>
-      <div className="space-y-3">
-        {filledSlots.map((slot) => (
-          <div key={slot.key} className={`rounded-xl border ${slot.border} bg-gradient-to-r ${slot.gradient} p-4`}>
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className={`w-7 h-7 rounded-lg bg-white/80 flex items-center justify-center ${slot.iconColor}`}>
-                {slot.icon}
-              </div>
-              <h4 className="text-sm font-bold text-gray-900">{slot.label}</h4>
-              <span className="text-[10px] text-gray-500 ml-auto">{dailySchedule[slot.key].length} item{dailySchedule[slot.key].length !== 1 ? "s" : ""}</span>
-            </div>
-            <div className="space-y-2">
-              {dailySchedule[slot.key].map((item, i) => (
-                <div key={i} className="flex items-start gap-3 bg-white/60 rounded-lg px-3 py-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-medium text-gray-900">{item.productName}</span>
-                      {item.dose && <span className="text-xs text-gray-500 shrink-0">{item.dose}</span>}
-                    </div>
-                    {item.reason && (
-                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{item.reason}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ── Watch-Out Card ─────────────────────────────────────── */
-function WatchOutCard({ watchOut }) {
-  const severityMap = {
-    critical: {
-      bg: "bg-red-50",
-      border: "border-red-200",
-      iconBg: "bg-red-100",
-      iconColor: "text-red-600",
-      titleColor: "text-red-900",
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-        </svg>
-      ),
-    },
-    warning: {
-      bg: "bg-amber-50",
-      border: "border-amber-200",
-      iconBg: "bg-amber-100",
-      iconColor: "text-amber-600",
-      titleColor: "text-amber-900",
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
-    info: {
-      bg: "bg-blue-50",
-      border: "border-blue-200",
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-      titleColor: "text-blue-900",
-      icon: (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-    },
-  };
-
-  const s = severityMap[watchOut.severity] || severityMap.info;
-
-  return (
-    <div className={`rounded-xl border ${s.border} ${s.bg} p-4`}>
-      <div className="flex items-start gap-3">
-        <div className={`w-8 h-8 rounded-lg ${s.iconBg} flex items-center justify-center shrink-0 ${s.iconColor}`}>
-          {s.icon}
-        </div>
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <h4 className={`text-sm font-bold ${s.titleColor}`}>{watchOut.title}</h4>
-          {watchOut.risk && (
-            <p className="text-xs text-gray-700 leading-relaxed">{watchOut.risk}</p>
-          )}
-          {watchOut.mitigation && (
-            <div className="pt-1">
-              <p className="text-xs font-semibold text-gray-800">What to do:</p>
-              <p className="text-xs text-gray-600 leading-relaxed mt-0.5">{watchOut.mitigation}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Training Protocol Section ──────────────────────────── */
 function TrainingProtocolSection({ trainingProtocol }) {
   if (!trainingProtocol) return null;
 
@@ -434,94 +843,222 @@ function TrainingProtocolSection({ trainingProtocol }) {
 
   if (!hasPhases && !hasZone2 && !hasWarmUp && !hasCoolDown && !trainingProtocol.goal) return null;
 
-  return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-bold text-gray-900">Your Training Program</h3>
+  /* Day name abbreviations for the visual week grid */
+  const DAY_ABBREVS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-      {/* Goal & Weekly Summary */}
+  /* Build a simple week view from phases if we can */
+  const weekDays = [];
+  if (hasPhases && trainingProtocol.phases[0]?.days) {
+    trainingProtocol.phases[0].days.forEach((day) => {
+      weekDays.push({
+        label: day.dayLabel,
+        focus: day.focus || "Training",
+        hasExercises: day.exercises?.length > 0,
+      });
+    });
+  }
+
+  return (
+    <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-5 space-y-5">
+      <SectionHeader
+        icon={<Dumbbell size={20} />}
+        label="Training"
+        title="Your Training Program"
+      />
+
+      {/* Goal + Schedule */}
       {(trainingProtocol.goal || trainingProtocol.weeklySchedule) && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+        <div className="rounded-xl bg-slate-50 p-4 space-y-2">
           {trainingProtocol.goal && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Goal</p>
-              <p className="text-sm text-gray-900 font-medium mt-0.5">{trainingProtocol.goal}</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Goal</p>
+              <p className="text-[15px] text-slate-800 font-medium mt-0.5">
+                {trainingProtocol.goal}
+              </p>
             </div>
           )}
           {trainingProtocol.weeklySchedule && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Weekly Schedule</p>
-              <p className="text-sm text-gray-700 mt-0.5">{trainingProtocol.weeklySchedule}</p>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Weekly Schedule
+              </p>
+              <p className="text-[14px] text-slate-600 mt-0.5">{trainingProtocol.weeklySchedule}</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Phase Cards */}
-      {hasPhases && (
-        <div className="space-y-0">
-          {trainingProtocol.phases.map((phase, pIdx) => (
-            <TrainingPhaseCard key={pIdx} phase={phase} isLast={pIdx === trainingProtocol.phases.length - 1} />
-          ))}
+      {/* Visual week grid */}
+      {weekDays.length > 0 && (
+        <div className="grid grid-cols-7 gap-1">
+          {DAY_ABBREVS.map((abbrev, i) => {
+            const dayData = weekDays.find(
+              (d) => d.label?.toLowerCase().includes(abbrev.toLowerCase())
+            );
+            return (
+              <div
+                key={abbrev}
+                className={`rounded-lg py-2 text-center ${
+                  dayData?.hasExercises
+                    ? "bg-cyan-50 border border-cyan-200"
+                    : "bg-slate-50 border border-slate-100"
+                }`}
+              >
+                <p className="text-[10px] font-semibold text-slate-500 uppercase">{abbrev}</p>
+                {dayData?.hasExercises && (
+                  <Activity size={12} className="text-cyan-500 mx-auto mt-1" />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
+
+      {/* Phases as accordions */}
+      {hasPhases &&
+        trainingProtocol.phases.map((phase, pIdx) => (
+          <Accordion
+            key={pIdx}
+            title={`Phase ${phase.phaseNumber}${phase.weeks ? `: Weeks ${phase.weeks}` : ""}${
+              phase.focus ? ` - ${phase.focus}` : ""
+            }`}
+            icon={<Flame size={16} />}
+          >
+            {/* Phase meta */}
+            {(phase.tempo || phase.rest) && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {phase.tempo && (
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">
+                    Tempo: {phase.tempo}
+                  </span>
+                )}
+                {phase.rest && (
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">
+                    Rest: {phase.rest}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Day cards */}
+            {phase.days?.map((day, dIdx) => (
+              <div key={dIdx} className="mb-4 last:mb-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[13px] font-bold text-slate-800">{day.dayLabel}</span>
+                  {day.focus && (
+                    <span className="text-[13px] text-slate-400">- {day.focus}</span>
+                  )}
+                </div>
+                {day.exercises?.length > 0 && (
+                  <div className="rounded-xl border border-gray-100 overflow-hidden">
+                    {/* Table header */}
+                    <div className="grid grid-cols-12 gap-1 bg-slate-50 px-3 py-2">
+                      <span className="col-span-5 text-[11px] font-semibold text-slate-400 uppercase">
+                        Exercise
+                      </span>
+                      <span className="col-span-2 text-[11px] font-semibold text-slate-400 uppercase text-center">
+                        Sets
+                      </span>
+                      <span className="col-span-2 text-[11px] font-semibold text-slate-400 uppercase text-center">
+                        Reps
+                      </span>
+                      <span className="col-span-3 text-[11px] font-semibold text-slate-400 uppercase">
+                        Cue
+                      </span>
+                    </div>
+                    {day.exercises.map((ex, eIdx) => (
+                      <div
+                        key={eIdx}
+                        className={`grid grid-cols-12 gap-1 px-3 py-2.5 ${
+                          eIdx % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                        }`}
+                      >
+                        <span className="col-span-5 text-[13px] text-slate-900 font-medium">
+                          {ex.name}
+                        </span>
+                        <span className="col-span-2 text-[13px] text-slate-500 text-center">
+                          {ex.sets || "-"}
+                        </span>
+                        <span className="col-span-2 text-[13px] text-slate-500 text-center">
+                          {ex.reps || "-"}
+                        </span>
+                        <span className="col-span-3 text-[13px] text-slate-400 truncate">
+                          {ex.cue || "-"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </Accordion>
+        ))}
 
       {/* Zone 2 Cardio */}
       {hasZone2 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+        <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4 space-y-2.5">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-              <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </div>
-            <h4 className="text-sm font-bold text-gray-900">Zone 2 Cardio</h4>
+            <Heart size={16} className="text-emerald-600" />
+            <h4 className="text-[14px] font-bold text-emerald-900">Zone 2 Cardio</h4>
           </div>
-          <p className="text-sm text-gray-700">{trainingProtocol.zone2.protocol}</p>
+          <p className="text-[14px] text-emerald-800/80">{trainingProtocol.zone2.protocol}</p>
           {trainingProtocol.zone2.intensity && (
-            <p className="text-xs text-gray-500">Intensity: {trainingProtocol.zone2.intensity}</p>
+            <p className="text-[13px] text-emerald-600">
+              Intensity: {trainingProtocol.zone2.intensity}
+            </p>
           )}
           {trainingProtocol.zone2.options?.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-600 mb-1.5">Options:</p>
-              <div className="flex flex-wrap gap-1.5">
-                {trainingProtocol.zone2.options.map((opt, i) => (
-                  <span key={i} className="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200">
-                    {opt}
-                  </span>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {trainingProtocol.zone2.options.map((opt, i) => (
+                <span
+                  key={i}
+                  className="text-[12px] bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full border border-emerald-200"
+                >
+                  {opt}
+                </span>
+              ))}
             </div>
           )}
           {trainingProtocol.zone2.reasoning && (
-            <p className="text-xs text-gray-500 leading-relaxed">{trainingProtocol.zone2.reasoning}</p>
+            <p className="text-[13px] text-emerald-600/70 leading-relaxed">
+              {trainingProtocol.zone2.reasoning}
+            </p>
           )}
         </div>
       )}
 
-      {/* Warm-Up & Cool-Down */}
+      {/* Warm-Up / Cool-Down */}
       {(hasWarmUp || hasCoolDown) && (
         <div className="grid grid-cols-1 gap-3">
           {hasWarmUp && (
-            <div className="rounded-xl bg-gray-50 p-4">
-              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Warm-Up</h4>
-              <ul className="space-y-1">
+            <div className="rounded-xl bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                Warm-Up
+              </p>
+              <ul className="space-y-1.5">
                 {trainingProtocol.warmUp.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-gray-700">
-                    <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 shrink-0" />
-                    {typeof item === "string" ? item : item.name || item.exercise || JSON.stringify(item)}
+                  <li key={i} className="flex items-start gap-2 text-[13px] text-slate-600">
+                    <span className="w-1 h-1 rounded-full bg-slate-400 mt-2 shrink-0" />
+                    {typeof item === "string"
+                      ? item
+                      : item.name || item.exercise || JSON.stringify(item)}
                   </li>
                 ))}
               </ul>
             </div>
           )}
           {hasCoolDown && (
-            <div className="rounded-xl bg-gray-50 p-4">
-              <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Cool-Down</h4>
-              <ul className="space-y-1">
+            <div className="rounded-xl bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                Cool-Down
+              </p>
+              <ul className="space-y-1.5">
                 {trainingProtocol.coolDown.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-gray-700">
-                    <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 shrink-0" />
-                    {typeof item === "string" ? item : item.name || item.exercise || JSON.stringify(item)}
+                  <li key={i} className="flex items-start gap-2 text-[13px] text-slate-600">
+                    <span className="w-1 h-1 rounded-full bg-slate-400 mt-2 shrink-0" />
+                    {typeof item === "string"
+                      ? item
+                      : item.name || item.exercise || JSON.stringify(item)}
                   </li>
                 ))}
               </ul>
@@ -533,180 +1070,298 @@ function TrainingProtocolSection({ trainingProtocol }) {
   );
 }
 
-/* ── Training Phase Card (Collapsible) ──────────────────── */
-function TrainingPhaseCard({ phase, isLast }) {
-  const [open, setOpen] = useState(false);
+/* ══════════════════════════════════════════════════════════════
+   PROTOCOL SECTION (Tabbed: Lifestyle/Nutrition/Supplements/Tests)
+   ══════════════════════════════════════════════════════════════ */
+
+function ProtocolSection({ protocol }) {
+  const tabs = [];
+
+  const sleepItems = protocol.lifestyle?.sleep || [];
+  const exerciseItems = protocol.lifestyle?.exercise || [];
+  const stressItems = protocol.lifestyle?.stress || [];
+  const nutritionItems = protocol.nutrition || [];
+  const supplementItems = protocol.supplements || [];
+  const testItems = protocol.diagnosticTests || [];
+
+  if (sleepItems.length > 0) tabs.push({ key: "sleep", label: "Sleep", Icon: BedDouble, items: sleepItems });
+  if (exerciseItems.length > 0) tabs.push({ key: "exercise", label: "Exercise", Icon: Dumbbell, items: exerciseItems });
+  if (stressItems.length > 0) tabs.push({ key: "stress", label: "Stress", Icon: Shield, items: stressItems });
+  if (nutritionItems.length > 0) tabs.push({ key: "nutrition", label: "Nutrition", Icon: Utensils, items: nutritionItems });
+  if (supplementItems.length > 0) tabs.push({ key: "supplements", label: "Supplements", Icon: Pill, items: supplementItems });
+  if (testItems.length > 0) tabs.push({ key: "tests", label: "Tests", Icon: Beaker, items: testItems });
+
+  const [activeTab, setActiveTab] = useState(tabs[0]?.key || "sleep");
+
+  if (tabs.length === 0) return null;
+
+  const currentTab = tabs.find((t) => t.key === activeTab) || tabs[0];
+
   return (
-    <div className={!isLast ? "border-b border-gray-200" : ""}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-3 cursor-pointer"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center">
-            <span className="text-xs font-bold text-gray-600">{phase.phaseNumber || "?"}</span>
+    <div className="space-y-4">
+      <SectionHeader
+        icon={<FileText size={20} />}
+        label="Protocol"
+        title="Your Protocol"
+        subtitle="Custom recommendations to target your health goals and address monitored issues."
+      />
+
+      {/* Tab bar */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide">
+        {tabs.map((tab) => {
+          const TabIcon = tab.Icon;
+          const isActive = currentTab.key === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold shrink-0 cursor-pointer transition-all duration-200 ${
+                isActive
+                  ? "bg-cyan-600 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+              }`}
+            >
+              <TabIcon size={14} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab content */}
+      <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-5">
+        {currentTab.key === "supplements" ? (
+          <div className="space-y-3">
+            {currentTab.items.map((supp, i) => (
+              <SupplementItem key={i} supplement={supp} />
+            ))}
           </div>
-          <div className="text-left">
-            <h4 className="text-sm font-semibold text-gray-900">
-              Phase {phase.phaseNumber}{phase.weeks ? `: Weeks ${phase.weeks}` : ""}
-            </h4>
-            {phase.focus && <p className="text-xs text-gray-500">{phase.focus}</p>}
+        ) : currentTab.key === "tests" ? (
+          <div className="space-y-3">
+            {currentTab.items.map((test, i) => (
+              <div key={i} className="rounded-xl bg-slate-50 p-4 space-y-1.5">
+                <h4 className="text-[15px] font-bold text-slate-900">{test.name}</h4>
+                {test.whatItIs && (
+                  <p className="text-[13px] text-slate-500 leading-relaxed">
+                    <span className="font-semibold text-slate-700">What it is: </span>
+                    {test.whatItIs}
+                  </p>
+                )}
+                {test.whyTestIt && (
+                  <p className="text-[13px] text-slate-500 leading-relaxed">
+                    <span className="font-semibold text-slate-700">Why test it: </span>
+                    {test.whyTestIt}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <ul className="space-y-2.5">
+            {currentTab.items.map((item, i) => (
+              <li key={i} className="flex items-start gap-3 text-[14px] text-slate-600 leading-relaxed">
+                <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-2 shrink-0" />
+                {item.text}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Supplement Item (expandable) ── */
+
+function SupplementItem({ supplement }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasDetails = supplement.whatItIs || supplement.whyItMatters || supplement.howToTake;
+
+  return (
+    <div className="rounded-xl bg-slate-50 overflow-hidden">
+      <button
+        onClick={() => hasDetails && setExpanded(!expanded)}
+        className={`w-full flex items-center gap-3 p-4 text-left ${hasDetails ? "cursor-pointer" : ""}`}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[15px] font-bold text-slate-900">{supplement.name}</span>
+            {supplement.timing && (
+              <span className="text-[10px] font-semibold text-cyan-600 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded-full uppercase shrink-0">
+                {supplement.timing}
+              </span>
+            )}
+          </div>
+          {supplement.dose && (
+            <p className="text-[13px] text-slate-500 mt-0.5">{supplement.dose}</p>
+          )}
+        </div>
+        {hasDetails && (
+          <ChevronDown
+            size={14}
+            className={`text-slate-400 shrink-0 transition-transform duration-200 ${
+              expanded ? "rotate-180" : ""
+            }`}
+          />
+        )}
+      </button>
+      {expanded && hasDetails && (
+        <div className="px-4 pb-4 space-y-2">
+          {supplement.whatItIs && (
+            <p className="text-[13px] text-slate-500 leading-relaxed">
+              <span className="font-semibold text-slate-700">What it is: </span>
+              {supplement.whatItIs}
+            </p>
+          )}
+          {supplement.whyItMatters && (
+            <p className="text-[13px] text-slate-500 leading-relaxed">
+              <span className="font-semibold text-slate-700">Why this matters: </span>
+              {supplement.whyItMatters}
+            </p>
+          )}
+          {supplement.howToTake && (
+            <p className="text-[13px] text-slate-500 leading-relaxed">
+              <span className="font-semibold text-slate-700">How to take it: </span>
+              {supplement.howToTake}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NEXT STEPS SECTION
+   ══════════════════════════════════════════════════════════════ */
+
+function NextStepsSection({ nextSteps, protocol, onDownloadPDF, router }) {
+  const totalProtocolItems = [
+    ...(protocol.lifestyle?.sleep || []),
+    ...(protocol.lifestyle?.exercise || []),
+    ...(protocol.lifestyle?.stress || []),
+    ...(protocol.nutrition || []),
+    ...(protocol.supplements || []),
+    ...(protocol.diagnosticTests || []),
+  ].length;
+
+  return (
+    <div className="space-y-5">
+      <SectionHeader
+        icon={<Sparkles size={20} />}
+        label="Next Steps"
+        title="What to Do Next"
+      />
+
+      {/* Checklist */}
+      <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-5 space-y-3">
+        {[
+          nextSteps.text,
+          "Review your daily supplement schedule and order recommended products.",
+          "Message your personal concierge or Cyborg AI with any questions.",
+        ]
+          .filter(Boolean)
+          .map((step, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full border-2 border-slate-200 flex items-center justify-center shrink-0 mt-0.5">
+                <Circle size={8} className="text-slate-300" />
+              </div>
+              <p className="text-[14px] text-slate-600 leading-relaxed">{step}</p>
+            </div>
+          ))}
+      </div>
+
+      {/* Follow-up callout */}
+      {nextSteps.followUpTimeline && (
+        <div className="rounded-2xl bg-cyan-50 border border-cyan-100 p-5">
+          <div className="flex items-start gap-3">
+            <Clock size={18} className="text-cyan-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-[14px] font-semibold text-cyan-900">Follow-up Blood Panel</p>
+              <p className="text-[14px] text-cyan-700/80 leading-relaxed mt-1">
+                Schedule your next blood panel in{" "}
+                <span className="font-semibold">{nextSteps.followUpTimeline}</span> to track
+                improvements and adjust your protocol.
+              </p>
+            </div>
           </div>
         </div>
-        <svg
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      <div className={`overflow-hidden transition-all duration-200 ${open ? "max-h-[5000px] opacity-100 pb-4" : "max-h-0 opacity-0"}`}>
-        {/* Phase meta */}
-        {(phase.tempo || phase.rest) && (
-          <div className="flex flex-wrap gap-3 mb-3">
-            {phase.tempo && (
-              <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">Tempo: {phase.tempo}</span>
-            )}
-            {phase.rest && (
-              <span className="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">Rest: {phase.rest}</span>
-            )}
-          </div>
-        )}
+      )}
 
-        {/* Day cards */}
-        {phase.days?.map((day, dIdx) => (
-          <div key={dIdx} className="mb-3 last:mb-0">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-bold text-gray-800">{day.dayLabel}</span>
-              {day.focus && <span className="text-xs text-gray-500">- {day.focus}</span>}
-            </div>
-            {day.exercises?.length > 0 && (
-              <div className="rounded-lg border border-gray-100 overflow-hidden">
-                {/* Table header */}
-                <div className="grid grid-cols-12 gap-1 bg-gray-50 px-3 py-1.5">
-                  <span className="col-span-5 text-[10px] font-semibold text-gray-500 uppercase">Exercise</span>
-                  <span className="col-span-2 text-[10px] font-semibold text-gray-500 uppercase text-center">Sets</span>
-                  <span className="col-span-2 text-[10px] font-semibold text-gray-500 uppercase text-center">Reps</span>
-                  <span className="col-span-3 text-[10px] font-semibold text-gray-500 uppercase">Cue</span>
+      {/* Recommended Products */}
+      {nextSteps.recommendedProducts?.length > 0 && (
+        <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-5">
+          <p className="text-[15px] font-bold text-slate-900 mb-3">
+            {nextSteps.recommendedProducts.length} items recommended for you
+          </p>
+          <div className="space-y-2">
+            {nextSteps.recommendedProducts.map((product, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-xl bg-slate-50 p-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-medium text-slate-900 truncate">
+                    {product.productName}
+                  </p>
+                  {product.price != null && (
+                    <p className="text-[13px] text-slate-400 mt-0.5">${product.price}</p>
+                  )}
                 </div>
-                {/* Table rows */}
-                {day.exercises.map((ex, eIdx) => (
-                  <div key={eIdx} className={`grid grid-cols-12 gap-1 px-3 py-2 ${eIdx % 2 === 0 ? "bg-white" : "bg-gray-50/50"}`}>
-                    <span className="col-span-5 text-xs text-gray-900 font-medium">{ex.name}</span>
-                    <span className="col-span-2 text-xs text-gray-600 text-center">{ex.sets || "-"}</span>
-                    <span className="col-span-2 text-xs text-gray-600 text-center">{ex.reps || "-"}</span>
-                    <span className="col-span-3 text-xs text-gray-500 truncate">{ex.cue || "-"}</span>
-                  </div>
-                ))}
               </div>
-            )}
+            ))}
           </div>
-        ))}
+          <p className="text-[12px] text-slate-400 text-center mt-3">
+            Member-exclusive pricing. You can always order independently.
+          </p>
+        </div>
+      )}
+
+      {/* Disclaimer */}
+      <div className="rounded-2xl bg-slate-50 p-4">
+        <p className="text-[12px] text-slate-400 leading-relaxed">
+          {nextSteps.disclaimer ||
+            "The scores generated under Health Optimization, Nutrition, and Lifestyle are based on your self-reported data and biomarkers. They are not a diagnosis. Always consult your physician before making changes to your health regimen."}
+        </p>
       </div>
     </div>
   );
 }
 
-/* ── Achievement Criteria Display ───────────────────────── */
-function AchievementCriteria({ criteria }) {
-  if (!criteria?.length) return null;
-  return (
-    <div className="mt-2">
-      <p className="text-xs font-bold text-gray-900 mb-1.5">Achievement Criteria:</p>
-      <div className="space-y-1">
-        {criteria.map((c, i) => (
-          <div key={i} className="flex items-center gap-2 text-xs">
-            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${c.currentlyMet ? "bg-emerald-100" : "bg-gray-100"}`}>
-              {c.currentlyMet ? (
-                <svg className="w-2.5 h-2.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <span className="w-1 h-1 rounded-full bg-gray-400" />
-              )}
-            </span>
-            <span className={`${c.currentlyMet ? "text-emerald-700" : "text-gray-600"}`}>
-              {c.biomarkerName} {c.operator} {c.threshold}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* ══════════════════════════════════════════════════════════════
+   STICKY BOTTOM BAR
+   ══════════════════════════════════════════════════════════════ */
 
-/* ── Accordion ───────────────────────────────────────────── */
-function AccordionItem({ title, children, defaultOpen = false, isLast = false }) {
-  const [open, setOpen] = useState(defaultOpen);
+function BottomActionBar({ onDownloadPDF }) {
   return (
-    <div className={!isLast ? "border-b border-gray-200" : ""}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-3 cursor-pointer"
-      >
-        <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-        <svg
-          className={`w-3 h-4 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+    <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-gray-100 px-5 py-3 z-40">
+      <div className="max-w-lg mx-auto flex gap-3">
+        <button
+          onClick={onDownloadPDF}
+          className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white text-[14px] font-semibold px-5 py-3 rounded-xl hover:bg-gray-800 transition-all duration-200 cursor-pointer"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      <div className={`overflow-hidden transition-all duration-200 ${open ? "max-h-[2000px] opacity-100 pb-4" : "max-h-0 opacity-0"}`}>
-        {children}
+          <Download size={16} />
+          Download PDF
+        </button>
+        <button
+          onClick={() => {
+            if (navigator.share) {
+              navigator.share({ title: "My Action Plan", url: window.location.href });
+            }
+          }}
+          className="flex items-center justify-center gap-2 border border-gray-100 text-slate-700 text-[14px] font-semibold px-5 py-3 rounded-xl hover:bg-slate-50 transition-all duration-200 cursor-pointer"
+        >
+          <Share2 size={16} />
+          Share
+        </button>
       </div>
     </div>
   );
 }
 
-/* ── Supplement Card ─────────────────────────────────────── */
-function SupplementCard({ supplement }) {
-  return (
-    <div className="rounded-xl bg-gray-50 p-4 space-y-1.5">
-      <h4 className="font-bold text-gray-900 text-sm">{supplement.name}</h4>
-      {supplement.whatItIs && (
-        <p className="text-xs text-gray-600 leading-relaxed">
-          <span className="font-semibold text-gray-800">What it is: </span>{supplement.whatItIs}
-        </p>
-      )}
-      {supplement.whyItMatters && (
-        <p className="text-xs text-gray-600 leading-relaxed">
-          <span className="font-semibold text-gray-800">Why this matters: </span>{supplement.whyItMatters}
-        </p>
-      )}
-      {supplement.howToTake && (
-        <p className="text-xs text-gray-600 leading-relaxed">
-          <span className="font-semibold text-gray-800">How to take it: </span>{supplement.howToTake}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/* ── Product Card ────────────────────────────────────────── */
-function ProductCard({ product }) {
-  return (
-    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 truncate">{product.productName}</p>
-        {product.price != null && (
-          <p className="text-xs text-gray-500 mt-0.5">${product.price}</p>
-        )}
-      </div>
-      <div className="w-11 h-11 rounded-lg bg-gray-100 shrink-0 ml-3 overflow-hidden">
-        {product.imageUrl ? (
-          <Image src={product.imageUrl} alt={product.productName} width={44} height={44} className="object-cover w-full h-full" />
-        ) : (
-          <div className="w-full h-full bg-gray-200 rounded-lg" />
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════ */
-/*  MAIN PAGE                                                */
-/* ══════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   MAIN PAGE
+   ══════════════════════════════════════════════════════════════ */
 
 export default function ActionPlanPage() {
   const params = useParams();
@@ -788,37 +1443,38 @@ export default function ActionPlanPage() {
     }
   };
 
-  /* ── Loading ── */
+  /* ── Loading state ── */
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
         <Navbar backHref="/dashboard" />
         <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-gray-500">Loading your action plan...</p>
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="w-10 h-10 border-2 border-gray-100 rounded-full" />
+              <div className="absolute inset-0 w-10 h-10 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+            </div>
+            <p className="text-[14px] text-gray-500">Loading your action plan...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  /* ── Error (no plan) ── */
+  /* ── Error state (no plan) ── */
   if (error && !plan) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-[#F8FAFB] flex flex-col">
         <Navbar backHref="/dashboard" />
         <div className="flex-1 flex items-center justify-center px-6">
-          <div className="max-w-sm text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto">
-              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+          <div className="max-w-sm text-center space-y-5">
+            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto">
+              <FileText size={28} className="text-slate-400" />
             </div>
-            <p className="text-sm text-gray-500 leading-relaxed">{error}</p>
+            <p className="text-[15px] text-slate-500 leading-relaxed">{error}</p>
             <button
               onClick={() => router.push("/dashboard")}
-              className="bg-black text-white text-sm px-6 py-2.5 rounded-xl hover:bg-gray-900 transition-colors cursor-pointer"
+              className="bg-gray-900 text-white text-[14px] font-semibold px-6 py-3 rounded-xl hover:bg-gray-800 transition-all duration-200 cursor-pointer"
             >
               Back to Dashboard
             </button>
@@ -828,7 +1484,7 @@ export default function ActionPlanPage() {
     );
   }
 
-  /* ── Data ── */
+  /* ── Extract data ── */
   const userName = user?.firstName || "Member";
   const overview = plan?.overview || {};
   const healthReport = plan?.healthReport || {};
@@ -842,22 +1498,16 @@ export default function ActionPlanPage() {
   const watchOuts = plan?.watchOuts || [];
   const dailySchedule = plan?.dailySchedule || null;
   const trainingProtocol = plan?.trainingProtocol || null;
-  const totalProtocolItems = [
-    ...(protocol.lifestyle?.sleep || []),
-    ...(protocol.lifestyle?.exercise || []),
-    ...(protocol.lifestyle?.stress || []),
-    ...(protocol.nutrition || []),
-    ...(protocol.supplements || []),
-    ...(protocol.diagnosticTests || []),
-  ].length;
+  const isReady = plan?.status === "ready" || plan?.status === "approved";
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-inter">
+    <div className="min-h-screen bg-[#F8FAFB] flex flex-col">
       <Navbar backHref="/dashboard" />
 
+      {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-16 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-xl shadow-lg text-white text-sm z-50 ${
+          className={`fixed top-16 left-1/2 -translate-x-1/2 px-5 py-3 rounded-xl shadow-lg text-white text-[14px] font-medium z-50 transition-all duration-300 ${
             toast.type === "success" ? "bg-emerald-500" : "bg-red-500"
           }`}
         >
@@ -865,477 +1515,105 @@ export default function ActionPlanPage() {
         </div>
       )}
 
-      <main className="flex-1 max-w-md mx-auto w-full px-5 pt-6 pb-20 space-y-6">
-
-        {/* ════ Page Header ════ */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {userName}&apos;s Action Plan
-          </h1>
-          {plan?.generatedAt && (
-            <p className="text-sm text-gray-500 mt-1">
-              {new Date(plan.generatedAt).toLocaleDateString("en-US", {
-                year: "numeric", month: "short", day: "2-digit",
-              })}
-            </p>
-          )}
+      <main className="flex-1 max-w-lg mx-auto w-full">
+        {/* ════ Hero Section ════ */}
+        <div className="px-5">
+          <HeroSection userName={userName} plan={plan} healthReport={healthReport} />
         </div>
 
-        {/* ════ Section 1: Overview ════ */}
-        <section className="space-y-5">
-          <SectionBanner number={1} total={5} title="Overview" index={0} />
+        {/* ════ Content Sections ════ */}
+        <div className="px-5 pb-28 space-y-8 mt-8">
+          {/* ── Clinical Thesis ── */}
+          <ClinicalThesisCard clinicalThesis={clinicalThesis} />
 
-          <p className="text-sm text-gray-700 leading-relaxed">
-            {overview.intro || "At the core of your Cyborg Health experience is your personal report, which will step through:"}
-          </p>
+          {/* ── Category Grades ── */}
+          <CategoryGradePills categoryGrades={categoryGrades} />
 
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">Health Report</h3>
-              <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
-                An explanation of your Cyborg Score, biological age and biomarkers which track your health across 7 dimensions.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">Monitored Issues</h3>
-              <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
-                The core issues we are monitoring as part of your health based on your data, as well as a root cause analysis.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">Protocol</h3>
-              <p className="text-xs text-gray-600 leading-relaxed mt-0.5">
-                Your custom recommendations and next steps you can take to superpower your health.
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-sm text-gray-700 mb-2">Here&apos;s the data we reviewed to create your annual report:</p>
-            <ul className="space-y-1.5">
-              {(overview.dataSources || [
-                "Latest and historical blood test results",
-                "Messaging with your care team and Cyborg AI",
-                "Your health intake survey responses",
-              ]).map((ds, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                  <span className="w-1 h-1 rounded-full bg-gray-400 mt-2 shrink-0" />
-                  {ds}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* ════ Section 2: Health Report ════ */}
-        <section className="space-y-5">
-          <SectionBanner number={2} total={5} title="Health Report" index={1} />
-
-          <p className="text-sm text-gray-600 leading-relaxed">
-            Your Health Report distills your Cyborg Score, Biological Age, and Biomarkers to show how your health tracks across 7 categories.
-          </p>
-
-          {/* Score Cards */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-              <p className="text-xs font-medium text-gray-500">Cyborg Score</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
-                {healthReport.cyborgScore ?? "—"}
-              </p>
-              {healthReport.cyborgScore != null && healthReport.cyborgScore >= 80 && (
-                <p className="text-[10px] text-emerald-600 mt-1">You&apos;re very healthy. Keep going!</p>
-              )}
-            </div>
-            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-              <p className="text-xs font-medium text-gray-500">Biological age</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">
-                {healthReport.bioAge?.phenoAge != null
-                  ? healthReport.bioAge.phenoAge.toFixed(1)
-                  : "—"}
-              </p>
-              {healthReport.bioAge?.delta != null && (
-                <p className={`text-[10px] mt-1 ${healthReport.bioAge.delta <= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                  {healthReport.bioAge.delta <= 0
-                    ? `${Math.abs(healthReport.bioAge.delta).toFixed(1)} years younger than your actual age`
-                    : `${healthReport.bioAge.delta.toFixed(1)} years older than your actual age`}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Biomarker Summary Bar */}
-          {healthReport.markerCounts && (
-            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-              <p className="text-xs font-semibold text-gray-800 mb-3">Biomarkers</p>
-              <div className="flex items-baseline gap-6">
-                {[
-                  { label: "Total", value: healthReport.markerCounts.total, color: "" },
-                  { label: "Optimal", value: healthReport.markerCounts.optimal, color: "text-blue-600" },
-                  { label: "Normal", value: healthReport.markerCounts.inRange, color: "text-emerald-600" },
-                  { label: "Out of Range", value: healthReport.markerCounts.outOfRange, color: "text-red-500" },
-                ].map(({ label, value: v, color }) => (
-                  <div key={label} className="text-center">
-                    <p className={`text-xl font-bold ${color || "text-gray-900"}`}>{v}</p>
-                    <p className="text-[10px] text-gray-500">{label}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex h-1.5 rounded-full overflow-hidden mt-3 bg-gray-100">
-                {healthReport.markerCounts.total > 0 && (
-                  <>
-                    <div className="bg-blue-500" style={{ width: `${(healthReport.markerCounts.optimal / healthReport.markerCounts.total) * 100}%` }} />
-                    <div className="bg-emerald-500" style={{ width: `${(healthReport.markerCounts.inRange / healthReport.markerCounts.total) * 100}%` }} />
-                    <div className="bg-red-500" style={{ width: `${(healthReport.markerCounts.outOfRange / healthReport.markerCounts.total) * 100}%` }} />
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Overview + Category Grades */}
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Overview</h3>
-            <p className="text-sm text-gray-600 leading-relaxed mb-4">
-              We have processed {healthReport.markerCounts?.total || "100+"}  biomarkers to provide you with this comprehensive report.
-            </p>
-
-            {Object.keys(categoryGrades).length > 0 && (
-              <div className="grid grid-cols-2 gap-y-4 gap-x-6">
-                {Object.entries(categoryGrades).map(([key, val]) => (
-                  <GradeCircle key={key} grade={val?.grade || "—"} label={key} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Disclaimer */}
-          <div className="rounded-xl bg-gray-50 p-4">
-            <p className="text-xs font-semibold text-gray-700 mb-2">Disclaimer</p>
-            <p className="text-[10px] text-gray-500 leading-relaxed">
-              {nextSteps.disclaimer ||
-                "The scores generated under Health Optimization, Nutrition, and Lifestyle are based on your self-reported data and biomarkers. They are not a diagnosis. Always consult your physician before making changes to your health regimen."}
-            </p>
-          </div>
-        </section>
-
-        {/* ════ Clinical Thesis ════ */}
-        <ClinicalThesisCard clinicalThesis={clinicalThesis} />
-
-        {/* ════ Section 3: Monitored Issues ════ */}
-        <section className="space-y-5">
-          <SectionBanner number={3} total={5} title="Monitored Issues" index={2} />
-
-          {isPendingReview ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-              <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
-              <h3 className="text-base font-semibold text-gray-900 mb-1">Your doctor is reviewing your health plan</h3>
-              <p className="text-sm text-gray-500">You&apos;ll be notified when your personalized goals are ready.</p>
-            </div>
-          ) : (
-            <>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Monitored issues highlight potential health concerns based on your test results to focus on. Think of it as starting points for your health roadmap—pinpointing areas for proactive care.
-              </p>
-
-              <p className="text-sm text-gray-700">
-                {monitoredIssues.length > 0
-                  ? `We detected ${monitoredIssues.length} monitored issue${monitoredIssues.length !== 1 ? "s" : ""} you should be aware of.`
-                  : "No monitored issues detected. Your biomarkers look healthy."}
-              </p>
-
-              <div className="space-y-6">
-                {monitoredIssues.map((issue, idx) => (
-                  <div key={issue.goalId || idx} className="space-y-4">
-                    {idx > 0 && <hr className="border-gray-200" />}
-
-                    {/* Issue Header */}
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-lg font-bold text-gray-900 leading-snug flex-1">
-                        {idx + 1}. {issue.title}
-                      </h3>
-                      <div className="flex flex-col items-end gap-1 shrink-0 pt-0.5">
-                        <PriorityBadge priority={issue.priority} />
-                        <DeltaBadge delta={issue.delta} />
-                        <GoalStatusBadge status={issue.status} />
-                      </div>
-                    </div>
-
-                    {/* Your result */}
-                    {issue.description && (
-                      <div>
-                        <p className="text-xs font-bold text-gray-900 mb-1">Your result:</p>
-                        <p className="text-sm text-gray-600 leading-relaxed">{issue.description}</p>
-                      </div>
-                    )}
-
-                    {/* Biomarker Evidence */}
-                    {issue.biomarkerEvidence?.length > 0 && (
-                      <div className="space-y-2">
-                        {issue.biomarkerEvidence.map((bm, i) => (
-                          <BiomarkerCard key={i} biomarker={bm} />
-                        ))}
-                      </div>
-                    )}
-
-                    {/* What this means */}
-                    {issue.whatThisMeans && (
-                      <div>
-                        <p className="text-xs font-bold text-gray-900 mb-1">What this means:</p>
-                        <p className="text-sm text-gray-600 leading-relaxed">{issue.whatThisMeans}</p>
-                      </div>
-                    )}
-
-                    {/* Potential Causes */}
-                    {issue.potentialCauses && (
-                      <div>
-                        <p className="text-xs font-bold text-gray-900 mb-1">Potential Causes:</p>
-                        <p className="text-sm text-gray-600 leading-relaxed">{issue.potentialCauses}</p>
-                      </div>
-                    )}
-
-                    {/* Recommended Actions */}
-                    {issue.recommendedActions?.length > 0 && (
-                      <div>
-                        <p className="text-xs font-bold text-gray-900 mb-2">Recommended Actions:</p>
-                        <div className="space-y-3">
-                          {issue.recommendedActions.map((action, i) => (
-                            <div key={i} className="text-sm text-gray-700 leading-relaxed">
-                              <span className="font-bold text-gray-900">
-                                {action.label}:
-                              </span>{" "}
-                              {action.detail}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Achievement Criteria */}
-                    <AchievementCriteria criteria={issue.achievementCriteria} />
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </section>
-
-        {/* ════ Phased Timeline ════ */}
-        {!isPendingReview && checkpoints.length > 0 && (
-          <section className="space-y-5">
-            <PhasedTimeline checkpoints={checkpoints} />
-          </section>
-        )}
-
-        {/* ════ Daily Supplement Schedule ════ */}
-        {!isPendingReview && dailySchedule && (
-          <section className="space-y-5">
-            <DailyScheduleSection dailySchedule={dailySchedule} />
-          </section>
-        )}
-
-        {/* ════ Clinical Watch-Outs ════ */}
-        {!isPendingReview && watchOuts.length > 0 && (
+          {/* ── Monitored Issues / Goals ── */}
           <section className="space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Important Watch-Outs</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Key interactions, contraindications, and things to monitor as you follow your protocol.
-            </p>
-            <div className="space-y-3">
-              {watchOuts.map((wo, i) => (
-                <WatchOutCard key={i} watchOut={wo} />
-              ))}
-            </div>
-          </section>
-        )}
+            <SectionHeader
+              icon={<Activity size={20} />}
+              label="Goals"
+              title="Monitored Issues"
+              subtitle={
+                isPendingReview
+                  ? undefined
+                  : monitoredIssues.length > 0
+                  ? `${monitoredIssues.length} issue${monitoredIssues.length !== 1 ? "s" : ""} identified from your biomarkers.`
+                  : "No monitored issues detected. Your biomarkers look healthy."
+              }
+            />
 
-        {/* ════ Training Protocol ════ */}
-        {!isPendingReview && trainingProtocol && (
-          <section className="space-y-5">
-            <TrainingProtocolSection trainingProtocol={trainingProtocol} />
-          </section>
-        )}
-
-        {/* ════ Section 4: Protocol ════ */}
-        {!isPendingReview && (
-          <section className="space-y-5">
-            <SectionBanner number={4} total={5} title="Protocol" index={3} />
-
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Cyborg has designed a personal protocol to help target your health goals and address your monitored issues. By following this protocol and re-testing your blood panel, you should see great progress.
-            </p>
-
-            <div>
-              <AccordionItem title="Lifestyle" defaultOpen>
-                <div className="space-y-4">
-                  {protocol.lifestyle?.sleep?.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Sleep</h4>
-                      <ul className="space-y-1.5">
-                        {protocol.lifestyle.sleep.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-gray-700 leading-relaxed">
-                            <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 shrink-0" />
-                            {item.text}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {protocol.lifestyle?.exercise?.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Exercise</h4>
-                      <ul className="space-y-1.5">
-                        {protocol.lifestyle.exercise.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-gray-700 leading-relaxed">
-                            <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 shrink-0" />
-                            {item.text}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {protocol.lifestyle?.stress?.length > 0 && (
-                    <div>
-                      <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-1.5">Stress</h4>
-                      <ul className="space-y-1.5">
-                        {protocol.lifestyle.stress.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-gray-700 leading-relaxed">
-                            <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 shrink-0" />
-                            {item.text}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+            {isPendingReview ? (
+              <div className="rounded-2xl bg-white shadow-sm border border-gray-100 p-8 text-center">
+                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Clock size={24} className="text-amber-500" />
                 </div>
-              </AccordionItem>
-
-              <AccordionItem title="Nutrition">
-                <ul className="space-y-1.5">
-                  {(protocol.nutrition || []).map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-gray-700 leading-relaxed">
-                      <span className="w-1 h-1 rounded-full bg-gray-400 mt-1.5 shrink-0" />
-                      {item.text}
-                    </li>
-                  ))}
-                </ul>
-              </AccordionItem>
-
-              <AccordionItem title="Supplements">
-                <div className="space-y-3">
-                  {(protocol.supplements || []).map((supp, i) => (
-                    <SupplementCard key={i} supplement={supp} />
-                  ))}
-                  {(!protocol.supplements || protocol.supplements.length === 0) && (
-                    <p className="text-xs text-gray-500">No supplements recommended based on your current biomarkers.</p>
-                  )}
-                </div>
-              </AccordionItem>
-
-              <AccordionItem title="Diagnostic Tests" isLast>
-                <div className="space-y-3">
-                  {(protocol.diagnosticTests || []).map((test, i) => (
-                    <div key={i} className="rounded-xl bg-gray-50 p-4 space-y-1.5">
-                      <h4 className="font-bold text-gray-900 text-sm">{test.name}</h4>
-                      {test.whatItIs && (
-                        <p className="text-xs text-gray-600 leading-relaxed">
-                          <span className="font-semibold text-gray-800">What it is: </span>{test.whatItIs}
-                        </p>
-                      )}
-                      {test.whyTestIt && (
-                        <p className="text-xs text-gray-600 leading-relaxed">
-                          <span className="font-semibold text-gray-800">Why test it: </span>{test.whyTestIt}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </AccordionItem>
-            </div>
-          </section>
-        )}
-
-        {/* ════ Section 5: Next Steps ════ */}
-        {!isPendingReview && (
-          <section className="space-y-5">
-            <SectionBanner number={5} total={5} title="Next Steps" index={4} />
-
-            <div className="space-y-4 text-sm text-gray-700">
-              {nextSteps.text && <p className="leading-relaxed">{nextSteps.text}</p>}
-
-              {nextSteps.followUpTimeline && (
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  To review the steps and track improvements, schedule your follow-up blood panel in {nextSteps.followUpTimeline} ensuring interventions are effective and making adjustments as needed.
+                <h3 className="text-[16px] font-bold text-slate-900 mb-1.5">
+                  Your doctor is reviewing your plan
+                </h3>
+                <p className="text-[14px] text-slate-500">
+                  You&apos;ll be notified when your personalized goals are ready.
                 </p>
-              )}
-
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Consider stocking up on the recommended supplements. You can either order through us at a discounted rate or source them on your own.
-              </p>
-
-              <p className="text-sm text-gray-600 leading-relaxed">
-                If you have any additional questions, feel free to message your personal concierge or ask your Cyborg AI.
-              </p>
-            </div>
-
-            {/* Recommended Products */}
-            {nextSteps.recommendedProducts?.length > 0 && (
-              <div>
-                <h4 className="text-lg font-bold text-gray-900 mb-3">
-                  {nextSteps.recommendedProducts.length} items recommended for you
-                </h4>
-                <div className="space-y-2">
-                  {nextSteps.recommendedProducts.map((product, i) => (
-                    <ProductCard key={i} product={product} />
-                  ))}
-                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {monitoredIssues.map((issue, idx) => (
+                  <MonitoredIssueCard key={issue.goalId || idx} issue={issue} index={idx} />
+                ))}
               </div>
             )}
-
-            {/* View All Protocol Items */}
-            {totalProtocolItems > 0 && (
-              <button className="w-full py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-900 hover:bg-gray-50 transition-colors cursor-pointer">
-                View all {totalProtocolItems} protocol items
-              </button>
-            )}
-
-            {/* Footer */}
-            <div className="text-center space-y-1 pt-2">
-              <p className="text-xs text-gray-500">Products cheaper than Amazon with member exclusive</p>
-              <p className="text-xs text-gray-400">You can always order independently.</p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <button
-                onClick={handleDownloadPDF}
-                className="flex-1 bg-black text-white text-sm px-5 py-3 rounded-xl font-semibold hover:bg-gray-900 transition-colors cursor-pointer"
-              >
-                Download as PDF
-              </button>
-              <button
-                onClick={() => router.push("/dashboard")}
-                className="flex-1 border border-gray-200 text-gray-800 text-sm px-5 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                Back to Dashboard
-              </button>
-            </div>
-
-            {/* Cyborg Logo */}
-            <div className="flex justify-center pt-6 pb-4">
-              <Image
-                src="/images/cyborg-logo-black.png"
-                alt="Cyborg"
-                width={87}
-                height={15}
-                className="opacity-40"
-                onError={(e) => { e.target.style.display = "none"; }}
-              />
-            </div>
           </section>
-        )}
+
+          {/* ── Phased Timeline ── */}
+          {!isPendingReview && checkpoints.length > 0 && (
+            <PhasedTimeline checkpoints={checkpoints} />
+          )}
+
+          {/* ── Daily Schedule ── */}
+          {!isPendingReview && dailySchedule && (
+            <DailyScheduleSection dailySchedule={dailySchedule} />
+          )}
+
+          {/* ── Watch-Outs ── */}
+          {!isPendingReview && watchOuts.length > 0 && (
+            <section className="space-y-4">
+              <SectionHeader
+                icon={<Shield size={20} />}
+                label="Watch-Outs"
+                title="Important Watch-Outs"
+                subtitle="Key interactions, contraindications, and things to monitor."
+              />
+              <div className="space-y-3">
+                {watchOuts.map((wo, i) => (
+                  <WatchOutCard key={i} watchOut={wo} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ── Training Protocol ── */}
+          {!isPendingReview && trainingProtocol && (
+            <TrainingProtocolSection trainingProtocol={trainingProtocol} />
+          )}
+
+          {/* ── Protocol (tabbed) ── */}
+          {!isPendingReview && <ProtocolSection protocol={protocol} />}
+
+          {/* ── Next Steps ── */}
+          {!isPendingReview && (
+            <NextStepsSection
+              nextSteps={nextSteps}
+              protocol={protocol}
+              onDownloadPDF={handleDownloadPDF}
+              router={router}
+            />
+          )}
+        </div>
       </main>
+
+      {/* ── Sticky Bottom Bar ── */}
+      {isReady && <BottomActionBar onDownloadPDF={handleDownloadPDF} />}
     </div>
   );
 }

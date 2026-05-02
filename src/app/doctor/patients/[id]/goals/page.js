@@ -119,7 +119,7 @@ function ClinicalThesisCard({ thesis }) {
       >
         <div className="flex items-center gap-2 min-w-0">
           <FileText className="h-4 w-4 text-[#6B7280] flex-shrink-0" />
-          <span className="text-[13px] font-semibold text-black truncate">
+          <span className="text-[15px] font-semibold text-black truncate">
             Clinical Thesis
           </span>
         </div>
@@ -132,12 +132,12 @@ function ClinicalThesisCard({ thesis }) {
       {expanded && (
         <div className="px-4 pb-4 border-t border-[#F3F4F6]">
           {thesis.title && (
-            <h4 className="text-[14px] font-semibold text-black mt-3 mb-1.5">
+            <h4 className="text-[15px] font-semibold text-black mt-3 mb-1.5">
               {thesis.title}
             </h4>
           )}
           {thesis.reasoning && (
-            <p className="text-[12px] text-[#4B5563] leading-relaxed">
+            <p className="text-[15px] text-[#4B5563] leading-relaxed">
               {thesis.reasoning}
             </p>
           )}
@@ -164,7 +164,7 @@ function CheckpointTimeline({ checkpoints }) {
             <div className="text-[10px] font-semibold text-[#6B7280] mb-0.5">
               Wk {cp.weekNumber}
             </div>
-            <div className="text-[12px] font-medium text-black leading-tight truncate">
+            <div className="text-[15px] font-medium text-black leading-tight truncate">
               {cp.label}
             </div>
             {cp.description && (
@@ -198,10 +198,10 @@ function WatchOutsBanner({ watchOuts }) {
       >
         <div className="flex items-center gap-2 min-w-0">
           <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
-          <span className="text-[13px] font-semibold text-black">
+          <span className="text-[15px] font-semibold text-black">
             Watch-Outs
           </span>
-          <span className="text-[11px] text-[#9CA3AF] font-medium">
+          <span className="text-[15px] text-[#9CA3AF] font-medium">
             ({watchOuts.length})
           </span>
         </div>
@@ -228,18 +228,18 @@ function WatchOutsBanner({ watchOuts }) {
                   />
                   <div className="min-w-0">
                     <p
-                      className="text-[12px] font-semibold"
+                      className="text-[15px] font-semibold"
                       style={{ color: sev.text }}
                     >
                       {wo.title}
                     </p>
                     {wo.risk && (
-                      <p className="text-[11px] mt-0.5" style={{ color: sev.text }}>
+                      <p className="text-[15px] mt-0.5" style={{ color: sev.text }}>
                         <span className="font-medium">Risk:</span> {wo.risk}
                       </p>
                     )}
                     {wo.mitigation && (
-                      <p className="text-[11px] mt-0.5" style={{ color: sev.text }}>
+                      <p className="text-[15px] mt-0.5" style={{ color: sev.text }}>
                         <span className="font-medium">Mitigation:</span> {wo.mitigation}
                       </p>
                     )}
@@ -259,7 +259,7 @@ function AchievementCriteria({ criteria }) {
 
   return (
     <div>
-      <label className="text-[9px] uppercase tracking-wider text-[#B0B0B0] block mb-1.5">
+      <label className="text-[12px] uppercase tracking-wider text-[#B0B0B0] block mb-1.5">
         Achievement Criteria
       </label>
       <div className="space-y-1">
@@ -279,7 +279,7 @@ function AchievementCriteria({ criteria }) {
                 <XCircle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
               )}
               <span
-                className="text-[11px] font-medium"
+                className="text-[15px] font-medium"
                 style={{ color: c.currentlyMet ? "#166534" : "#991B1B" }}
               >
                 {c.biomarkerName} {op} {c.threshold}
@@ -337,7 +337,7 @@ function GoalStatusActions({ goal, isEditable, onStatusChange }) {
                   onStatusChange(goal._id, action.value);
                   setOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-[#374151] hover:bg-gray-50 transition-colors text-left"
+                className="w-full flex items-center gap-2 px-3 py-2 text-[15px] text-[#374151] hover:bg-gray-50 transition-colors text-left"
               >
                 <Icon className="h-3.5 w-3.5 text-[#6B7280]" />
                 {action.label}
@@ -636,13 +636,13 @@ export default function GoalsProtocolPage() {
         {planStatus === "pending_review" && (
           <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">
             <Clock className="h-4 w-4 text-amber-600 flex-shrink-0" />
-            <span className="text-[13px] text-amber-800">Pending your review. Edit goals and approve when ready.</span>
+            <span className="text-[15px] text-amber-800">Pending your review. Edit goals and approve when ready.</span>
           </div>
         )}
         {planStatus === "draft" && (
           <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-4">
             <Pencil className="h-4 w-4 text-orange-600 flex-shrink-0" />
-            <span className="text-[13px] text-orange-800">
+            <span className="text-[15px] text-orange-800">
               Draft saved{draftSavedAt ? ` at ${new Date(draftSavedAt).toLocaleTimeString()}` : ""}. Approve when ready.
             </span>
           </div>
@@ -650,7 +650,7 @@ export default function GoalsProtocolPage() {
         {planStatus === "approved" && (
           <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4">
             <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-            <span className="text-[13px] text-green-800">
+            <span className="text-[15px] text-green-800">
               Approved{approvedAt ? ` on ${new Date(approvedAt).toLocaleDateString()}` : ""}. Patient can see these goals.
             </span>
           </div>
@@ -658,7 +658,7 @@ export default function GoalsProtocolPage() {
         {planStatus === "superseded" && (
           <div className="flex items-center gap-2 bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 mb-4">
             <AlertCircle className="h-4 w-4 text-gray-500 flex-shrink-0" />
-            <span className="text-[13px] text-gray-600">This plan was superseded by a newer report.</span>
+            <span className="text-[15px] text-gray-600">This plan was superseded by a newer report.</span>
           </div>
         )}
 
@@ -707,7 +707,7 @@ export default function GoalsProtocolPage() {
           ))}
           {/* Save status indicator */}
           {saveStatus && activeTab === "goals" && (
-            <span className="ml-auto text-[12px] text-[#9CA3AF] flex items-center gap-1">
+            <span className="ml-auto text-[15px] text-[#9CA3AF] flex items-center gap-1">
               {saveStatus === "saving" && <><Loader2 className="h-3 w-3 animate-spin" /> Saving...</>}
               {saveStatus === "saved" && <><Check className="h-3 w-3 text-green-500" /> Saved</>}
               {saveStatus === "error" && <><AlertCircle className="h-3 w-3 text-red-500" /> Save failed</>}
@@ -729,8 +729,8 @@ export default function GoalsProtocolPage() {
             ) : planStatus === "pending" || planStatus === "generating" ? (
               <div className="text-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-3" />
-                <p className="text-[14px] text-gray-500">Goals are being generated...</p>
-                <p className="text-[12px] text-gray-400 mt-1">This may take a minute.</p>
+                <p className="text-[15px] text-gray-500">Goals are being generated...</p>
+                <p className="text-[15px] text-gray-400 mt-1">This may take a minute.</p>
               </div>
             ) : (
               <>
@@ -740,7 +740,7 @@ export default function GoalsProtocolPage() {
                     <button
                       key={filter}
                       onClick={() => setPriorityFilter(filter)}
-                      className={`px-4 py-1.5 rounded-full text-[14px] font-medium whitespace-nowrap transition-colors ${
+                      className={`px-4 py-1.5 rounded-full text-[15px] font-medium whitespace-nowrap transition-colors ${
                         priorityFilter === filter
                           ? "bg-black text-white"
                           : "bg-white text-[#495565] border border-gray-300 hover:bg-gray-50"
@@ -775,14 +775,14 @@ export default function GoalsProtocolPage() {
                           >
                             <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                               <span
-                                className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0"
+                                className="inline-block px-2.5 py-0.5 rounded-full text-[15px] font-medium flex-shrink-0"
                                 style={{ backgroundColor: ps.bg, color: ps.color }}
                               >
                                 {getGoalField(goal, "priority")}
                               </span>
                               <StatusBadge status={goal.status} />
                               <DeltaBadge delta={goal.delta} />
-                              <span className="text-[14px] font-semibold text-black truncate">
+                              <span className="text-[15px] font-semibold text-black truncate">
                                 {getGoalField(goal, "title")}
                               </span>
                             </div>
@@ -814,12 +814,12 @@ export default function GoalsProtocolPage() {
                               {/* Editable: Title */}
                               {isEditable ? (
                                 <div>
-                                  <label className="text-[9px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Title</label>
+                                  <label className="text-[12px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Title</label>
                                   <input
                                     type="text"
                                     value={getGoalField(goal, "title")}
                                     onChange={(e) => trackEdit(goal._id, "title", e.target.value)}
-                                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md text-[14px] font-semibold bg-[#FAFAFA] focus:border-black focus:ring-1 focus:ring-black/10 focus:bg-white outline-none transition-all"
+                                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md text-[15px] font-semibold bg-[#FAFAFA] focus:border-black focus:ring-1 focus:ring-black/10 focus:bg-white outline-none transition-all"
                                   />
                                 </div>
                               ) : null}
@@ -827,7 +827,7 @@ export default function GoalsProtocolPage() {
                               {/* Editable: Priority */}
                               {isEditable && (
                                 <div>
-                                  <label className="text-[9px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Priority</label>
+                                  <label className="text-[12px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Priority</label>
                                   <div className="flex gap-2">
                                     {["High", "Medium", "Low"].map((p) => {
                                       const active = getGoalField(goal, "priority") === p;
@@ -836,7 +836,7 @@ export default function GoalsProtocolPage() {
                                         <button
                                           key={p}
                                           onClick={() => trackEdit(goal._id, "priority", p)}
-                                          className="px-3 py-1.5 rounded-full text-[12px] font-medium transition-all"
+                                          className="px-3 py-1.5 rounded-full text-[15px] font-medium transition-all"
                                           style={active
                                             ? { backgroundColor: s.color, color: "#fff" }
                                             : { backgroundColor: "#F3F4F6", color: "#6B7280" }
@@ -852,71 +852,73 @@ export default function GoalsProtocolPage() {
 
                               {/* Editable: Description */}
                               <div>
-                                <label className="text-[9px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Description</label>
+                                <label className="text-[12px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Description</label>
                                 {isEditable ? (
                                   <textarea
                                     ref={(el) => autoResize(el)}
                                     value={getGoalField(goal, "description") || ""}
                                     onChange={(e) => { trackEdit(goal._id, "description", e.target.value); autoResize(e.target); }}
                                     rows={2}
-                                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md text-[12px] bg-[#FAFAFA] focus:border-black focus:ring-1 focus:ring-black/10 focus:bg-white outline-none transition-all overflow-hidden"
+                                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md text-[15px] bg-[#FAFAFA] focus:border-black focus:ring-1 focus:ring-black/10 focus:bg-white outline-none transition-all overflow-hidden"
                                   />
                                 ) : (
-                                  <p className="text-[12px] text-[#4B5563]">{goal.description || "—"}</p>
+                                  <p className="text-[15px] text-[#4B5563]">{goal.description || "—"}</p>
                                 )}
                               </div>
 
                               {/* Editable: What This Means */}
                               <div>
-                                <label className="text-[9px] uppercase tracking-wider text-[#9CA3AF] block mb-1">What This Means</label>
+                                <label className="text-[12px] uppercase tracking-wider text-[#9CA3AF] block mb-1">What This Means</label>
                                 {isEditable ? (
                                   <textarea
                                     ref={(el) => autoResize(el)}
                                     value={getGoalField(goal, "whatThisMeans") || ""}
                                     onChange={(e) => { trackEdit(goal._id, "whatThisMeans", e.target.value); autoResize(e.target); }}
                                     rows={2}
-                                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md text-[12px] bg-[#FAFAFA] focus:border-black focus:ring-1 focus:ring-black/10 focus:bg-white outline-none transition-all overflow-hidden"
+                                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md text-[15px] bg-[#FAFAFA] focus:border-black focus:ring-1 focus:ring-black/10 focus:bg-white outline-none transition-all overflow-hidden"
                                   />
                                 ) : (
-                                  <p className="text-[12px] text-[#4B5563]">{goal.whatThisMeans || "—"}</p>
+                                  <p className="text-[15px] text-[#4B5563]">{goal.whatThisMeans || "—"}</p>
                                 )}
                               </div>
 
                               {/* Editable: Potential Causes */}
                               <div>
-                                <label className="text-[9px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Potential Causes</label>
+                                <label className="text-[12px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Potential Causes</label>
                                 {isEditable ? (
                                   <textarea
                                     ref={(el) => autoResize(el)}
                                     value={getGoalField(goal, "potentialCauses") || ""}
                                     onChange={(e) => { trackEdit(goal._id, "potentialCauses", e.target.value); autoResize(e.target); }}
                                     rows={2}
-                                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md text-[12px] bg-[#FAFAFA] focus:border-black focus:ring-1 focus:ring-black/10 focus:bg-white outline-none transition-all overflow-hidden"
+                                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md text-[15px] bg-[#FAFAFA] focus:border-black focus:ring-1 focus:ring-black/10 focus:bg-white outline-none transition-all overflow-hidden"
                                   />
                                 ) : (
-                                  <p className="text-[12px] text-[#4B5563]">{goal.potentialCauses || "—"}</p>
+                                  <p className="text-[15px] text-[#4B5563]">{goal.potentialCauses || "—"}</p>
                                 )}
                               </div>
 
                               {/* Editable: Recommended Actions */}
                               <div>
-                                <label className="text-[9px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Recommended Actions</label>
+                                <label className="text-[12px] uppercase tracking-wider text-[#9CA3AF] block mb-1">Recommended Actions</label>
                                 {(getGoalField(goal, "recommendedActions") || []).map((action, idx) => (
-                                  <div key={idx} className="flex items-start gap-2 mb-1">
-                                    <span className="text-[11px] text-[#9CA3AF] font-semibold mt-1.5 flex-shrink-0">{idx + 1}.</span>
+                                  <div key={idx} className="flex items-start gap-2 mb-2">
+                                    <span className="text-[15px] text-[#9CA3AF] font-semibold mt-1 flex-shrink-0">{idx + 1}.</span>
                                     {isEditable ? (
-                                      <input
-                                        type="text"
+                                      <textarea
+                                        rows={1}
+                                        ref={(el) => autoResize(el)}
                                         value={action.detail || action.label || ""}
                                         onChange={(e) => {
                                           const actions = [...(getGoalField(goal, "recommendedActions") || [])];
                                           actions[idx] = { ...actions[idx], detail: e.target.value };
                                           trackEdit(goal._id, "recommendedActions", actions);
+                                          autoResize(e.target);
                                         }}
-                                        className="flex-1 px-2 py-1 border border-[#E5E7EB] rounded text-[12px] bg-[#FAFAFA] focus:border-black focus:bg-white outline-none transition-all"
+                                        className="flex-1 w-full px-2 py-1.5 border border-[#E5E7EB] rounded text-[15px] bg-[#FAFAFA] focus:border-black focus:bg-white outline-none transition-all resize-none overflow-hidden"
                                       />
                                     ) : (
-                                      <span className="text-[12px] text-[#374151]">{action.label} {action.detail}</span>
+                                      <span className="text-[15px] text-[#374151] break-words">{action.label} {action.detail}</span>
                                     )}
                                   </div>
                                 ))}
@@ -927,7 +929,7 @@ export default function GoalsProtocolPage() {
                                       actions.push({ number: actions.length + 1, label: "", detail: "" });
                                       trackEdit(goal._id, "recommendedActions", actions);
                                     }}
-                                    className="text-[11px] text-[#6B7280] hover:text-black mt-1 flex items-center gap-1"
+                                    className="text-[15px] text-[#6B7280] hover:text-black mt-1 flex items-center gap-1"
                                   >
                                     <Plus className="h-3 w-3" /> Add action
                                   </button>
@@ -937,7 +939,7 @@ export default function GoalsProtocolPage() {
                               {/* Read-only: Biomarker Evidence with targets and trends */}
                               {goal.biomarkerEvidence?.length > 0 && (
                                 <div>
-                                  <label className="text-[9px] uppercase tracking-wider text-[#B0B0B0] block mb-1">Biomarker Evidence (from report)</label>
+                                  <label className="text-[12px] uppercase tracking-wider text-[#B0B0B0] block mb-1">Biomarker Evidence (from report)</label>
                                   <div className="space-y-1">
                                     {goal.biomarkerEvidence.map((bm, i) => {
                                       const isElevated = bm.flag?.toLowerCase().includes("high") || bm.flag?.toLowerCase().includes("elevated");
@@ -954,21 +956,21 @@ export default function GoalsProtocolPage() {
                                           className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded"
                                           style={{ backgroundColor: bgColor }}
                                         >
-                                          <div className="flex items-center gap-1.5 min-w-0">
+                                          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
                                             <span
-                                              className="text-[10px] font-medium"
+                                              className="text-[14px] font-medium"
                                               style={{ color: textColor }}
                                             >
                                               {bm.name || bm.canonicalName}: {bm.value}{bm.unit ? ` ${bm.unit}` : ""}
                                             </span>
                                             {hasTarget && (
-                                              <span className="text-[10px] text-[#6B7280] flex-shrink-0">
+                                              <span className="text-[13px] text-[#6B7280]">
                                                 {"→"} Target: {bm.targetValue}{bm.unit ? ` ${bm.unit}` : ""}
                                               </span>
                                             )}
                                             {bm.targetDate && (
-                                              <span className="text-[9px] text-[#9CA3AF] flex-shrink-0">
-                                                by {new Date(bm.targetDate).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                                              <span className="text-[12px] text-[#9CA3AF]">
+                                                by {bm.targetDate}
                                               </span>
                                             )}
                                           </div>
@@ -998,7 +1000,7 @@ export default function GoalsProtocolPage() {
                               {/* Read-only: Protocol items */}
                               {goal.protocolItems?.length > 0 && (
                                 <div>
-                                  <label className="text-[9px] uppercase tracking-wider text-[#B0B0B0] block mb-1">Linked Protocol Items</label>
+                                  <label className="text-[12px] uppercase tracking-wider text-[#B0B0B0] block mb-1">Linked Protocol Items</label>
                                   <div className="flex flex-wrap gap-1">
                                     {goal.protocolItems.map((pi, i) => (
                                       <span key={i} className="text-[10px] font-medium px-2 py-0.5 rounded bg-[#EDE9FE] text-[#6D28D9] flex items-center gap-1">
@@ -1025,7 +1027,7 @@ export default function GoalsProtocolPage() {
                         setGoalForm({ title: "", description: "", priority: "", whatThisMeans: "", potentialCauses: "" });
                         setShowGoalModal(true);
                       }}
-                      className="px-6 py-3 bg-black text-white rounded-full text-[14px] font-medium flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors"
+                      className="px-6 py-3 bg-black text-white rounded-full text-[15px] font-medium flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors"
                     >
                       <Plus className="h-4 w-4" />
                       Add a goal
@@ -1051,10 +1053,10 @@ export default function GoalsProtocolPage() {
                   <div key={`rp-${idx}`} className="bg-white rounded-lg p-4 border border-[#e8e8e8]">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-[14px] font-medium text-black mb-0.5 truncate">{item.productName}</h3>
+                        <h3 className="text-[15px] font-medium text-black mb-0.5 truncate">{item.productName}</h3>
                         <div className="flex items-center gap-3 mt-1">
-                          {item.price && <span className="text-[14px] font-medium text-[#717178]">{item.price}</span>}
-                          {item.dose && <span className="text-[12px] font-normal text-[#717178]">{item.dose}</span>}
+                          {item.price && <span className="text-[15px] font-medium text-[#717178]">{item.price}</span>}
+                          {item.dose && <span className="text-[15px] font-normal text-[#717178]">{item.dose}</span>}
                         </div>
                       </div>
                     </div>
@@ -1065,10 +1067,10 @@ export default function GoalsProtocolPage() {
                   <div key={item.id} className="bg-white rounded-lg p-4 border border-[#e8e8e8]">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-[14px] font-medium text-black mb-0.5 truncate">{item.name}</h3>
+                        <h3 className="text-[15px] font-medium text-black mb-0.5 truncate">{item.name}</h3>
                         <div className="flex items-center gap-3 mt-1">
-                          {item.price && <span className="text-[14px] font-medium text-[#717178]">{item.price}</span>}
-                          {item.quantity && <span className="text-[12px] font-normal text-[#717178]">{item.quantity}</span>}
+                          {item.price && <span className="text-[15px] font-medium text-[#717178]">{item.price}</span>}
+                          {item.quantity && <span className="text-[15px] font-normal text-[#717178]">{item.quantity}</span>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 ml-3 flex-shrink-0">
@@ -1097,7 +1099,7 @@ export default function GoalsProtocolPage() {
                   setShowProtocolModal(false);
                   setShowProtocolModal(true);
                 }}
-                className="px-6 py-3 bg-black text-white rounded-full text-[14px] font-medium flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors"
+                className="px-6 py-3 bg-black text-white rounded-full text-[15px] font-medium flex items-center justify-center gap-2 hover:bg-gray-900 transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Add more items
@@ -1114,7 +1116,7 @@ export default function GoalsProtocolPage() {
             <button
               onClick={handleSaveDraft}
               disabled={saving}
-              className="flex-1 py-3 rounded-xl text-[14px] font-semibold bg-[#374151] text-white hover:bg-[#4B5563] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[#374151] text-white hover:bg-[#4B5563] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save Draft
@@ -1122,7 +1124,7 @@ export default function GoalsProtocolPage() {
             {canApprove && (
               <button
                 onClick={() => setShowApproveConfirm(true)}
-                className="flex-1 py-3 rounded-xl text-[14px] font-semibold bg-[#059669] text-white hover:bg-[#047857] transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-xl text-[15px] font-semibold bg-[#059669] text-white hover:bg-[#047857] transition-colors flex items-center justify-center gap-2"
               >
                 <Check className="h-4 w-4" />
                 Approve & Publish
@@ -1138,19 +1140,19 @@ export default function GoalsProtocolPage() {
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowApproveConfirm(false)} />
           <div className="relative bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-xl">
             <h3 className="text-[16px] font-semibold text-black mb-2">Approve Action Plan</h3>
-            <p className="text-[13px] text-[#6B7280] mb-5">
+            <p className="text-[15px] text-[#6B7280] mb-5">
               Once approved, the patient will see these goals and recommendations. This cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowApproveConfirm(false)}
-                className="flex-1 py-2.5 rounded-xl text-[14px] font-medium text-[#6B7280] border border-[#E5E7EB] hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2.5 rounded-xl text-[15px] font-medium text-[#6B7280] border border-[#E5E7EB] hover:bg-gray-50 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleApprove}
-                className="flex-1 py-2.5 rounded-xl text-[14px] font-semibold bg-[#059669] text-white hover:bg-[#047857] transition-colors"
+                className="flex-1 py-2.5 rounded-xl text-[15px] font-semibold bg-[#059669] text-white hover:bg-[#047857] transition-colors"
               >
                 Approve
               </button>
@@ -1168,7 +1170,7 @@ export default function GoalsProtocolPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-[18px] font-semibold text-black">Add a New Goal</h2>
-                  <p className="text-[14px] font-normal text-[#717178] mt-0.5">Define a new health goal for the patient</p>
+                  <p className="text-[15px] font-normal text-[#717178] mt-0.5">Define a new health goal for the patient</p>
                 </div>
                 <button onClick={() => setShowGoalModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                   <X className="h-5 w-5 text-gray-500" />
@@ -1177,7 +1179,7 @@ export default function GoalsProtocolPage() {
             </div>
             <div className="px-5 py-4 space-y-4">
               <div>
-                <label className="block text-[14px] font-medium text-black mb-1.5">
+                <label className="block text-[15px] font-medium text-black mb-1.5">
                   Goal Title<span className="text-[#ef4444]">*</span>
                 </label>
                 <input
@@ -1185,22 +1187,22 @@ export default function GoalsProtocolPage() {
                   value={goalForm.title}
                   onChange={(e) => setGoalForm((f) => ({ ...f, title: e.target.value }))}
                   placeholder="e.g. Optimize Cardiovascular Health"
-                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-[14px] font-medium text-black mb-1.5">Description</label>
+                <label className="block text-[15px] font-medium text-black mb-1.5">Description</label>
                 <textarea
                   ref={(el) => autoResize(el)}
                   value={goalForm.description}
                   onChange={(e) => { setGoalForm((f) => ({ ...f, description: e.target.value })); autoResize(e.target); }}
                   placeholder="Detailed description..."
                   rows={3}
-                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-[14px] font-medium text-black mb-1.5">
+                <label className="block text-[15px] font-medium text-black mb-1.5">
                   Priority Level<span className="text-[#ef4444]">*</span>
                 </label>
                 <div className="flex gap-3">
@@ -1214,7 +1216,7 @@ export default function GoalsProtocolPage() {
                       <button
                         key={opt.value}
                         onClick={() => setGoalForm((f) => ({ ...f, priority: opt.value }))}
-                        className="flex-1 py-3 px-3 rounded-xl text-[14px] font-medium transition-all text-center"
+                        className="flex-1 py-3 px-3 rounded-xl text-[15px] font-medium transition-all text-center"
                         style={
                           isActive
                             ? { backgroundColor: opt.color, color: "#fff", border: `1px solid ${opt.color}` }
@@ -1228,36 +1230,36 @@ export default function GoalsProtocolPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-[14px] font-medium text-black mb-1.5">What This Means</label>
+                <label className="block text-[15px] font-medium text-black mb-1.5">What This Means</label>
                 <textarea
                   ref={(el) => autoResize(el)}
                   value={goalForm.whatThisMeans}
                   onChange={(e) => { setGoalForm((f) => ({ ...f, whatThisMeans: e.target.value })); autoResize(e.target); }}
                   placeholder="Explain the significance..."
                   rows={2}
-                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-[14px] font-medium text-black mb-1.5">Potential Causes</label>
+                <label className="block text-[15px] font-medium text-black mb-1.5">Potential Causes</label>
                 <textarea
                   ref={(el) => autoResize(el)}
                   value={goalForm.potentialCauses}
                   onChange={(e) => { setGoalForm((f) => ({ ...f, potentialCauses: e.target.value })); autoResize(e.target); }}
                   placeholder="What might be causing this..."
                   rows={2}
-                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                  className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                 />
               </div>
             </div>
             <div className="sticky bottom-0 bg-white px-5 py-4 border-t border-gray-100 flex items-center justify-end gap-4">
-              <button onClick={() => setShowGoalModal(false)} className="py-2.5 px-4 text-[14px] font-medium text-[#717178] hover:text-gray-900 transition-colors">
+              <button onClick={() => setShowGoalModal(false)} className="py-2.5 px-4 text-[15px] font-medium text-[#717178] hover:text-gray-900 transition-colors">
                 Cancel
               </button>
               <button
                 onClick={handleAddGoal}
                 disabled={!goalForm.title || !goalForm.priority}
-                className="py-2.5 px-6 bg-black text-white rounded-full text-[14px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="py-2.5 px-6 bg-black text-white rounded-full text-[15px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Plus className="h-4 w-4" />
                 Add Goal
@@ -1276,7 +1278,7 @@ export default function GoalsProtocolPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-[18px] font-semibold text-black">Add a New Protocol</h2>
-                  <p className="text-[14px] font-normal text-[#717178] mt-0.5">Add a supplement, test, or treatment</p>
+                  <p className="text-[15px] font-normal text-[#717178] mt-0.5">Add a supplement, test, or treatment</p>
                 </div>
                 <button onClick={() => setShowProtocolModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                   <X className="h-5 w-5 text-gray-500" />
@@ -1285,7 +1287,7 @@ export default function GoalsProtocolPage() {
             </div>
             <div className="px-5 py-4 space-y-4">
               <div>
-                <label className="block text-[14px] font-medium text-black mb-1.5">Item Name<span className="text-[#ef4444]">*</span></label>
+                <label className="block text-[15px] font-medium text-black mb-1.5">Item Name<span className="text-[#ef4444]">*</span></label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
@@ -1293,28 +1295,28 @@ export default function GoalsProtocolPage() {
                     value={protocolForm.name}
                     onChange={(e) => setProtocolForm((f) => ({ ...f, name: e.target.value }))}
                     placeholder="Search supplements, tests..."
-                    className="w-full pl-9 pr-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
+                    className="w-full pl-9 pr-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[14px] font-medium text-black mb-1.5">Price</label>
-                  <input type="text" value={protocolForm.price} onChange={(e) => setProtocolForm((f) => ({ ...f, price: e.target.value }))} placeholder="$0" className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors" />
+                  <label className="block text-[15px] font-medium text-black mb-1.5">Price</label>
+                  <input type="text" value={protocolForm.price} onChange={(e) => setProtocolForm((f) => ({ ...f, price: e.target.value }))} placeholder="$0" className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors" />
                 </div>
                 <div>
-                  <label className="block text-[14px] font-medium text-black mb-1.5">Quantity</label>
-                  <input type="text" value={protocolForm.quantity} onChange={(e) => setProtocolForm((f) => ({ ...f, quantity: e.target.value }))} placeholder="e.g. 90 Servings" className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors" />
+                  <label className="block text-[15px] font-medium text-black mb-1.5">Quantity</label>
+                  <input type="text" value={protocolForm.quantity} onChange={(e) => setProtocolForm((f) => ({ ...f, quantity: e.target.value }))} placeholder="e.g. 90 Servings" className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors" />
                 </div>
               </div>
               <div>
-                <label className="block text-[14px] font-medium text-black mb-1.5">Dosage Instructions</label>
-                <input type="text" value={protocolForm.dosage} onChange={(e) => setProtocolForm((f) => ({ ...f, dosage: e.target.value }))} placeholder="e.g. Take 1 capsule daily" className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors" />
+                <label className="block text-[15px] font-medium text-black mb-1.5">Dosage Instructions</label>
+                <input type="text" value={protocolForm.dosage} onChange={(e) => setProtocolForm((f) => ({ ...f, dosage: e.target.value }))} placeholder="e.g. Take 1 capsule daily" className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors" />
               </div>
             </div>
             <div className="sticky bottom-0 bg-white px-5 py-4 border-t border-gray-100 flex items-center justify-end gap-4">
-              <button onClick={() => setShowProtocolModal(false)} className="py-2.5 px-4 text-[14px] font-medium text-[#717178]">Cancel</button>
-              <button onClick={handleAddProtocol} disabled={!protocolForm.name} className="py-2.5 px-6 bg-black text-white rounded-full text-[14px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+              <button onClick={() => setShowProtocolModal(false)} className="py-2.5 px-4 text-[15px] font-medium text-[#717178]">Cancel</button>
+              <button onClick={handleAddProtocol} disabled={!protocolForm.name} className="py-2.5 px-6 bg-black text-white rounded-full text-[15px] font-medium flex items-center justify-center gap-1.5 hover:bg-gray-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                 <Plus className="h-4 w-4" />
                 Add Protocol
               </button>
