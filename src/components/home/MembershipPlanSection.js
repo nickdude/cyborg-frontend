@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 
 const STEP_IMAGES = [
-  "/assets/preview/steps/step1.png",
-  "/assets/preview/steps/step2.png",
-  "/assets/preview/steps/step3.png",
-  "/assets/preview/steps/step4.png",
-  "/assets/preview/steps/step5.png",
+  "/assets/preview/steps/1.webp",
+  "/assets/preview/steps/2.webp",
+  "/assets/preview/steps/3.webp",
+  "/assets/preview/steps/4.webp",
+  "/assets/preview/steps/5.webp",
 ];
 
 const BENEFITS = [
