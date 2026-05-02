@@ -259,7 +259,7 @@ export default function DoctorProfilePage() {
               {showQR && (
                 <div className="mt-4 flex flex-col items-center gap-3 p-4 rounded-lg bg-white border border-primary/20">
                   <QRCodeSVG
-                    value={`http://localhost:3000/register?ref=${referralCode}`}
+                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/register?ref=${referralCode}`}
                     size={200}
                     bgColor="#ffffff"
                     fgColor="#6D28D9"
@@ -270,13 +270,13 @@ export default function DoctorProfilePage() {
                     Scan to register as your patient
                   </p>
                   <p className="text-xs text-gray-400 break-all text-center">
-                    http://localhost:3000/register?ref={referralCode}
+                    {typeof window !== "undefined" ? window.location.origin : ""}/register?ref={referralCode}
                   </p>
                 </div>
               )}
 
               <p className="mt-2 text-xs text-gray-500">
-                Patients can register at <span className="font-medium text-gray-700">localhost:3000/register?ref={referralCode}</span> or enter this code manually during sign-up.
+                Patients can register at <span className="font-medium text-gray-700">/register?ref={referralCode}</span> or enter this code manually during sign-up.
               </p>
             </div>
           )}
