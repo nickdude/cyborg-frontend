@@ -4,10 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import StatsGrid from "@/components/StatsGrid";
 import BiomarkersList from "@/components/BiomarkersList";
-import ActionButtons from "./ActionButtons";
+import TimelineFeed from "./TimelineFeed";
 import LiveBetterSection from "./LiveBetterSection";
 
-export default function InsightsDashboard({ userName, data, scores, reportDate, actionPlanHref }) {
+export default function InsightsDashboard({ userName, data, scores, reportDate, actionPlanHref, userId }) {
   return (
     <div className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10">
       <div className="mx-auto w-full max-w-[1240px] px-4 pt-6 lg:px-8 lg:pt-10">
@@ -112,11 +112,7 @@ export default function InsightsDashboard({ userName, data, scores, reportDate, 
 
             <section className="mt-6 rounded-2xl border border-borderColor bg-white p-4 lg:p-5">
               <h2 className="text-3xl font-semibold text-black lg:text-3xl">Timeline</h2>
-              <div className="mt-5 text-center">
-                <p className="text-lg font-medium text-black lg:text-xl">No events today</p>
-                <p className="mt-1 text-secondary">Log something to fill your timeline</p>
-              </div>
-              <ActionButtons actions={data.timelineActions} />
+              <TimelineFeed userId={userId} actions={data.timelineActions} />
             </section>
 
             <div className="mt-6">

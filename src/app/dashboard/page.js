@@ -129,6 +129,7 @@ export default function Dashboard() {
                 scores={insightsData?.scores || {}}
                 reportDate={insightsData?.reportDate}
                 actionPlanHref={actionPlanHref}
+                userId={user?._id || user?.id}
             />
         );
     }

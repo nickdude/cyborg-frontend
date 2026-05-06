@@ -1,0 +1,82 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { timelineAPI } from "@/services/api";
+import TimelineDateNav from "./TimelineDateNav";
+import TimelineMealCard from "./TimelineMealCard";
+import TimelineActivityCard from "./TimelineActivityCard";
+import ActionButtons from "./ActionButtons";
+
+function todayUTC() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export default function TimelineFeed({ userId, actions }) {
+  const [date, setDate] = useState(todayUTC);
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchTimeline = useCallback(async () => {
+    if (!userId) return;
+    setLoading(true);
+    try {
+      const resp = await timelineAPI.get(userId, date);
+      setEntries(resp?.data?.entries || resp?.entries || resp?.data || []);
+    } catch {
+      setEntries([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, date]);
+
+  useEffect(() => {
+    fetchTimeline();
+  }, [fetchTimeline]);
+
+  return (
+    <div>
+      <TimelineDateNav date={date} onChange={setDate} />
+
+      <div className="mt-4 space-y-3">
+        {loading && entries.length === 0 && (
+          <p className="py-6 text-center text-sm text-[#6d6f7b]">Loading timeline...</p>
+        )}
+
+        {!loading && entries.length === 0 && (
+          <div className="py-6 text-center">
+            <p className="text-lg font-medium text-black lg:text-xl">No events today</p>
+            <p className="mt-1 text-secondary">Log something to fill your timeline</p>
+          </div>
+        )}
+
+        {entries.map((entry) => {
+          if (entry.type === "meal") {
+            return (
+              <TimelineMealCard
+                key={entry.id || entry._id}
+                entry={entry}
+                onClick={() => {
+                  // Future: navigate to food score or meal detail.
+                }}
+              />
+            );
+          }
+          if (entry.type === "activity") {
+            return (
+              <TimelineActivityCard
+                key={entry.id || entry._id}
+                entry={entry}
+                onClick={() => {
+                  // Future: navigate to activity detail.
+                }}
+              />
+            );
+          }
+          return null;
+        })}
+      </div>
+
+      {actions && actions.length > 0 && <ActionButtons actions={actions} />}
+    </div>
+  );
+}

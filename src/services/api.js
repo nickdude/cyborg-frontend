@@ -186,4 +186,44 @@ export const doctorAPI = {
     API.post(`/api/doctor/patients/${patientId}/action-plan/approve`),
 };
 
+// Activity endpoints (all user-scoped)
+export const activityAPI = {
+  catalog: (userId, q = "") =>
+    API.get(`/api/users/${userId}/activities/catalog`, { params: { q } }),
+  create: (userId, body) =>
+    API.post(`/api/users/${userId}/activities`, body),
+  list: (userId, date) =>
+    API.get(`/api/users/${userId}/activities`, { params: { date } }),
+  get: (userId, activityId) =>
+    API.get(`/api/users/${userId}/activities/${activityId}`),
+  update: (userId, activityId, body) =>
+    API.patch(`/api/users/${userId}/activities/${activityId}`, body),
+  delete: (userId, activityId) =>
+    API.delete(`/api/users/${userId}/activities/${activityId}`),
+};
+
+// Timeline endpoint (aggregated feed of meals + activities)
+export const timelineAPI = {
+  get: (userId, date) =>
+    API.get(`/api/users/${userId}/timeline`, { params: { date } }),
+};
+
+// Food Score endpoints
+export const foodScoreAPI = {
+  get: (userId, mealId) =>
+    API.get(`/api/users/${userId}/meals/${mealId}/score`),
+  compute: (userId, mealId) =>
+    API.post(`/api/users/${userId}/meals/${mealId}/score/compute`),
+  listByDate: (userId, date) =>
+    API.get(`/api/users/${userId}/meals/scores`, { params: { date } }),
+};
+
+// Glucose intelligence endpoints
+export const glucoseAPI = {
+  dayReview: (userId, date) =>
+    API.get(`/api/users/${userId}/glucose/day-review`, { params: { date } }),
+  predictions: (userId, date) =>
+    API.get(`/api/users/${userId}/glucose/predictions`, { params: { date } }),
+};
+
 export default API;
