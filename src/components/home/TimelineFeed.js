@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { timelineAPI } from "@/services/api";
 import TimelineDateNav from "./TimelineDateNav";
 import TimelineMealCard from "./TimelineMealCard";
@@ -12,6 +13,7 @@ function todayUTC() {
 }
 
 export default function TimelineFeed({ userId, actions }) {
+  const router = useRouter();
   const [date, setDate] = useState(todayUTC);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -56,7 +58,8 @@ export default function TimelineFeed({ userId, actions }) {
                 key={entry.id || entry._id}
                 entry={entry}
                 onClick={() => {
-                  // Future: navigate to food score or meal detail.
+                  const id = entry.id || entry._id;
+                  if (id) router.push(`/meals/${id}/score`);
                 }}
               />
             );
@@ -67,7 +70,8 @@ export default function TimelineFeed({ userId, actions }) {
                 key={entry.id || entry._id}
                 entry={entry}
                 onClick={() => {
-                  // Future: navigate to activity detail.
+                  const id = entry.id || entry._id;
+                  if (id) router.push(`/activities/${id}`);
                 }}
               />
             );
