@@ -1,10 +1,16 @@
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.js",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Tolerate useSearchParams and similar client hooks during build-time
-  // prerendering. Pages bail out to client rendering at runtime.
   experimental: {
     missingSuspenseWithCSRBailout: false,
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

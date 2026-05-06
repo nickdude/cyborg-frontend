@@ -47,6 +47,11 @@ devansh.env
 *.tsbuildinfo
 next-env.d.ts
 
+# PWA service worker (generated at build time)
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js
+
 # Tool / MCP artifacts
 .devansh-review/
 .claude/
