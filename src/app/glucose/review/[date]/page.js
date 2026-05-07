@@ -17,7 +17,12 @@ export default function GlucoseDayReviewPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (authLoading || !userId || !date) return;
+    if (authLoading) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+    if (!date) return;
     let cancelled = false;
     setLoading(true);
     setError("");
@@ -31,7 +36,6 @@ export default function GlucoseDayReviewPage() {
       })
       .catch((err) => {
         if (cancelled) return;
-        // Backend may not have this endpoint yet -- fall through to mock data
         console.warn("[GlucoseReview] API error, using mock data:", err?.message);
         setReviewData(null);
       })
