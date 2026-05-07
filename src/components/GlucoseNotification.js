@@ -1,28 +1,147 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle, X } from "lucide-react";
+import { useMemo } from "react";
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+/** Generate a simple glucose response curve (white line on gradient bg). */
+function generateCurvePoints(score) {
+  const points = [];
+  const peak = score <= 4 ? 40 : 15;
+  for (let i = 0; i <= 20; i++) {
+    const t = i / 20;
+    const y = peak * Math.sin(Math.PI * t) * Math.exp(-0.3 * t);
+    points.push({ x: i * 5, y: Math.round(50 - y) });
+  }
+  return points;
+}
+
+function curveToPath(points) {
+  if (points.length === 0) return "";
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const cpx1 = prev.x + (curr.x - prev.x) / 3;
+    const cpx2 = prev.x + (2 * (curr.x - prev.x)) / 3;
+    d += ` C ${cpx1} ${prev.y}, ${cpx2} ${curr.y}, ${curr.x} ${curr.y}`;
+  }
+  return d;
+}
+
+/* ------------------------------------------------------------------ */
+/* Bokeh circle component (decorative blurred circles)                 */
+/* ------------------------------------------------------------------ */
+
+function BokehCircles({ isNegative }) {
+  const circles = useMemo(() => {
+    const base = isNegative
+      ? [
+          { cx: "15%", cy: "20%", r: 60, opacity: 0.15 },
+          { cx: "80%", cy: "15%", r: 40, opacity: 0.1 },
+          { cx: "70%", cy: "70%", r: 80, opacity: 0.12 },
+          { cx: "25%", cy: "80%", r: 50, opacity: 0.08 },
+          { cx: "50%", cy: "45%", r: 35, opacity: 0.1 },
+        ]
+      : [
+          { cx: "20%", cy: "25%", r: 55, opacity: 0.12 },
+          { cx: "75%", cy: "20%", r: 45, opacity: 0.1 },
+          { cx: "65%", cy: "65%", r: 70, opacity: 0.1 },
+          { cx: "30%", cy: "75%", r: 40, opacity: 0.08 },
+          { cx: "55%", cy: "40%", r: 30, opacity: 0.1 },
+        ];
+    return base;
+  }, [isNegative]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {circles.map((c, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: c.cx,
+            top: c.cy,
+            width: c.r * 2,
+            height: c.r * 2,
+            transform: "translate(-50%, -50%)",
+            backgroundColor: "rgba(255,255,255," + c.opacity + ")",
+            filter: "blur(20px)",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
 
 /**
  * GlucoseNotification
  *
- * Alert card for glucose scores.
- * Shows a colored badge, message, and Dismiss / Details buttons.
+ * Full-screen gradient overlay for glucose zone scores.
+ * - Negative (score <= 4): pink/red gradient with bokeh
+ * - Positive (score >= 8): green/teal gradient with bokeh
+ * - Neutral (5-7): amber gradient
  *
- * @param {number}   score     - Glucose score value
- * @param {string}   message   - Alert message text
+ * @param {number}   score     - Glucose zone score (1-10)
+ * @param {number}   deltaMgDl - Glucose change in mg/dL (e.g. 26)
+ * @param {string}   message   - Description text
  * @param {string}   type      - "positive" | "negative"
- * @param {string}   date      - Date string (YYYY-MM-DD) for the day review link
+ * @param {number}   minutesAgo - Minutes since this zone was recorded
+ * @param {string}   date      - Date string for the day review link
  * @param {function} onDismiss - Called when user dismisses
  */
-export default function GlucoseNotification({ score, message, type, date, onDismiss }) {
+export default function GlucoseNotification({
+  score = 3,
+  deltaMgDl = 26,
+  message,
+  type,
+  minutesAgo = 13,
+  date,
+  onDismiss,
+}) {
   const router = useRouter();
 
-  const isNegative = type === "negative";
-  const badgeBg = isNegative ? "bg-red-100" : "bg-green-100";
-  const badgeText = isNegative ? "text-red-600" : "text-green-600";
-  const borderColor = isNegative ? "border-red-200" : "border-green-200";
-  const Icon = isNegative ? AlertTriangle : CheckCircle;
+  const isNegative = type === "negative" || score <= 4;
+  const isPositive = type === "positive" || score >= 8;
+
+  // Gradient classes
+  const gradientClass = isNegative
+    ? "from-rose-400 via-rose-500 to-rose-600"
+    : isPositive
+    ? "from-emerald-400 via-emerald-500 to-emerald-600"
+    : "from-amber-400 via-amber-500 to-amber-600";
+
+  // Auto-generate description if none provided
+  const displayMessage =
+    message ||
+    (isNegative
+      ? "This zone had a large glucose response"
+      : isPositive
+      ? "This zone had a healthy glucose response"
+      : "This zone had a moderate glucose response");
+
+  const curvePoints = useMemo(() => generateCurvePoints(score), [score]);
+  const curvePath = useMemo(() => curveToPath(curvePoints), [curvePoints]);
+
+  // Find the peak point for the dot marker
+  const peakPoint = useMemo(() => {
+    let minY = Infinity;
+    let peak = curvePoints[0];
+    for (const p of curvePoints) {
+      if (p.y < minY) {
+        minY = p.y;
+        peak = p;
+      }
+    }
+    return peak;
+  }, [curvePoints]);
 
   const handleDetails = () => {
     if (date) {
@@ -32,61 +151,63 @@ export default function GlucoseNotification({ score, message, type, date, onDism
 
   return (
     <div
-      className={`relative rounded-2xl border ${borderColor} bg-white p-4 shadow-sm`}
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b ${gradientClass}`}
     >
-      {/* Top row: badge + dismiss */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <div
-            className={`flex h-8 w-8 items-center justify-center rounded-full ${badgeBg}`}
-          >
-            <Icon size={16} className={badgeText} />
-          </div>
-          {score != null && (
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-bold ${badgeBg} ${badgeText}`}
+      {/* Bokeh circles */}
+      <BokehCircles isNegative={isNegative} />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center px-8 w-full max-w-md">
+        {/* Zone score label */}
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80 mb-6">
+          Zone Score &middot; {minutesAgo} min ago
+        </p>
+
+        {/* Large score number */}
+        <span className="text-[55px] font-bold leading-none text-white">
+          {score}
+        </span>
+
+        {/* Delta mg/dL */}
+        <p className="mt-2 text-[15px] text-white/90">
+          +{deltaMgDl} mg/dL
+        </p>
+
+        {/* Glucose response curve */}
+        <div className="mt-6 w-full flex justify-center">
+          <svg width="100" height="60" viewBox="0 0 100 60" fill="none">
+            <path d={curvePath} stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+            {/* Dot marker at peak */}
+            <circle cx={peakPoint.x} cy={peakPoint.y} r="4" fill="white" />
+          </svg>
+        </div>
+
+        {/* Description text */}
+        <p className="mt-6 text-center text-[22px] font-bold leading-tight text-white px-2">
+          {displayMessage}
+        </p>
+
+        {/* Buttons */}
+        <div className="mt-10 flex w-full gap-3">
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="flex-1 rounded-xl border-2 border-white/60 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
-              {score}/10
-            </span>
+              Dismiss
+            </button>
+          )}
+          {date && (
+            <button
+              type="button"
+              onClick={handleDetails}
+              className="flex-1 rounded-xl bg-white py-3 text-sm font-semibold text-black transition hover:bg-white/90"
+            >
+              Details
+            </button>
           )}
         </div>
-        {onDismiss && (
-          <button
-            type="button"
-            onClick={onDismiss}
-            aria-label="Dismiss notification"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-[#6d6f7b] hover:bg-[#f6f7fb]"
-          >
-            <X size={14} />
-          </button>
-        )}
-      </div>
-
-      {/* Message */}
-      <p className="mt-3 text-sm leading-relaxed text-[#14151a]">
-        {message || "Glucose event detected."}
-      </p>
-
-      {/* Actions */}
-      <div className="mt-4 flex items-center gap-3">
-        {onDismiss && (
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="rounded-xl border border-borderColor px-4 py-2 text-xs font-medium text-[#6d6f7b] transition hover:bg-[#f6f7fb]"
-          >
-            Dismiss
-          </button>
-        )}
-        {date && (
-          <button
-            type="button"
-            onClick={handleDetails}
-            className="rounded-xl bg-black px-4 py-2 text-xs font-medium text-white transition hover:bg-black/85"
-          >
-            Details
-          </button>
-        )}
       </div>
     </div>
   );

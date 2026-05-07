@@ -9,55 +9,59 @@ import { X } from "lucide-react";
 
 const MOCK_FOOD_RECS = [
   {
-    name: "Lentil Soup",
-    description: "High-protein recovery meal with iron and complex carbs",
-    calories: 230,
-    proteinG: 18,
-    carbsG: 35,
-    fatG: 3,
+    name: "Oatmeal with Banana & Almonds",
+    description: "A hearty bowl of oatmeal topped with sliced banana and a handful of almonds for sustained energy and recovery.",
+    calories: 360,
+    proteinG: 20,
+    carbsG: 50,
+    fatG: 8,
+    fiberG: 15,
   },
   {
     name: "Greek Yogurt Bowl",
-    description: "Probiotics + protein for muscle repair and gut health",
-    calories: 180,
+    description: "Probiotics + protein for muscle repair and gut health, topped with berries and granola.",
+    calories: 280,
     proteinG: 22,
-    carbsG: 12,
-    fatG: 5,
+    carbsG: 30,
+    fatG: 6,
+    fiberG: 4,
   },
   {
     name: "Chicken & Rice",
-    description: "Classic post-workout combo for glycogen replenishment",
-    calories: 380,
-    proteinG: 32,
-    carbsG: 42,
-    fatG: 8,
+    description: "Classic post-workout combo for glycogen replenishment with lean protein.",
+    calories: 420,
+    proteinG: 35,
+    carbsG: 48,
+    fatG: 10,
+    fiberG: 3,
   },
   {
     name: "Banana Smoothie",
-    description: "Quick potassium and natural sugars for immediate recovery",
-    calories: 210,
-    proteinG: 8,
-    carbsG: 38,
-    fatG: 4,
+    description: "Quick potassium and natural sugars for immediate recovery with whey protein.",
+    calories: 310,
+    proteinG: 18,
+    carbsG: 42,
+    fatG: 5,
+    fiberG: 6,
   },
 ];
 
 const MOCK_INSIGHTS = [
-  "Your average heart rate suggests moderate cardiovascular intensity.",
-  "Duration was within the recommended range for this activity type.",
-  "Consistent effort throughout the session - good pacing strategy.",
-  "Calorie burn estimate aligns with your body composition goals.",
-  "Heart rate recovery time is an important metric to track over sessions.",
-  "Consider tracking RPE (Rate of Perceived Exertion) alongside HR data.",
+  "Your average heart rate of 87 BPM suggests moderate cardiovascular intensity — ideal for building aerobic base.",
+  "Duration was within the recommended range for this activity type. Consistency matters more than intensity at this stage.",
+  "Consistent effort throughout the session indicates good pacing strategy. Your heart rate variability stayed within a healthy range.",
+  "Calorie burn estimate aligns with your body composition goals. You're on track for a 300-400 kcal deficit today.",
+  "Heart rate recovery time is an important metric to track over sessions. Faster recovery = better cardiovascular fitness.",
+  "Consider tracking RPE (Rate of Perceived Exertion) alongside HR data for a more complete picture of training load.",
 ];
 
 const MOCK_RECOMMENDATIONS = [
-  "Hydrate within 30 minutes post-workout with 500-750ml of water.",
-  "Consume a protein-rich meal within 2 hours for optimal recovery.",
-  "Include 5-10 minutes of static stretching to reduce muscle soreness.",
-  "Aim for 7-9 hours of sleep tonight to support muscle repair.",
-  "Consider active recovery (light walking) tomorrow instead of rest.",
-  "Monitor any joint discomfort over the next 24 hours.",
+  "Hydrate within 30 minutes post-workout with 500-750ml of water. Add electrolytes if you sweated heavily.",
+  "Consume a protein-rich meal within 2 hours for optimal muscle protein synthesis.",
+  "Include 5-10 minutes of static stretching to reduce muscle soreness and improve flexibility.",
+  "Aim for 7-9 hours of sleep tonight to support muscle repair and hormonal recovery.",
+  "Consider active recovery (light walking or yoga) tomorrow instead of complete rest.",
+  "Monitor any joint discomfort over the next 24 hours — early attention prevents chronic issues.",
 ];
 
 const DIET_FILTERS = ["Veg", "Non-Veg", "Vegan"];
@@ -66,33 +70,20 @@ const DIET_FILTERS = ["Veg", "Non-Veg", "Vegan"];
 /* Component                                                           */
 /* ------------------------------------------------------------------ */
 
-/**
- * AIPostWorkoutSheet
- *
- * Bottom sheet overlay with 3 tabs:
- *   1. Food Recommendations (with diet filter chips)
- *   2. Insights (bulleted list)
- *   3. Recommendations (bulleted list)
- *
- * @param {object}   activity - Activity object
- * @param {string}   userId
- * @param {function} onClose
- */
 export default function AIPostWorkoutSheet({ activity, userId, onClose }) {
   const [tab, setTab] = useState(0);
   const [dietFilter, setDietFilter] = useState("Non-Veg");
   const [loading, setLoading] = useState(true);
 
-  const tabs = ["Food Recs", "Insights", "Recommendations"];
+  const tabs = ["Food Recommendations", "Insights", "Recommendations"];
 
-  // Simulate loading (backend doesn't exist yet)
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1200);
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="AI workout analysis">
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Post-workout recovery">
       {/* Backdrop */}
       <button
         type="button"
@@ -106,31 +97,33 @@ export default function AIPostWorkoutSheet({ activity, userId, onClose }) {
         <div className="w-full max-w-md rounded-t-3xl bg-white px-5 pt-5 pb-8 shadow-2xl animate-slide-up max-h-[85vh] flex flex-col">
           {/* Header */}
           <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <SparkleIcon />
-              <h2 className="text-base font-semibold text-[#14151a]">AI Analysis</h2>
-            </div>
+            <h2 className="text-lg font-bold text-black">Post-Workout Recovery</h2>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close sheet"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f2f2f2] text-[#3c3c43] hover:bg-[#e5e5e5] transition"
             >
               <X size={16} />
             </button>
           </div>
 
-          {/* Tab bar */}
-          <div className="flex rounded-xl bg-[#e8e9f0] p-1 mb-4">
+          {/* Intro text */}
+          <p className="mb-4 text-sm leading-relaxed text-[#717178]">
+            Hi Ateeb Shaikh! Your 30-minute activity this morning was a great start to your day. Let&apos;s focus on optimizing your recovery to help you perform better.
+          </p>
+
+          {/* Tab pills */}
+          <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
             {tabs.map((t, idx) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTab(idx)}
-                className={`flex-1 rounded-lg py-2 text-xs font-semibold transition ${
+                className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${
                   tab === idx
-                    ? "bg-white text-[#14151a] shadow-sm"
-                    : "text-[#6d6f7b]"
+                    ? "bg-black text-white"
+                    : "bg-white text-[#717178] border border-[#E6E6E8]"
                 }`}
               >
                 {t}
@@ -143,7 +136,7 @@ export default function AIPostWorkoutSheet({ activity, userId, onClose }) {
             {loading ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-black border-t-transparent" />
-                <p className="text-sm text-[#6d6f7b]">Analyzing your workout...</p>
+                <p className="text-sm text-[#717178]">Analyzing your workout...</p>
               </div>
             ) : (
               <>
@@ -179,10 +172,10 @@ function FoodRecsTab({ recs, dietFilter, onFilterChange }) {
             key={f}
             type="button"
             onClick={() => onFilterChange(f)}
-            className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+            className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
               dietFilter === f
                 ? "bg-black text-white"
-                : "bg-[#f6f7fb] text-[#6d6f7b]"
+                : "bg-white text-[#717178] border border-[#E6E6E8]"
             }`}
           >
             {f}
@@ -195,12 +188,17 @@ function FoodRecsTab({ recs, dietFilter, onFilterChange }) {
         {recs.map((rec, idx) => (
           <div
             key={idx}
-            className="rounded-xl border border-borderColor bg-[#f6f7fb] p-3"
+            className="rounded-xl bg-white border border-[#E6E6E8] p-4"
+            style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}
           >
-            <p className="text-sm font-semibold text-[#14151a]">{rec.name}</p>
-            <p className="mt-1 text-xs text-[#6d6f7b]">{rec.description}</p>
-            <p className="mt-2 text-[10px] font-medium text-[#6d6f7b]">
-              {rec.calories} Cal · {rec.proteinG}g P · {rec.carbsG}g C · {rec.fatG}g F
+            <p className="text-sm font-bold text-black">{rec.name}</p>
+            <p className="mt-1 text-xs leading-relaxed text-[#717178]">{rec.description}</p>
+            <p className="mt-2 text-xs font-medium text-[#717178]">
+              {rec.calories} kcal{" "}
+              <span className="text-[#c7c7cc]">&middot;</span> {rec.proteinG}g Protein{" "}
+              <span className="text-[#c7c7cc]">&middot;</span> {rec.carbsG}g Carbs{" "}
+              <span className="text-[#c7c7cc]">&middot;</span> {rec.fatG}g Fat{" "}
+              <span className="text-[#c7c7cc]">&middot;</span> {rec.fiberG}g Fiber
             </p>
           </div>
         ))}
@@ -211,13 +209,11 @@ function FoodRecsTab({ recs, dietFilter, onFilterChange }) {
 
 function InsightsTab({ insights }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {insights.map((text, idx) => (
-        <div key={idx} className="flex gap-2">
-          <span className="mt-1 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-600">
-            {idx + 1}
-          </span>
-          <p className="text-sm text-[#14151a] leading-relaxed">{text}</p>
+        <div key={idx} className="flex gap-3">
+          <span className="mt-1.5 flex h-2 w-2 flex-shrink-0 rounded-full bg-[#6366f1]" />
+          <p className="text-sm text-black leading-relaxed">{text}</p>
         </div>
       ))}
     </div>
@@ -226,40 +222,15 @@ function InsightsTab({ insights }) {
 
 function RecommendationsTab({ recs }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {recs.map((text, idx) => (
-        <div key={idx} className="flex gap-2">
-          <span className="mt-0.5 flex h-2 w-2 flex-shrink-0 rounded-full bg-green-400" />
-          <p className="text-sm text-[#14151a] leading-relaxed">{text}</p>
+        <div key={idx} className="flex gap-3">
+          <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white">
+            {idx + 1}
+          </span>
+          <p className="text-sm text-black leading-relaxed">{text}</p>
         </div>
       ))}
     </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Sparkle icon (AI indicator — lucide "Sparkles" alternative)         */
-/* ------------------------------------------------------------------ */
-
-function SparkleIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-indigo-500"
-      aria-hidden="true"
-    >
-      <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
-      <path d="M5 3v4" />
-      <path d="M19 17v4" />
-      <path d="M3 5h4" />
-      <path d="M17 19h4" />
-    </svg>
   );
 }

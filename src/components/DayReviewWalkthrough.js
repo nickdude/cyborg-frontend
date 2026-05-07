@@ -1,61 +1,87 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ArrowLeft, ArrowRight, Check, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Info } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
   ReferenceLine,
+  Tooltip,
 } from "recharts";
 
 /* ------------------------------------------------------------------ */
 /* Mock / fallback data builders                                       */
 /* ------------------------------------------------------------------ */
 
-function buildSpikeChart(predictedPeak = 40, baseline = 90) {
+function buildSpikeChart(predictedPeak = 36, baseline = 118) {
   const points = [];
-  for (let m = 0; m <= 180; m += 5) {
-    const t = m / 180;
-    const spike = predictedPeak * Math.sin(Math.PI * t) * Math.exp(-0.4 * t);
-    points.push({ minute: m, glucose: Math.round(baseline + spike) });
+  for (let m = 0; m <= 120; m += 5) {
+    const t = m / 120;
+    const spike = predictedPeak * Math.sin(Math.PI * t) * Math.exp(-0.3 * t);
+    points.push({
+      minute: m,
+      glucose: Math.round(baseline + spike),
+      time: `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`,
+    });
   }
   return points;
 }
 
 const MOCK_REVIEW = {
+  date: "Jan 29",
   score: 3,
   scoreLabel: "Large Spike",
-  baseline: 90,
-  predictedPeak: 42,
+  baseline: 118,
+  predictedPeak: 36,
+  peakValue: 154,
+  spikeAmount: 36,
   spikerFood: {
-    name: "Orange Juice",
+    name: "orange juice",
     portion: { quantity: 1, unit: "glass", grams: 250 },
     calories: 112,
     proteinG: 2,
     fatG: 0,
     carbsG: 26,
     sugarG: 21,
+    score: 3,
   },
   otherItems: [
-    { name: "Oatmeal", contribution: "low", calories: 150, carbsG: 27, sugarG: 1 },
-    { name: "Banana", contribution: "medium", calories: 105, carbsG: 27, sugarG: 14 },
+    { name: "coffee", score: 6.2, deltaMgDl: null },
+    { name: "eggs", score: null, deltaMgDl: 6 },
   ],
-  explanation:
-    "Orange juice is high in simple sugars and lacks fiber, causing a rapid glucose spike. The liquid form bypasses chewing and speeds absorption.",
+  communityScores: [
+    { range: "1-2", count: 8, color: "#ef4444" },
+    { range: "3-4", count: 22, color: "#f97316" },
+    { range: "5-6", count: 35, color: "#eab308" },
+    { range: "7-8", count: 25, color: "#22c55e" },
+    { range: "9-10", count: 10, color: "#16a34a" },
+  ],
   alternatives: [
-    { name: "Whole Orange", description: "Fiber slows absorption", calories: 62, carbsG: 15 },
-    { name: "Apple Slices", description: "Lower glycemic index", calories: 52, carbsG: 14 },
-    { name: "Mixed Berries", description: "High fiber, low GI", calories: 57, carbsG: 14 },
+    {
+      name: "Cucumber & Celery Juice",
+      image: null,
+      description: "Low sugar, hydrating alternative",
+    },
+    {
+      name: "Macadamia Milk",
+      image: null,
+      description: "Creamy, low-carb option",
+    },
   ],
   blunters: [
-    { name: "Almonds (handful)", description: "Fat + fiber slows absorption", calories: 160 },
-    { name: "Greek Yogurt", description: "Protein buffer", calories: 100 },
-    { name: "Apple Cider Vinegar", description: "1 tbsp before meals", calories: 3 },
+    {
+      name: "Chia Seed Pudding",
+      image: null,
+      description: "Fiber-rich, slows glucose absorption",
+    },
+    {
+      name: "Almond Butter",
+      image: null,
+      description: "Healthy fats buffer sugar spikes",
+    },
   ],
 };
 
@@ -63,21 +89,9 @@ const MOCK_REVIEW = {
 /* Component                                                           */
 /* ------------------------------------------------------------------ */
 
-/**
- * DayReviewWalkthrough
- *
- * 3-step walkthrough for glucose day review:
- *   Step 1: Spike Identification (chart + food)
- *   Step 2: What Caused It (explanation)
- *   Step 3: Alternatives (replacements + blunters)
- *
- * @param {object}   reviewData  - Response from glucoseAPI.dayReview(), falls back to mock
- * @param {function} onComplete  - Called when user finishes walkthrough
- */
 export default function DayReviewWalkthrough({ reviewData, onComplete }) {
   const [step, setStep] = useState(0);
 
-  // Merge with mock data as fallback
   const data = useMemo(() => {
     if (reviewData && Object.keys(reviewData).length > 0) {
       return { ...MOCK_REVIEW, ...reviewData };
@@ -103,24 +117,20 @@ export default function DayReviewWalkthrough({ reviewData, onComplete }) {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md bg-[#f4f5f9] pb-24 font-inter">
-      {/* Progress indicator */}
-      <div className="px-4 pt-[max(env(safe-area-inset-top,0px),12px)] pb-2">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-[#6d6f7b]">
-            Step {step + 1} of 3
-          </p>
-          <div className="flex gap-1.5">
-            {[0, 1, 2].map((s) => (
-              <div
-                key={s}
-                className={`h-1.5 w-8 rounded-full transition-colors ${
-                  s <= step ? "bg-black" : "bg-[#e8e9f0]"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
+    <div className="mx-auto min-h-screen w-full max-w-md bg-white pb-28 font-inter">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pb-2 pt-[max(env(safe-area-inset-top,0px),12px)]">
+        <button
+          type="button"
+          onClick={step > 0 ? handlePrev : undefined}
+          aria-label="Go back"
+          className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-[#f6f7fb]"
+        >
+          <ArrowLeft size={20} className="text-black" />
+        </button>
+        <h1 className="flex-1 text-base font-semibold text-black">
+          Day Review - {data.date || "Jan 29"}
+        </h1>
       </div>
 
       {/* Step content */}
@@ -130,35 +140,15 @@ export default function DayReviewWalkthrough({ reviewData, onComplete }) {
         {step === 2 && <AlternativesStep data={data} />}
       </div>
 
-      {/* Navigation buttons */}
-      <div className="fixed bottom-0 left-0 right-0 flex justify-center bg-[#f4f5f9] pb-6 pt-3 px-4">
-        <div className="w-full max-w-md flex gap-3">
-          {step > 0 && (
-            <button
-              type="button"
-              onClick={handlePrev}
-              className="flex h-12 items-center justify-center gap-2 rounded-xl border border-borderColor bg-white px-5 text-sm font-medium text-[#14151a]"
-            >
-              <ArrowLeft size={16} />
-              Back
-            </button>
-          )}
+      {/* Next button - fixed at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 flex justify-center bg-white pb-6 pt-3 px-4">
+        <div className="w-full max-w-md">
           <button
             type="button"
             onClick={handleNext}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-black text-sm font-medium text-white"
+            className="w-full rounded-lg bg-black py-3 text-sm font-semibold text-white transition hover:bg-black/90"
           >
-            {step < 2 ? (
-              <>
-                Next
-                <ArrowRight size={16} />
-              </>
-            ) : (
-              <>
-                <Check size={16} />
-                Done
-              </>
-            )}
+            Next
           </button>
         </div>
       </div>
@@ -171,61 +161,82 @@ export default function DayReviewWalkthrough({ reviewData, onComplete }) {
 /* ------------------------------------------------------------------ */
 
 function SpikeStep({ data, chartPoints }) {
-  const scoreColor = data.score <= 4 ? "text-red-600 bg-red-100" : "text-green-600 bg-green-100";
-
   return (
     <div>
-      <h2 className="text-lg font-bold text-black">Spike Identification</h2>
-
-      {/* Score badge */}
-      <div className="mt-3 mb-4 flex items-center gap-2">
-        <span className={`rounded-full px-3 py-1 text-sm font-bold ${scoreColor}`}>
-          {data.score}/10
-        </span>
-        <span className="text-sm text-[#6d6f7b]">{data.scoreLabel || "Glucose Spike"}</span>
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mt-2 mb-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-[#717178]">
+          1 of 3 &middot; Your Glucose Response
+        </p>
+        <Info size={14} className="text-[#717178]" />
       </div>
 
+      {/* Score and label */}
+      <h2 className="text-xl font-bold text-black">
+        {data.score}/10 - {data.scoreLabel || "Large Spike"}
+      </h2>
+
+      {/* Description */}
+      <p className="mt-2 text-sm text-[#717178] leading-relaxed">
+        Glucose increased{" "}
+        <span className="font-bold text-black">{data.spikeAmount || 36} mg/dL</span>{" "}
+        and peaked at{" "}
+        <span className="font-bold text-black">{data.peakValue || 154} mg/dL</span>
+      </p>
+
       {/* Glucose chart */}
-      <div className="rounded-2xl border border-borderColor bg-white p-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6d6f7b]">
-          Glucose Response
-        </p>
-        <div className="h-48 w-full">
+      <div className="mt-4 rounded-lg border border-[#E6E6E8] p-4" style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}>
+        <div className="h-52 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartPoints} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+            <AreaChart data={chartPoints} margin={{ top: 10, right: 20, left: -10, bottom: 5 }}>
               <defs>
-                <linearGradient id="spikeFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                <linearGradient id="glucoseFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis
-                dataKey="minute"
-                tick={{ fontSize: 10, fill: "#6d6f7b" }}
-                tickFormatter={(v) => `${v}m`}
+                dataKey="time"
+                tick={{ fontSize: 10, fill: "#717178" }}
+                axisLine={false}
+                tickLine={false}
               />
               <YAxis
-                domain={["dataMin - 5", "dataMax + 10"]}
-                tick={{ fontSize: 10, fill: "#6d6f7b" }}
-              />
-              <Tooltip
-                contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                formatter={(val) => [`${val} mg/dL`, "Glucose"]}
-                labelFormatter={(v) => `${v} min`}
+                domain={["dataMin - 10", "dataMax + 10"]}
+                tick={{ fontSize: 10, fill: "#717178" }}
+                axisLine={false}
+                tickLine={false}
+                unit=" mg/dL"
+                width={55}
               />
               <ReferenceLine
                 y={data.baseline}
                 stroke="#9ca3af"
-                strokeDasharray="4 4"
-                label={{ value: "Baseline", fontSize: 10, fill: "#9ca3af", position: "right" }}
+                strokeDasharray="6 4"
+                strokeWidth={1}
+              />
+              {/* TARGET RANGE label on right */}
+              <ReferenceLine
+                y={data.baseline + 20}
+                stroke="transparent"
+                label={{
+                  value: "TARGET RANGE",
+                  position: "right",
+                  fontSize: 9,
+                  fill: "#9ca3af",
+                  fontWeight: 600,
+                }}
+              />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E6E6E8" }}
+                formatter={(val) => [`${val} mg/dL`, "Glucose"]}
               />
               <Area
                 type="monotone"
                 dataKey="glucose"
-                stroke="#ef4444"
-                strokeWidth={2}
-                fill="url(#spikeFill)"
+                stroke="#6366f1"
+                strokeWidth={2.5}
+                fill="url(#glucoseFill)"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -234,15 +245,18 @@ function SpikeStep({ data, chartPoints }) {
 
       {/* Spiker food card */}
       {data.spikerFood && (
-        <div className="mt-4 rounded-xl border-2 border-red-200 bg-red-50 p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle size={14} className="text-red-500" />
-            <p className="text-xs font-semibold text-red-600">Primary Spiker</p>
+        <div className="mt-4 rounded-lg border border-[#E6E6E8] p-3" style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-black">{data.spikerFood.name}</p>
+              <p className="text-xs text-[#717178] mt-0.5">
+                {data.spikerFood.calories} Cal &middot; {data.spikerFood.carbsG}g carbs &middot; {data.spikerFood.sugarG}g sugar
+              </p>
+            </div>
+            <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-600">
+              {data.spikerFood.score || data.score}/10
+            </span>
           </div>
-          <p className="text-sm font-semibold text-[#14151a]">{data.spikerFood.name}</p>
-          <p className="text-xs text-[#6d6f7b]">
-            {data.spikerFood.calories} Cal · {data.spikerFood.carbsG}g carbs · {data.spikerFood.sugarG}g sugar
-          </p>
         </div>
       )}
     </div>
@@ -254,49 +268,66 @@ function SpikeStep({ data, chartPoints }) {
 /* ------------------------------------------------------------------ */
 
 function CauseStep({ data }) {
+  const maxCount = Math.max(...(data.communityScores || []).map((s) => s.count), 1);
+
   return (
     <div>
-      <h2 className="text-lg font-bold text-black">What Caused It</h2>
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mt-2 mb-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-[#717178]">
+          2 of 3 &middot; What Caused It
+        </p>
+        <Info size={14} className="text-[#717178]" />
+      </div>
 
-      {/* Spiker highlight */}
-      {data.spikerFood && (
-        <div className="mt-4 rounded-xl border-2 border-red-200 bg-red-50 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle size={14} className="text-red-500" />
-            <p className="text-sm font-bold text-red-600">{data.spikerFood.name}</p>
+      {/* Main explanation */}
+      <p className="text-base text-black leading-relaxed">
+        The largest influence on your score was{" "}
+        <span className="font-bold">&lsquo;{data.spikerFood?.name || "orange juice"}&rsquo;</span>
+      </p>
+
+      {/* Community score distribution */}
+      {data.communityScores && (
+        <div className="mt-5 rounded-lg border border-[#E6E6E8] p-4" style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#717178]">
+            Community Score Distribution
+          </p>
+          <div className="space-y-2">
+            {data.communityScores.map((bar, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="w-8 text-right text-xs text-[#717178]">{bar.range}</span>
+                <div className="flex-1 h-5 rounded-full bg-[#f2f2f2] overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${(bar.count / maxCount) * 100}%`,
+                      backgroundColor: bar.color,
+                    }}
+                  />
+                </div>
+                <span className="w-6 text-xs text-[#717178]">{bar.count}%</span>
+              </div>
+            ))}
           </div>
-          <p className="text-sm leading-relaxed text-[#14151a]">{data.explanation}</p>
         </div>
       )}
 
-      {/* Other items */}
+      {/* How other ingredients typically score */}
       {data.otherItems && data.otherItems.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6d6f7b]">
-            Other Meal Items
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#717178]">
+            How other ingredients typically score
           </p>
           <div className="space-y-2">
             {data.otherItems.map((item, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between rounded-xl border border-borderColor bg-white p-3"
+                className="flex items-center justify-between rounded-lg border border-[#E6E6E8] bg-white p-3"
+                style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}
               >
-                <div>
-                  <p className="text-sm font-medium text-[#14151a]">{item.name}</p>
-                  <p className="text-xs text-[#6d6f7b]">
-                    {item.calories} Cal · {item.carbsG}g carbs
-                  </p>
-                </div>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                    item.contribution === "high"
-                      ? "bg-red-100 text-red-600"
-                      : item.contribution === "medium"
-                      ? "bg-amber-100 text-amber-600"
-                      : "bg-green-100 text-green-600"
-                  }`}
-                >
-                  {item.contribution}
+                <p className="text-sm font-medium text-black">{item.name}</p>
+                <span className="text-sm font-semibold text-[#717178]">
+                  {item.score != null ? item.score : `+${item.deltaMgDl} mg/dL`}
                 </span>
               </div>
             ))}
@@ -314,35 +345,46 @@ function CauseStep({ data }) {
 function AlternativesStep({ data }) {
   return (
     <div>
-      <h2 className="text-lg font-bold text-black">Alternatives</h2>
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mt-2 mb-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-[#717178]">
+          3 of 3 &middot; Alternatives
+        </p>
+        <Info size={14} className="text-[#717178]" />
+      </div>
 
-      {/* Spiker callout */}
-      {data.spikerFood && (
-        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
-          <p className="text-sm text-amber-800">
-            <span className="font-semibold">{data.spikerFood.name}</span> is a glucose spiker.
-            Here are healthier alternatives and blunters.
-          </p>
-        </div>
-      )}
+      {/* Warning text */}
+      <p className="text-base text-black leading-relaxed">
+        &lsquo;{data.spikerFood?.name || "orange juice"}&rsquo; is a glucose spike. Enjoy it infrequently.
+      </p>
 
       {/* Popular Alternatives */}
       {data.alternatives && data.alternatives.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6d6f7b]">
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[#717178]">
             Popular Alternatives
           </p>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
             {data.alternatives.map((alt, idx) => (
               <div
                 key={idx}
-                className="rounded-xl border border-borderColor bg-white p-3"
+                className="rounded-lg border border-[#E6E6E8] bg-white overflow-hidden"
+                style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}
               >
-                <p className="text-sm font-semibold text-[#14151a]">{alt.name}</p>
-                <p className="text-xs text-[#6d6f7b]">{alt.description}</p>
-                <p className="mt-1 text-[10px] font-medium text-[#6d6f7b]">
-                  {alt.calories} Cal · {alt.carbsG}g carbs
-                </p>
+                {/* Image placeholder */}
+                <div className="h-24 bg-[#f2f2f2] flex items-center justify-center">
+                  {alt.image ? (
+                    <img src={alt.image} alt={alt.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-2xl">🥤</span>
+                  )}
+                </div>
+                <div className="p-2.5">
+                  <p className="text-xs font-bold text-black leading-tight">{alt.name}</p>
+                  {alt.description && (
+                    <p className="mt-0.5 text-[10px] text-[#717178]">{alt.description}</p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -352,20 +394,30 @@ function AlternativesStep({ data }) {
       {/* Spike Blunters */}
       {data.blunters && data.blunters.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6d6f7b]">
-            Spike Blunters
+          <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[#717178]">
+            Spike &ldquo;Blunters&rdquo;
           </p>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
             {data.blunters.map((bl, idx) => (
               <div
                 key={idx}
-                className="rounded-xl border border-green-200 bg-green-50 p-3"
+                className="rounded-lg border border-[#E6E6E8] bg-white overflow-hidden"
+                style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}
               >
-                <p className="text-sm font-semibold text-[#14151a]">{bl.name}</p>
-                <p className="text-xs text-[#6d6f7b]">{bl.description}</p>
-                <p className="mt-1 text-[10px] font-medium text-[#6d6f7b]">
-                  {bl.calories} Cal
-                </p>
+                {/* Image placeholder */}
+                <div className="h-24 bg-[#f2f2f2] flex items-center justify-center">
+                  {bl.image ? (
+                    <img src={bl.image} alt={bl.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-2xl">🥜</span>
+                  )}
+                </div>
+                <div className="p-2.5">
+                  <p className="text-xs font-bold text-black leading-tight">{bl.name}</p>
+                  {bl.description && (
+                    <p className="mt-0.5 text-[10px] text-[#717178]">{bl.description}</p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
