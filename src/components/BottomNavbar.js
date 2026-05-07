@@ -184,6 +184,15 @@ export default function BottomNavbar() {
   const [pickedFiles, setPickedFiles] = useState([]);
   const popupOpen = activeSheet === "actions";
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("logfood") === "1") {
+      setActiveSheet("actions");
+      window.history.replaceState({}, "", pathname);
+    }
+  }, [pathname]);
+
   const handleFilesPicked = (files) => {
     setPickedFiles(files);
     setActiveSheet("details");

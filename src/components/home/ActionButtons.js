@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Utensils, Activity } from "lucide-react";
 
 const ACTION_ROUTES = {
-  "Log Food": "/meals",
+  "Log Food": "/dashboard?logfood=1",
   "Add an activity": "/activities/new",
 };
 
