@@ -127,7 +127,7 @@ function FoodScoreTab({ scoreVal, predictedDelta, items, totals, consumedAt, mea
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <p
             className="text-white"
-            style={{ fontFamily: "Arimo, Inter, sans-serif", fontWeight: 700, fontSize: 55 }}
+            style={{ fontFamily: "var(--font-arimo), Inter, sans-serif", fontWeight: 700, fontSize: 55 }}
           >
             {scoreVal ?? "--"}
           </p>
@@ -239,7 +239,7 @@ function PredictedGlucoseTab({ scoreVal, predictedDelta, glucoseCurve, items, to
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <p
             className="text-white"
-            style={{ fontFamily: "Arimo, Inter, sans-serif", fontWeight: 700, fontSize: 55 }}
+            style={{ fontFamily: "var(--font-arimo), Inter, sans-serif", fontWeight: 700, fontSize: 55 }}
           >
             {scoreVal ?? "--"}
           </p>

@@ -226,4 +226,10 @@ export const glucoseAPI = {
     API.get(`/api/users/${userId}/glucose/predictions`, { params: { date } }),
 };
 
+// Food Search endpoints
+export const foodSearchAPI = {
+  search: (userId, q) =>
+    API.get(`/api/users/${userId}/foods/search`, { params: { q } }),
+};
+
 export default API;
