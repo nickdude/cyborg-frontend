@@ -18,7 +18,9 @@ export default function MealScorePage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (authLoading || !userId || !mealId) return;
+    if (authLoading) return;
+    if (!userId) { setLoading(false); return; }
+    if (!mealId) return;
     let cancelled = false;
     setLoading(true);
     setError("");

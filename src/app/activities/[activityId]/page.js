@@ -17,7 +17,9 @@ export default function ActivityDetailPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (authLoading || !userId || !activityId) return;
+    if (authLoading) return;
+    if (!userId) { setLoading(false); return; }
+    if (!activityId) return;
     let cancelled = false;
     setLoading(true);
     setError("");
