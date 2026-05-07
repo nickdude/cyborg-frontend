@@ -188,7 +188,7 @@ function SpikeStep({ data, chartPoints }) {
       <div className="mt-4 rounded-lg border border-[#E6E6E8] p-4" style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}>
         <div className="h-52 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartPoints} margin={{ top: 10, right: 20, left: -10, bottom: 5 }}>
+            <AreaChart data={chartPoints} margin={{ top: 10, right: 85, left: -10, bottom: 5 }}>
               <defs>
                 <linearGradient id="glucoseFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />

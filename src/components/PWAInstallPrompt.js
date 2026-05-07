@@ -39,27 +39,27 @@ export default function PWAInstallPrompt() {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 bg-zinc-900 border border-zinc-700 rounded-2xl p-4 shadow-2xl animate-slide-up">
+    <div className="fixed bottom-20 left-4 right-4 z-50 rounded-2xl border border-purple-200 bg-white p-4 shadow-2xl animate-slide-up">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-          <span className="text-emerald-400 text-xl font-bold">C</span>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-100">
+          <span className="text-xl font-bold text-purple-700">C</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm">Install Cyborg</p>
-          <p className="text-zinc-400 text-xs">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-black">Install Cyborg</p>
+          <p className="text-xs text-[#717178]">
             Add to home screen for faster access
           </p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex shrink-0 gap-2">
           <button
             onClick={handleDismiss}
-            className="px-3 py-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
+            className="px-3 py-1.5 text-xs text-[#717178] transition-colors hover:text-black"
           >
             Later
           </button>
           <button
             onClick={handleInstall}
-            className="px-4 py-1.5 text-xs font-medium bg-emerald-500 text-black rounded-lg hover:bg-emerald-400 transition-colors"
+            className="rounded-lg bg-primary px-4 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90"
           >
             Install
           </button>

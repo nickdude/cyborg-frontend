@@ -56,9 +56,16 @@ export default function GlucoseDayReviewPage() {
     );
   }
 
+  const formattedDate = (() => {
+    try {
+      const d = new Date(date + "T00:00:00");
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    } catch { return date; }
+  })();
+
   return (
     <DayReviewWalkthrough
-      reviewData={reviewData}
+      reviewData={reviewData ? { ...reviewData, date: formattedDate } : { date: formattedDate }}
       onComplete={handleComplete}
     />
   );

@@ -71,7 +71,7 @@ function AuthShell({ children }) {
           </div>
         </aside>
 
-        <div className="lg:flex lg:items-center lg:justify-center lg:bg-white lg:p-10">{children}</div>
+        <div className="flex items-center justify-center px-6 py-8 lg:bg-white lg:p-10">{children}</div>
       </div>
     </div>
   );
