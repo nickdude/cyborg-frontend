@@ -1,65 +1,81 @@
 "use client";
 
-import { Utensils, Info, Flame, Leaf, Wheat, Beef, Droplet, Candy } from "lucide-react";
+import { Flame, Leaf, Wheat, Beef, Droplet, Candy, Info } from "lucide-react";
 
 function formatTime(iso) {
   const d = new Date(iso);
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
 }
 
-const MACRO_TILES = [
-  { key: "calories", label: "Calories", icon: Flame, color: "text-orange-500", bg: "bg-orange-50" },
-  { key: "fiber", label: "Fiber", icon: Leaf, color: "text-green-500", bg: "bg-green-50" },
-  { key: "carbs", label: "Carbs", icon: Wheat, color: "text-blue-500", bg: "bg-blue-50" },
-  { key: "protein", label: "Protein", icon: Beef, color: "text-purple-500", bg: "bg-purple-50" },
-  { key: "fat", label: "Fat", icon: Droplet, color: "text-yellow-500", bg: "bg-yellow-50" },
-  { key: "sugar", label: "Sugar", icon: Candy, color: "text-pink-500", bg: "bg-pink-50" },
-];
+const MACRO_ICONS = {
+  calories: { icon: Flame, color: "#EF1360", label: "CALORIES" },
+  fiber: { icon: Leaf, color: "#34C759", label: "FIBER" },
+  carbs: { icon: Wheat, color: "#DE8E4E", label: "CARBS" },
+  protein: { icon: Beef, color: "#DD5F5F", label: "PROTEIN" },
+  fat: { icon: Droplet, color: "#548ADE", label: "FAT" },
+  sugar: { icon: Candy, color: "#4F378B", label: "SUGAR" },
+};
+
+const MACRO_ORDER = ["calories", "fiber", "carbs", "protein", "fat", "sugar"];
 
 export default function TimelineMealCard({ entry, onClick }) {
   const totals = entry.data?.totals || {};
   const time = formatTime(entry.time);
+  const itemNames = (entry.data?.items || []).map((i) => i.name).filter(Boolean).join(", ");
+  const displayName = itemNames || entry.title || "Meal";
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full rounded-2xl border border-borderColor bg-white p-3 text-left transition hover:shadow-sm active:scale-[0.99]"
+      className="relative w-full pl-8 text-left"
     >
-      {/* Top row: time + info icon */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Utensils size={14} className="text-[#6d6f7b]" />
-          <span className="text-xs font-medium text-[#6d6f7b]">{time}</span>
+      <div className="absolute left-0 top-[22px] h-2 w-2 rounded-full bg-black" />
+
+      <div className="w-full rounded-xl bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-black">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span className="text-[14px] font-medium leading-5 text-black">{time}</span>
+          </div>
+          <Info size={16} className="text-[#717178]" />
         </div>
-        <Info size={16} className="text-[#6d6f7b]" />
-      </div>
 
-      {/* Meal title */}
-      <p className="mt-1.5 truncate text-sm font-semibold text-[#1e2027]">
-        {entry.title}
-      </p>
+        <p className="mt-1 truncate text-[14px] font-medium leading-5 text-[#717178]">
+          {displayName}
+        </p>
 
-      {/* Macro split grid */}
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {MACRO_TILES.map(({ key, label, icon: Icon, color, bg }) => {
-          const val = totals[key];
-          return (
-            <div
-              key={key}
-              className={`flex items-center gap-1.5 rounded-lg ${bg} px-2 py-1.5`}
-            >
-              <Icon size={13} className={color} />
-              <div className="min-w-0">
-                <p className="truncate text-[10px] text-[#6d6f7b]">{label}</p>
-                <p className="text-xs font-semibold text-[#1e2027]">
-                  {val != null ? Math.round(val) : "--"}
-                  {key === "calories" ? "" : "g"}
-                </p>
-              </div>
+        {Object.keys(totals).length > 0 && (
+          <>
+            <p className="mt-3 text-[10px] font-semibold uppercase tracking-wide text-black">
+              MACRO SPLIT
+            </p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {MACRO_ORDER.map((key) => {
+                const { icon: Icon, color, label } = MACRO_ICONS[key];
+                const val = totals[key];
+                const unit = key === "calories" ? "" : "g";
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center gap-1.5 rounded-lg bg-[#F8F8FA] px-2 py-2"
+                  >
+                    <Icon size={16} color={color} className="shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-medium uppercase text-[#717178]">{label}</p>
+                      <p className="text-[13px] font-semibold leading-4 text-black">
+                        {val != null ? Math.round(val) : "--"}{unit}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          </>
+        )}
       </div>
     </button>
   );
