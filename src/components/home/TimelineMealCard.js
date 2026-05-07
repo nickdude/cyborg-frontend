@@ -9,14 +9,14 @@ function formatTime(iso) {
 
 const MACRO_ICONS = {
   calories: { icon: Flame, color: "#EF1360", label: "CALORIES" },
-  fiber: { icon: Leaf, color: "#34C759", label: "FIBER" },
-  carbs: { icon: Wheat, color: "#DE8E4E", label: "CARBS" },
-  protein: { icon: Beef, color: "#DD5F5F", label: "PROTEIN" },
-  fat: { icon: Droplet, color: "#548ADE", label: "FAT" },
-  sugar: { icon: Candy, color: "#4F378B", label: "SUGAR" },
+  fiberG: { icon: Leaf, color: "#34C759", label: "FIBER" },
+  carbsG: { icon: Wheat, color: "#DE8E4E", label: "CARBS" },
+  proteinG: { icon: Beef, color: "#DD5F5F", label: "PROTEIN" },
+  fatG: { icon: Droplet, color: "#548ADE", label: "FAT" },
+  sugarG: { icon: Candy, color: "#4F378B", label: "SUGAR" },
 };
 
-const MACRO_ORDER = ["calories", "fiber", "carbs", "protein", "fat", "sugar"];
+const MACRO_ORDER = ["calories", "fiberG", "carbsG", "proteinG", "fatG", "sugarG"];
 
 export default function TimelineMealCard({ entry, onClick }) {
   const totals = entry.data?.totals || {};
