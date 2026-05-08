@@ -10,6 +10,8 @@ import MembershipPlanSection from "@/components/home/MembershipPlanSection";
 import AllInOneImageSwitcher from "@/components/home/AllInOneImageSwitcher";
 import TestimonialCarousel from "@/components/home/TestimonialCarousel";
 import TagOverlaySection from "@/components/home/TagOverlaySection";
+import FaqAccordion from "@/components/home/FaqAccordion";
+import TestCoverageTabs from "@/components/home/TestCoverageTabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -302,6 +304,8 @@ export default function Home() {
       <MedicalProfessionalsSection />
       <MembershipPlanSection />
       <TagOverlaySection image="/assets/testinomial/test1.png" />
+      <FaqAccordion />
+      <TestCoverageTabs />
     </main>
   );
 }

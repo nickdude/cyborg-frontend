@@ -20,7 +20,70 @@ export default function Marketplace() {
 
   // Complete products data with types
   const productsData = [
-    // Tests (vial)
+
+    // Supplements (pills)
+    {
+      id: 5,
+      name: "AMINO 9",
+      brand: "Lean mass insurance.",
+      category: "Vitamins",
+      type: "supplement",
+      price: 28.00,
+      originalPrice: 35,
+      image: "/assets/preview/product-1.png",
+      onSale: true,
+      section: "recommended"
+    },
+    {
+      id: 6,
+      name: "MITO HEART",
+      brand: "Cellular cardiovascular vitality.",
+      category: "Omega",
+      type: "supplement",
+      price: 34.40,
+      originalPrice: 43,
+      image: "/assets/preview/product-2.png",
+      onSale: true,
+      section: "recommended"
+    },
+    {
+      id: 7,
+      name: "OZEMPIC",
+      brand: "Triple-organ protection in T2D.",
+      category: "Energy",
+      type: "supplement",
+      price: 43.20,
+      originalPrice: 54,
+      image: "/assets/preview/product-3.png",
+      onSale: true,
+      section: "brain"
+    },
+    {
+      id: 8,
+      name: "MOUNJARO",
+      brand: "The deepest metabolic reset.",
+      category: "Minerals",
+      type: "supplement",
+      price: 35.48,
+      originalPrice: 44.4,
+      image: "/assets/preview/product-4.png",
+      onSale: true,
+      section: "brain"
+    },
+    // {
+    //   id: 9,
+    //   name: "Probiotic Complex",
+    //   brand: "Garden of Life",
+    //   category: "Digestive",
+    //   type: "supplement",
+    //   price: 29.99,
+    //   originalPrice: 39.99,
+    //   image: "/assets/sample-medicine.png",
+    //   onSale: true,
+    //   section: "digestive"
+    // },
+
+     // Tests (vial)
     {
       id: 1,
       name: "Complete Blood Count (CBC)",
@@ -68,68 +131,6 @@ export default function Marketplace() {
       image: "/assets/sample-medicine.png",
       onSale: false,
       section: "wellness"
-    },
-
-    // Supplements (pills)
-    {
-      id: 5,
-      name: "Vitamin D + K2 Liquid",
-      brand: "Thorne",
-      category: "Vitamins",
-      type: "supplement",
-      price: 28.00,
-      originalPrice: 35,
-      image: "/assets/sample-medicine.png",
-      onSale: true,
-      section: "recommended"
-    },
-    {
-      id: 6,
-      name: "O.N.E. Omega - 30 Softgels",
-      brand: "Pure Encapsulations",
-      category: "Omega",
-      type: "supplement",
-      price: 34.40,
-      originalPrice: 43,
-      image: "/assets/sample-medicine.png",
-      onSale: true,
-      section: "recommended"
-    },
-    {
-      id: 7,
-      name: "CoQ10",
-      brand: "Thorne",
-      category: "Energy",
-      type: "supplement",
-      price: 43.20,
-      originalPrice: 54,
-      image: "/assets/sample-medicine.png",
-      onSale: true,
-      section: "brain"
-    },
-    {
-      id: 8,
-      name: "Magnesium Glycinate",
-      brand: "Pure Encapsulations",
-      category: "Minerals",
-      type: "supplement",
-      price: 35.48,
-      originalPrice: 44.4,
-      image: "/assets/sample-medicine.png",
-      onSale: true,
-      section: "brain"
-    },
-    {
-      id: 9,
-      name: "Probiotic Complex",
-      brand: "Garden of Life",
-      category: "Digestive",
-      type: "supplement",
-      price: 29.99,
-      originalPrice: 39.99,
-      image: "/assets/sample-medicine.png",
-      onSale: true,
-      section: "digestive"
     },
 
     // Prescriptions (prescription)
@@ -238,7 +239,7 @@ export default function Marketplace() {
 
   // Reset filter when tab changes
   useMemo(() => {
-    setActiveFilter("all");
+    setActiveFilter("supplements"); // default filter for grid
   }, [activeTab]);
 
   // Filter products based on active tab, search, and filter

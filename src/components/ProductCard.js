@@ -7,7 +7,7 @@ export default function ProductCard({ product }) {
   const content = (
     <>
       {/* Product Image */}
-      <div className="relative aspect-square mb-3 flex items-center justify-center rounded-lg bg-pageBackground">
+      <div className="relative aspect-square mb-3 flex items-center justify-center rounded-lg ">
         <Image
           src={product.image}
           alt={product.name}

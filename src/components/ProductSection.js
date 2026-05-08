@@ -4,13 +4,13 @@ import ProductCard from "./ProductCard";
 
 export default function ProductSection({ title, subtitle, products }) {
   return (
-    <div className="space-y-4 bg-pageBackground">
+    <div className="space-y-4">
       <div>
         <h2 className="text-xl lg:text-2xl font-inter font-medium text-gray-900">{title}</h2>
         {subtitle && <p className="text-sm lg:text-base text-gray-600 mt-1">{subtitle}</p>}
       </div>
       
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 bg-pageBackground">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 ">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
