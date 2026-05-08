@@ -99,85 +99,75 @@ function PatientCard({ patient, index = 0, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="rounded-3xl overflow-hidden bg-[#1a1a1a] cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200"
+      className="cursor-pointer overflow-hidden rounded-2xl border border-borderColor bg-white shadow-sm transition hover:shadow-md"
     >
-      {/* Avatar area — image with gradient overlay */}
-      <div className="relative h-[192px] overflow-hidden">
-        {/* Purple gradient background behind avatar */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#541d7a] to-[#7a2fa0]" />
+      <div className="relative h-[180px] overflow-hidden bg-gradient-to-b from-[#f6f1fb] to-white">
         <img
           src={`/assets/avatars/avatar-${(index % 5) + 1}.png`}
           alt={patient.firstName || "Patient"}
-          className="relative w-full h-full object-cover"
+          className="relative h-full w-full object-contain object-center p-3"
         />
-        {/* Bottom fade to card bg */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a]/20 to-transparent" />
-        {/* Status badge */}
         <span
-          className={`absolute top-3 right-3 px-3 py-1 rounded text-xs font-semibold ${
+          className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-semibold ${
             STATUS_STYLES[status] || STATUS_STYLES["Normal"]
           }`}
         >
           {status}
         </span>
-        {/* Name + Age badge at bottom-left over gradient */}
-        <div className="absolute bottom-3 left-4">
-          <h3 className="text-2xl font-bold text-white">
-            {patient.firstName || "Unknown"} {patient.lastName || ""}
-          </h3>
-          <span className="inline-block mt-1 px-2 py-0.5 rounded bg-white/10 text-sm font-normal text-white">
-            Age: {chronoAge || "N/A"}
-          </span>
-        </div>
       </div>
 
-      {/* Info area */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 pt-4">
+        <div>
+          <h3 className="text-lg font-semibold text-black">
+            {patient.firstName || "Unknown"} {patient.lastName || ""}
+          </h3>
+          <p className="mt-1 text-sm text-secondary">Age: {chronoAge || "N/A"}</p>
+        </div>
 
-        {/* Biological Age */}
-        <div className="mt-4 flex items-center justify-between">
-          <div>
-            <p className="text-white text-xs font-normal">Biological Age</p>
-            <p className="text-[#717178] text-sm font-normal">
-              {bioAgeDiff != null
-                ? `≈ ${Math.abs(bioAgeDiff)} calendar years`
-                : "Not available"}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <BioAgeBar value={bioAgeBarValue} />
-            <span className="text-2xl font-light text-white">
-              {bioAge != null ? Math.round(bioAge) : "—"}
-            </span>
-            {bioAgeDiff != null && (
-              <span className={bioAgeDiff > 0 ? "text-red-400" : "text-green-400"}>
-                {bioAgeDiff > 0 ? (
-                  <ArrowDownRight className="w-4 h-4" />
-                ) : (
-                  <ArrowUpRight className="w-4 h-4" />
-                )}
+        <div className="mt-4 rounded-xl border border-borderColor bg-gray-50 px-3 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-secondary">Biological Age</p>
+              <p className="text-sm text-gray-500">
+                {bioAgeDiff != null
+                  ? `≈ ${Math.abs(bioAgeDiff)} calendar years`
+                  : "Not available"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <BioAgeBar value={bioAgeBarValue} />
+              <span className="text-2xl font-semibold text-black">
+                {bioAge != null ? Math.round(bioAge) : "—"}
               </span>
-            )}
+              {bioAgeDiff != null && (
+                <span className={bioAgeDiff > 0 ? "text-red-500" : "text-emerald-500"}>
+                  {bioAgeDiff > 0 ? (
+                    <ArrowDownRight className="h-4 w-4" />
+                  ) : (
+                    <ArrowUpRight className="h-4 w-4" />
+                  )}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ApoB */}
-        <div className="mt-3 flex items-center justify-between">
-          <div>
-            <p className="text-white text-xs font-normal">ApoB</p>
-            <p className="text-[#717178] text-[10px] font-normal">Lowest % for Age Range</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Sparkline values={apobValue ? [60, 55, 58, 52, apobValue] : [60, 55, 58, 52, 55]} />
-            <span className="text-lg font-normal text-white">
-              {apobValue != null ? Math.round(apobValue) : "—"}
-            </span>
-            <span className="w-2 h-2 rounded-full bg-[#f865dd]" />
+        <div className="mt-3 rounded-xl border border-borderColor bg-gray-50 px-3 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-secondary">ApoB</p>
+              <p className="text-[11px] text-gray-500">Lowest % for Age Range</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Sparkline values={apobValue ? [60, 55, 58, 52, apobValue] : [60, 55, 58, 52, 55]} />
+              <span className="text-lg font-semibold text-black">
+                {apobValue != null ? Math.round(apobValue) : "—"}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Watermark */}
-        <p className="text-xs text-[#717178] mt-3">cyborg.com</p>
+        <p className="mt-3 text-xs text-secondary">cyborg.com</p>
       </div>
     </div>
   );
@@ -193,13 +183,11 @@ function CalendarStrip() {
     days.push(d);
   }
 
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
   return (
-    <div className="bg-[#333333] rounded-[16px] p-5 flex flex-col" style={{ minHeight: 320 }}>
+    <div className="flex min-h-[320px] flex-col rounded-2xl border border-borderColor bg-white p-5 shadow-sm">
       <div>
-        <h3 className="text-[20px] font-medium text-white">Upcoming</h3>
-        <p className="text-[14px] font-normal text-white/40">in the next 2 weeks</p>
+        <h3 className="text-lg font-semibold text-black">Upcoming</h3>
+        <p className="text-sm text-secondary">in the next 2 weeks</p>
       </div>
       <div className="flex-1" />
       <div className="grid grid-cols-7 gap-x-2 gap-y-3">
@@ -208,10 +196,10 @@ function CalendarStrip() {
           return (
             <button
               key={i}
-              className={`w-[38px] h-[38px] rounded-full text-[16px] font-bold flex items-center justify-center transition-colors mx-auto ${
+              className={`mx-auto flex h-[38px] w-[38px] items-center justify-center rounded-full text-sm font-semibold transition-colors ${
                 isToday
-                  ? "bg-white text-[#333333]"
-                  : "bg-[#555555] text-white hover:bg-[#666666]"
+                  ? "bg-black text-white"
+                  : "border border-borderColor bg-gray-50 text-gray-600 hover:bg-gray-100"
               }`}
             >
               {d.getDate()}
@@ -226,14 +214,14 @@ function CalendarStrip() {
 // ─── Appointment Item ───
 function AppointmentItem({ date, title, time }) {
   return (
-    <div className="bg-white rounded-lg p-4 flex items-start gap-4">
-      <div className="flex-shrink-0 text-center">
-        <p className="text-[12px] font-medium text-[#717178]">{date.split(" ")[0]}</p>
-        <p className="text-[20px] font-medium text-[#717178]">{date.split(" ")[1]}</p>
+    <div className="flex items-start gap-4 rounded-2xl border border-borderColor bg-white p-4 shadow-sm">
+      <div className="flex-shrink-0 rounded-xl border border-borderColor bg-gray-50 px-3 py-2 text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-secondary">{date.split(" ")[0]}</p>
+        <p className="text-xl font-semibold text-black">{date.split(" ")[1]}</p>
       </div>
-      <div className="flex-1 min-w-0 border-l border-gray-200 pl-4">
-        <p className="text-[14px] font-medium text-black">{title}</p>
-        <p className="text-[12px] font-medium text-[#717178]">{time}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-black">{title}</p>
+        <p className="mt-1 text-xs text-secondary">{time}</p>
       </div>
     </div>
   );
@@ -303,9 +291,8 @@ export default function DoctorDashboard() {
 
   return (
     <div className="min-h-screen bg-[#f2f2f2] font-sans">
-      {/* Header — no white bar per Figma, floats on gray bg */}
-      <header className="sticky top-0 z-40 bg-[#f2f2f2]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
+      <header className="sticky top-0 z-40 bg-[#f2f2f2]/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 lg:px-8">
           <div>
             <h1 className="text-[24px] font-semibold text-[#000000]">
               Dr. {user?.firstName || "Doctor"}
@@ -317,38 +304,32 @@ export default function DoctorDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
-        {/* Desktop: two columns. Mobile: single column */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Column — Calendar + Appointments */}
-          <div className="lg:w-[340px] lg:flex-shrink-0 space-y-4">
+      <main className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <div className="space-y-4 lg:w-[320px] lg:flex-shrink-0">
             <CalendarStrip />
 
-            {/* Appointments */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {MOCK_APPOINTMENTS.map((apt, i) => (
                 <AppointmentItem key={i} {...apt} />
               ))}
             </div>
           </div>
 
-          {/* Right Column — Patients */}
           <div className="flex-1">
-            {/* Patients header */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
               <h2 className="text-[20px] font-semibold text-[#000000]">Patients</h2>
             </div>
 
-            {/* Tab filters */}
-            <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide pb-1">
               {TABS.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
                     activeTab === tab
-                      ? "bg-[#000000] text-white"
-                      : "bg-[#ffffff] text-[#495565] border border-[#e5e7eb] hover:bg-gray-100"
+                      ? "bg-black text-white shadow-sm"
+                      : "bg-white text-[#495565] border border-borderColor hover:bg-gray-100"
                   }`}
                 >
                   {tab}
@@ -356,16 +337,15 @@ export default function DoctorDashboard() {
               ))}
             </div>
 
-            {/* Search (desktop) */}
-            <div className="hidden lg:block mb-4">
+            <div className="mb-5">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search patients..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-2xl border border-borderColor bg-white py-3 pl-10 pr-4 text-sm text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:border-primary/30 focus:ring-4 focus:ring-primary/10"
                 />
               </div>
             </div>
@@ -373,10 +353,10 @@ export default function DoctorDashboard() {
             {/* Patient Cards Grid */}
             {loading ? (
               <div className="flex items-center justify-center py-20">
-                <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               </div>
             ) : filteredPatients.length === 0 ? (
-              <div className="bg-white rounded-2xl p-12 text-center shadow-sm">
+              <div className="rounded-2xl border border-borderColor bg-white p-12 text-center shadow-sm">
                 <p className="text-gray-400 text-sm">
                   {patients.length === 0
                     ? "No patients linked yet. Share your referral code to get started."
@@ -384,7 +364,7 @@ export default function DoctorDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
                 {filteredPatients.map((patient, index) => (
                   <PatientCard
                     key={patient._id}

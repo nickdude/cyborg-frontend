@@ -245,10 +245,10 @@ export default function PatientDetail() {
   );
 
   return (
-    <div className="min-h-screen bg-[#f2f2f2]">
+    <div className="min-h-screen bg-[#f5f5f7]">
       {/* Header */}
-      <header className="bg-[#f2f2f2] sticky top-0 z-40">
-        <div className="relative flex items-center justify-between h-14 px-5 md:px-6 max-w-[1400px] mx-auto">
+      <header className="sticky top-0 z-40 bg-[#f2f2f2]/95 backdrop-blur-sm">
+        <div className="relative mx-auto flex h-14 max-w-[1400px] items-center justify-between px-5 md:px-6">
           <button
             onClick={() => router.back()}
             className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors z-10"
@@ -269,12 +269,12 @@ export default function PatientDetail() {
       </header>
 
       {/* Body */}
-      <div className="flex max-w-[1400px] mx-auto">
+      <div className="mx-auto flex max-w-[1400px]">
         {/* Left / Main Content */}
-        <main className="flex-1 w-full lg:pr-[400px] xl:pr-[440px]">
-          <div className="px-4 md:px-6 py-4 space-y-4 max-w-2xl mx-auto lg:max-w-none">
+        <main className="w-full flex-1 lg:pr-[416px] xl:pr-[456px]">
+          <div className="mx-auto max-w-[980px] space-y-5 px-4 py-4 md:px-6 lg:max-w-[980px] lg:space-y-6 lg:py-6">
             {/* Biological Age Card */}
-            <div className="relative rounded-[12px] overflow-hidden h-[176px] border border-[#e6e6e8] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)]">
+            <div className="relative h-[176px] overflow-hidden rounded-2xl border border-borderColor shadow-sm ring-1 ring-black/5">
               <img
                 src="/assets/doctor/bio-age-card-bg-figma.png"
                 alt=""
@@ -308,24 +308,24 @@ export default function PatientDetail() {
               onClick={() =>
                 router.push(`/doctor/patients/${patientId}/biomarkers`)
               }
-              className="w-full text-left bg-[#1a1a1a] rounded-[12px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] p-5 hover:shadow-md transition-shadow group"
+              className="group w-full rounded-2xl border border-borderColor bg-white p-5 text-left shadow-sm transition-shadow hover:shadow-md"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[12px] font-normal text-[#99a1ae]">
+                  <p className="text-[12px] font-medium text-secondary">
                     Biomarkers
                   </p>
-                  <p className="text-[20px] font-normal text-white mt-0.5">
+                  <p className="mt-0.5 text-[20px] font-semibold text-black">
                     {totalBiomarkers > 0 ? totalBiomarkers : "N/A"} biomarkers tested
                   </p>
                 </div>
-                <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-gray-300 transition-colors" />
+                <ChevronRight className="h-5 w-5 text-gray-400 transition-colors group-hover:text-gray-600" />
               </div>
               <ColorBar />
             </button>
 
             {/* Donut Chart Section */}
-            <div className="bg-white rounded-[12px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] p-5">
+            <div className="rounded-2xl border border-borderColor bg-white p-5 shadow-sm ring-1 ring-black/5">
               <h3 className="text-[18px] font-semibold text-black leading-[28px] tracking-[-0.44px]">
                 {totalBiomarkers > 0 ? outOfRangeCount : "N/A"} out of range
               </h3>
@@ -353,7 +353,7 @@ export default function PatientDetail() {
             </div>
 
             {/* Goals & Protocol */}
-            <div className="bg-white rounded-[12px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] p-4">
+            <div className="rounded-2xl border border-borderColor bg-white p-5 shadow-sm ring-1 ring-black/5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-[18px] font-semibold text-[#0a0a0a] leading-[28px] tracking-[-0.44px]">
                   Goals &amp; Protocol
@@ -369,7 +369,7 @@ export default function PatientDetail() {
               </div>
 
               {/* High priority goal card */}
-              <div className="relative rounded-[8px] overflow-hidden h-[132px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] mb-4">
+              <div className="relative mb-4 h-[132px] overflow-hidden rounded-2xl border border-borderColor shadow-sm">
                 <img
                   src="/assets/doctor/goals-card-bg-figma.png"
                   alt=""
@@ -390,7 +390,7 @@ export default function PatientDetail() {
 
               {/* Stats row */}
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 bg-white border border-[#e6e6e8] rounded-[4px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)] p-3">
+                <div className="flex-1 rounded-xl border border-borderColor bg-gray-50 p-3">
                   <p className="text-[12px] font-medium text-[#717178] leading-[16px]">
                     Total Goals
                   </p>
@@ -398,7 +398,7 @@ export default function PatientDetail() {
                     {goals.length}
                   </p>
                 </div>
-                <div className="flex-1 bg-white border border-[#e6e6e8] rounded-[4px] shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)] p-3">
+                <div className="flex-1 rounded-xl border border-borderColor bg-gray-50 p-3">
                   <p className="text-[12px] font-medium text-[#717178] leading-[16px]">
                     Protocol Items
                   </p>
@@ -417,7 +417,7 @@ export default function PatientDetail() {
                   protocolItems.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-3 p-3 rounded-[8px] bg-white border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)]"
+                      className="flex items-center gap-3 rounded-xl border border-borderColor bg-white p-3 shadow-sm"
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-[14px] font-medium text-black leading-[20px]">
@@ -446,7 +446,7 @@ export default function PatientDetail() {
             {planStatus && (
               <div
                 onClick={() => router.push(`/doctor/patients/${patientId}/goals`)}
-                className={`rounded-[24px] border shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] p-5 mb-6 cursor-pointer transition-colors ${
+                className={`mb-6 cursor-pointer rounded-2xl border p-5 shadow-sm ring-1 ring-black/5 transition-colors ${
                   planStatus === "pending_review"
                     ? "bg-amber-50 border-amber-200 hover:bg-amber-100"
                     : planStatus === "draft"
@@ -495,7 +495,7 @@ export default function PatientDetail() {
             )}
 
             {/* Your Action Plan */}
-            <div className="bg-white rounded-[24px] border border-[#e6e6e8] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] pt-5 px-5 pb-5 mb-6">
+            <div className="mb-6 rounded-2xl border border-borderColor bg-white px-5 pb-5 pt-5 shadow-sm ring-1 ring-black/5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-[18px] font-semibold text-[#0a0a0a] leading-[28px] tracking-[-0.44px]">
                   Your action plan
@@ -512,7 +512,7 @@ export default function PatientDetail() {
                   actionPlanItems.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-3 px-3 h-[60px] rounded-[14px] bg-[#f9fafb] cursor-pointer"
+                      className="flex h-[60px] cursor-pointer items-center gap-3 rounded-xl bg-gray-50 px-3"
                     >
                       <div className="flex items-center justify-center flex-shrink-0 w-6 h-6">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -540,7 +540,7 @@ export default function PatientDetail() {
         </main>
 
         {/* Right Chatbot Sidebar -- Desktop */}
-        <aside className="hidden lg:block fixed right-0 top-14 bottom-0 w-[400px] xl:w-[440px] bg-white border-l border-gray-200 z-30">
+        <aside className="hidden lg:block fixed right-0 top-14 bottom-0 w-[400px] xl:w-[440px] bg-white z-30 border-l border-borderColor/80 shadow-[-8px_0_24px_rgba(0,0,0,0.03)]">
           <Chatbot
             patientId={patientId}
             patientName={patientName}

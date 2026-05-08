@@ -963,9 +963,9 @@ export default function Chatbot({ patientId, patientName }) {
   // Render
   // -----------------------------------------------------------------------
   return (
-    <div className="h-full flex flex-col bg-white relative">
+    <div className="h-full flex flex-col bg-white relative border border-borderColor/80 rounded-l-3xl overflow-hidden shadow-sm">
       {/* Header */}
-      <header className="flex items-center gap-2 px-3 py-3 border-b border-gray-100 bg-white shrink-0">
+      <header className="flex items-center gap-2 px-4 py-3 border-b border-borderColor bg-white shrink-0">
         <button
           type="button"
           onClick={() => setHistoryOpen((v) => !v)}
@@ -1006,8 +1006,8 @@ export default function Chatbot({ patientId, patientName }) {
       {/* Chat history sidebar */}
       {historyOpen && (
         <div className="absolute inset-0 top-[52px] z-20 bg-white flex flex-col">
-          <div className="px-3 py-2 border-b border-gray-100">
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+          <div className="px-4 py-3 border-b border-borderColor">
+            <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-0.5">
               <button
                 type="button"
                 onClick={() => setShowAllPatients(false)}
@@ -1082,7 +1082,7 @@ export default function Chatbot({ patientId, patientName }) {
               </div>
             )}
           </div>
-          <div className="px-3 py-2 border-t border-gray-100">
+          <div className="px-4 py-3 border-t border-borderColor">
             <button
               type="button"
               onClick={handleNewChat}
@@ -1099,7 +1099,7 @@ export default function Chatbot({ patientId, patientName }) {
       <div className="relative flex-1 min-h-0">
         <div
           ref={containerRef}
-          className="h-full overflow-y-auto px-4 sm:px-6 py-6 space-y-4 bg-gray-50"
+          className="h-full overflow-y-auto bg-gray-50 px-4 py-6 space-y-4 sm:px-6"
         >
           {isEmpty ? (
             /* Empty state with quick prompts */
@@ -1164,9 +1164,9 @@ export default function Chatbot({ patientId, patientName }) {
       </div>
 
       {/* Composer */}
-      <div className="border-t border-gray-100 bg-white px-4 py-3">
+      <div className="border-t border-borderColor bg-white px-4 py-3">
         <div className="flex items-end gap-2">
-          <div className="flex-1 border border-gray-200 rounded-2xl bg-gray-50/50 px-4 py-2.5 focus-within:bg-white focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200">
+          <div className="flex-1 rounded-2xl border border-borderColor bg-gray-50/50 px-4 py-2.5 transition-all duration-200 focus-within:border-primary/30 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/10">
             <textarea
               ref={textareaRef}
               rows={1}
