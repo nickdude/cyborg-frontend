@@ -135,9 +135,9 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-pageBackground pb-24 lg:pb-10">
+        <div className="min-h-screen bg-pageBackground pb-24 lg:pb-12">
             {/* Hero */}
-            <div className="relative w-full min-h-[60vh] text-white lg:min-h-[480px]">
+            <div className="relative w-full min-h-[45vh] text-white lg:min-h-[360px]">
                 <div className="absolute inset-0 z-0">
                     <Image
                         src="/assets/welcome/welcome.jpg"
@@ -147,31 +147,29 @@ export default function Dashboard() {
                         priority
                     />
                 </div>
-                <div className="absolute inset-0 bg-black/40 z-0" />
+                <div className="absolute inset-0 bg-black/35 z-0" />
 
-                <div className="relative z-10 mx-auto w-full max-w-[1240px] px-6 pt-10 lg:px-8 lg:pt-14">
-                    <div className="space-y-6">
+                <div className="relative z-10 mx-auto w-full max-w-[1240px] px-4 pt-8 pb-12 lg:px-12 lg:pt-12 lg:pb-16">
+                    <div className="space-y-8">
                         <div>
-                            <p className="text-2xl font-semibold font-inter lg:text-[2rem]">Good morning {userName},</p>
-                            <h1 className="text-lg font-inter opacity-90 lg:text-xl">Welcome to
-                                <span className="block">CYBORG</span>
-                            </h1>
+                            <p className="text-2xl font-semibold font-inter lg:text-3xl">Good morning, {userName}</p>
+                            <h1 className="text-lg font-inter opacity-95 mt-1 lg:text-xl">Welcome to CYBORG</h1>
                         </div>
                     </div>
 
-                    <div className="mt-8 bg-white/20 backdrop-blur rounded-2xl p-5 max-w-sm lg:mt-10 lg:max-w-[430px] lg:p-6">
-                        <p className="text-xs font-inter uppercase tracking-wide opacity-80">{homeScheduledData.hero.panelLabel}</p>
-                        <p className="text-base font-semibold font-inter mt-2 lg:text-lg">{homeScheduledData.hero.appointmentText}</p>
-                        <div className="flex items-center gap-2 mt-44 lg:mt-52">
+                    <div className="mt-10 bg-white/15 backdrop-blur-md rounded-2xl p-6 max-w-sm border border-white/20 lg:mt-12 lg:max-w-[480px] lg:p-7">
+                        <p className="text-xs font-inter uppercase tracking-widest opacity-80 font-medium">{homeScheduledData.hero.panelLabel}</p>
+                        <p className="text-base font-semibold font-inter mt-3 lg:text-lg leading-snug">{homeScheduledData.hero.appointmentText}</p>
+                        <div className="flex items-center gap-2.5 mt-48 lg:mt-56">
                             {homeScheduledData.hero.progressBars.map((opacity, index) => (
                                 <div
                                     key={index}
-                                    className="h-[3px] w-8 bg-white rounded-full"
+                                    className="h-1 w-10 bg-white rounded-full"
                                     style={{ opacity }}
                                 />
                             ))}
                         </div>
-                        <p className="text-xs font-inter opacity-80 mt-2">{homeScheduledData.hero.statusText}</p>
+                        <p className="text-xs font-inter opacity-75 mt-3 font-medium">{homeScheduledData.hero.statusText}</p>
                     </div>
                 </div>
             </div>
