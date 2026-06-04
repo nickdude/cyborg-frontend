@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
-import { paymentAPI } from "@/services/api";
+import { paymentAPI, userAPI } from "@/services/api";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 import Navbar from "@/components/Navbar";
@@ -21,6 +21,10 @@ export default function MembershipPage() {
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [plansLoading, setPlansLoading] = useState(true);
+  // True until we've confirmed (via API) whether the user already has an active
+  // plan. While true we render only a loader, so the Membership UI never flickers
+  // before a redirect.
+  const [checkingAccess, setCheckingAccess] = useState(true);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -87,15 +91,67 @@ export default function MembershipPage() {
     }
   }, []);
 
-  const fetchSubscription = useCallback(async () => {
+  // API-backed active-plan gate. If the user already has a valid active plan we
+  // never render Membership — we mark the context and redirect to the next step.
+  const checkActivePlan = useCallback(async () => {
+    if (!user?.id) {
+      setCheckingAccess(false);
+      return;
+    }
     try {
       const response = await paymentAPI.getUserSubscription(user.id);
-      if (response.data) {
-        setSubscription(response.data);
+      const sub = response?.data;
+      // Backend already returns only active + non-expired; re-validate defensively.
+      const isActive =
+        sub &&
+        sub.status === "active" &&
+        (!sub.expiryDate || new Date(sub.expiryDate) > new Date());
+
+      if (isActive) {
+        setSubscription(sub);
+        const updatedUser = { ...user, hasActiveSubscription: true };
+        updateUser(updatedUser);
+        // Skip the Membership step → go to the next appropriate screen.
+        router.replace(getNextRoute(updatedUser));
+        return; // keep the loader up during redirect (no Membership flicker)
       }
     } catch (err) {
-      console.log("No active subscription");
+      // Fail open: if the check fails, show Membership so the user isn't blocked.
+      console.log("Subscription check failed; showing membership");
     }
+    setCheckingAccess(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Hydrate the form from the authoritative profile (DB) rather than relying on
+  // the trimmed user object returned by login/social-login. This is what makes
+  // Pincode / Mobile / DOB persist across logout → re-login.
+  const fetchProfile = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const response = await userAPI.getProfile(user.id);
+      const p = response?.data;
+      if (!p) return;
+
+      if (p.firstName) setFirstName(p.firstName);
+      if (p.lastName) setLastName(p.lastName);
+      if (p.email) setEmail(p.email);
+      if (p.phone) setPhone(p.phone);
+      if (p.zipCode) setZip(p.zipCode);
+      if (p.dateOfBirth) {
+        const dob = new Date(p.dateOfBirth);
+        setDobMonth(String(dob.getMonth() + 1).padStart(2, "0"));
+        setDobDay(String(dob.getDate()).padStart(2, "0"));
+        setDobYear(String(dob.getFullYear()));
+      }
+
+      // Persist the complete profile into the auth context (and localStorage) so
+      // other screens and future sessions have the full set of fields.
+      updateUser({ ...user, ...p });
+    } catch (err) {
+      console.log("Could not load profile; falling back to cached values");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   useEffect(() => {
@@ -106,9 +162,10 @@ export default function MembershipPage() {
 
     fetchPlans();
     if (user?.id) {
-      fetchSubscription();
+      checkActivePlan();
+      fetchProfile();
     }
-  }, [token, user?.id, fetchPlans, fetchSubscription, router]);
+  }, [token, user?.id, fetchPlans, checkActivePlan, fetchProfile, router]);
 
   useEffect(() => {
     if (user?.firstName) setFirstName(user.firstName);
@@ -270,9 +327,9 @@ export default function MembershipPage() {
           </div>
         )}
 
-        {plansLoading ? (
+        {checkingAccess || plansLoading ? (
           <div className="flex justify-center items-center min-h-96">
-            <p className="text-gray-600">Loading plans...</p>
+            <p className="text-gray-600">{checkingAccess ? "Checking your membership…" : "Loading plans..."}</p>
           </div>
         ) : (
           <>
