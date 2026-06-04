@@ -1,15 +1,22 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import Link from "next/link";
 import IconTabs from "@/components/IconTabs";
 import SearchBar from "@/components/SearchBar";
 import FilterTabs from "@/components/FilterTabs";
 import ProductSection from "@/components/ProductSection";
+import { productAPI } from "@/services/api";
 
 export default function Marketplace() {
   const [activeTab, setActiveTab] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+
+  // Backend-driven marketplace data
+  const [productsData, setProductsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const dataCategories = [
     { id: "grid", icon: "/assets/data-bar-icons/grid.svg" },
@@ -18,184 +25,26 @@ export default function Marketplace() {
     { id: "prescription", icon: "/assets/data-bar-icons/dose.svg" },
   ];
 
-  // Complete products data with types
-  const productsData = [
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // Fetch all active products once; tab/search/filter are applied client-side.
+      // (The API also supports server-side type/section/q/page/limit for scaling.)
+      const response = await productAPI.getProducts({ limit: 200 });
+      const items = response?.data?.items || [];
+      setProductsData(items);
+    } catch (err) {
+      setError(err.message || "Failed to load products");
+      setProductsData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    // Supplements (pills)
-    {
-      id: 5,
-      name: "AMINO 9",
-      brand: "Lean mass insurance.",
-      category: "Vitamins",
-      type: "supplement",
-      price: 28.00,
-      originalPrice: 35,
-      image: "/assets/preview/product-1.png",
-      onSale: true,
-      section: "recommended"
-    },
-    {
-      id: 6,
-      name: "MITO HEART",
-      brand: "Cellular cardiovascular vitality.",
-      category: "Omega",
-      type: "supplement",
-      price: 34.40,
-      originalPrice: 43,
-      image: "/assets/preview/product-2.png",
-      onSale: true,
-      section: "recommended"
-    },
-    {
-      id: 7,
-      name: "OZEMPIC",
-      brand: "Triple-organ protection in T2D.",
-      category: "Energy",
-      type: "supplement",
-      price: 43.20,
-      originalPrice: 54,
-      image: "/assets/preview/product-3.png",
-      onSale: true,
-      section: "brain"
-    },
-    {
-      id: 8,
-      name: "MOUNJARO",
-      brand: "The deepest metabolic reset.",
-      category: "Minerals",
-      type: "supplement",
-      price: 35.48,
-      originalPrice: 44.4,
-      image: "/assets/preview/product-4.png",
-      onSale: true,
-      section: "brain"
-    },
-    // {
-    //   id: 9,
-    //   name: "Probiotic Complex",
-    //   brand: "Garden of Life",
-    //   category: "Digestive",
-    //   type: "supplement",
-    //   price: 29.99,
-    //   originalPrice: 39.99,
-    //   image: "/assets/sample-medicine.png",
-    //   onSale: true,
-    //   section: "digestive"
-    // },
-
-     // Tests (vial)
-    {
-      id: 1,
-      name: "Complete Blood Count (CBC)",
-      brand: "LabCorp",
-      category: "Blood Test",
-      type: "test",
-      price: 45.00,
-      originalPrice: 60,
-      image: "/assets/sample-medicine.png",
-      onSale: true,
-      section: "recommended"
-    },
-    {
-      id: 2,
-      name: "Thyroid Panel (TSH, T3, T4)",
-      brand: "Quest Diagnostics",
-      category: "Hormone Test",
-      type: "test",
-      price: 89.00,
-      originalPrice: 120,
-      image: "/assets/sample-medicine.png",
-      onSale: true,
-      section: "recommended"
-    },
-    {
-      id: 3,
-      name: "Vitamin D Test",
-      brand: "LabCorp",
-      category: "Vitamin Test",
-      type: "test",
-      price: 35.00,
-      originalPrice: 50,
-      image: "/assets/sample-medicine.png",
-      onSale: true,
-      section: "wellness"
-    },
-    {
-      id: 4,
-      name: "Lipid Panel",
-      brand: "Quest Diagnostics",
-      category: "Blood Test",
-      type: "test",
-      price: 42.00,
-      originalPrice: 55,
-      image: "/assets/sample-medicine.png",
-      onSale: false,
-      section: "wellness"
-    },
-
-    // Prescriptions (prescription)
-    {
-      id: 10,
-      name: "Metformin 500mg",
-      brand: "Generic",
-      category: "Diabetes",
-      type: "prescription",
-      price: 15.00,
-      originalPrice: null,
-      image: "/assets/sample-medicine.png",
-      onSale: false,
-      section: "chronic"
-    },
-    {
-      id: 11,
-      name: "Lisinopril 10mg",
-      brand: "Generic",
-      category: "Blood Pressure",
-      type: "prescription",
-      price: 12.00,
-      originalPrice: null,
-      image: "/assets/sample-medicine.png",
-      onSale: false,
-      section: "chronic"
-    },
-    {
-      id: 12,
-      name: "Levothyroxine 50mcg",
-      brand: "Synthroid",
-      category: "Thyroid",
-      type: "prescription",
-      price: 18.50,
-      originalPrice: null,
-      image: "/assets/sample-medicine.png",
-      onSale: false,
-      section: "hormone"
-    },
-    {
-      id: 13,
-      name: "Atorvastatin 20mg",
-      brand: "Generic",
-      category: "Cholesterol",
-      type: "prescription",
-      price: 14.00,
-      originalPrice: null,
-      image: "/assets/sample-medicine.png",
-      onSale: false,
-      section: "chronic"
-    },
-    {
-      id: 14,
-      name: "Semaglutide",
-      brand: "Metabolic Health",
-      category: "Weight Management",
-      type: "prescription",
-      price: 349.00,
-      originalPrice: 399,
-      image: "/assets/sample-medicine.png",
-      onSale: true,
-      section: "hormone",
-      link: "/market-place/prescriptions/semaglutide"
-    },
-  ];
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   // Dynamic filters based on active tab
   const getFilters = (tab) => {
@@ -332,9 +181,17 @@ export default function Marketplace() {
 
           {/* Right Content Area */}
           <div className="lg:col-span-9 space-y-6">
+            <div className="flex items-center justify-end">
+              <Link
+                href="/cart"
+                className="inline-flex items-center gap-2 rounded-full border border-borderColor bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50"
+              >
+                🛒 View Cart
+              </Link>
+            </div>
             {/* Search Bar */}
-            <SearchBar 
-              placeholder="Search anything" 
+            <SearchBar
+              placeholder="Search anything"
               value={searchQuery}
               onChange={setSearchQuery}
             />
@@ -350,18 +207,56 @@ export default function Marketplace() {
 
             {/* Product Sections */}
             <div className="space-y-8">
-              {Object.entries(groupedProducts).map(([section, products]) => (
-                <ProductSection 
-                  key={section}
-                  title={sectionTitles[section] || section}
-                  products={products}
-                />
-              ))}
-
-              {filteredProducts.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                  No products found
+              {loading ? (
+                /* Loading state */
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="animate-pulse rounded-xl p-4 lg:p-5 lg:border lg:border-borderColor lg:bg-white"
+                    >
+                      <div className="aspect-square mb-3 rounded-lg bg-gray-100" />
+                      <div className="h-3 w-1/2 rounded bg-gray-100" />
+                      <div className="mt-2 h-3 w-3/4 rounded bg-gray-100" />
+                      <div className="mt-3 h-4 w-1/3 rounded bg-gray-100" />
+                    </div>
+                  ))}
                 </div>
+              ) : error ? (
+                /* Error state */
+                <div className="text-center py-12">
+                  <p className="text-gray-700 font-medium">Couldn&apos;t load the marketplace</p>
+                  <p className="mt-1 text-sm text-gray-500">{error}</p>
+                  <button
+                    type="button"
+                    onClick={fetchProducts}
+                    className="mt-4 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-purple-800"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                /* Empty state */
+                <div className="text-center py-16 text-gray-500">
+                  <p className="text-base font-medium text-gray-700">No products available yet</p>
+                  <p className="mt-1 text-sm">
+                    {searchQuery
+                      ? "Try a different search."
+                      : activeTab === "vial"
+                      ? "Tests will appear here once they're added."
+                      : activeTab === "prescription"
+                      ? "Prescriptions will appear here once they're added."
+                      : "Check back soon — new products are added regularly."}
+                  </p>
+                </div>
+              ) : (
+                Object.entries(groupedProducts).map(([section, products]) => (
+                  <ProductSection
+                    key={section}
+                    title={sectionTitles[section] || section}
+                    products={products}
+                  />
+                ))
               )}
             </div>
           </div>

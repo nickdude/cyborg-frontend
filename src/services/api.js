@@ -63,6 +63,56 @@ export const authAPI = {
   socialLogin: (data) => API.post("/api/auth/social-login", data),
 };
 
+// Marketplace product endpoints
+export const productAPI = {
+  // params: { type, section, category, q, onSale, page, limit }
+  getProducts: (params = {}) => API.get("/api/products", { params }),
+  getProduct: (id) => API.get(`/api/products/${id}`),
+  createProduct: (data) => API.post("/api/products", data),
+  updateProduct: (id, data) => API.put(`/api/products/${id}`, data),
+  deleteProduct: (id) => API.delete(`/api/products/${id}`),
+};
+
+// Delivery address endpoints
+export const addressAPI = {
+  list: () => API.get("/api/addresses"),
+  create: (data) => API.post("/api/addresses", data),
+  update: (id, data) => API.put(`/api/addresses/${id}`, data),
+  setDefault: (id) => API.patch(`/api/addresses/${id}/default`),
+  remove: (id) => API.delete(`/api/addresses/${id}`),
+};
+
+// Shopping cart endpoints
+export const cartAPI = {
+  get: () => API.get("/api/cart"),
+  addItem: (productId, quantity = 1) => API.post("/api/cart/items", { productId, quantity }),
+  updateItem: (productId, quantity) => API.put(`/api/cart/items/${productId}`, { quantity }),
+  removeItem: (productId) => API.delete(`/api/cart/items/${productId}`),
+  clear: () => API.delete("/api/cart"),
+};
+
+// Checkout endpoints
+export const checkoutAPI = {
+  // data: { addressId, paymentMethod: "online" | "cod" }
+  create: (data) => API.post("/api/checkout", data),
+  verify: (data) => API.post("/api/checkout/verify", data),
+  retry: (orderId) => API.post(`/api/checkout/${orderId}/retry`),
+};
+
+// Order endpoints
+export const orderAPI = {
+  list: () => API.get("/api/orders"),
+  get: (id) => API.get(`/api/orders/${id}`),
+  tracking: (id) => API.get(`/api/orders/${id}/tracking`),
+  cancel: (id, reason) => API.post(`/api/orders/${id}/cancel`, { reason }),
+  updateStatus: (id, status, note) => API.patch(`/api/orders/${id}/status`, { status, note }),
+};
+
+// Unified purchase history (plans + product orders)
+export const purchaseHistoryAPI = {
+  get: () => API.get("/api/purchase-history"),
+};
+
 // User endpoints (prefix with /api to match backend)
 export const userAPI = {
   getProfile: (userId) => API.get(`/api/users/${userId}/profile`),

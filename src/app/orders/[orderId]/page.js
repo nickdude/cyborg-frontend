@@ -1,173 +1,194 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import { CalendarDays, MapPin, ChevronDown } from "lucide-react";
-import Button from "@/components/Button";
-import { mockOrders } from "@/mocks/mockOrders";
+import { useAuth } from "@/contexts/AuthContext";
+import { orderAPI, checkoutAPI } from "@/services/api";
+import { formatPaise } from "@/utils/money";
+import { loadRazorpay } from "@/utils/loadRazorpay";
 
-function SummaryCard({ order }) {
-  return (
-    <div className="rounded-2xl border border-borderColor bg-white p-4 shadow-sm">
-      <div className="flex items-start gap-4">
-        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-[#F7F7F8]">
-          <Image
-            src={order.image}
-            alt={order.title}
-            fill
-            className="object-contain p-2"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[1.75rem] font-semibold leading-tight text-black lg:text-2xl">{order.title}</h2>
-          <p className="mt-1 text-sm text-secondary lg:text-base">{order.subtitle}</p>
-        </div>
-      </div>
-    </div>
-  );
+const CANCELLABLE = ["Pending", "Confirmed", "Processing"];
+
+function fmtDateTime(d) {
+  return new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function DetailBlock({ order }) {
-  if (order.type === "test_booking") {
-    return (
-      <div className="space-y-5 text-black">
-        <div className="flex items-start gap-3">
-          <CalendarDays className="mt-0.5 h-5 w-5 text-secondary" />
-          <div>
-            <p className="text-secondary">{order.details.appointmentType}</p>
-            <p className="font-semibold">{order.details.date}</p>
-            <p className="font-semibold">{order.details.time}</p>
-            <Link href={order.details.calendarUrl} className="mt-2 inline-flex items-center gap-1 text-primary">
-              Add to calendar <ChevronDown className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-3">
-          <MapPin className="mt-0.5 h-5 w-5 text-secondary" />
-          <div>
-            <p className="text-secondary">Address</p>
-            <p className="font-semibold">{order.details.address}</p>
-            <Link href={order.details.directionsUrl} className="mt-2 inline-flex items-center gap-1 text-primary">
-              View directions <ChevronDown className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (order.type === "medicine") {
-    return (
-      <div className="space-y-2 text-base text-secondary lg:text-lg">
-        <p>
-          <span className="font-semibold text-black">Source:</span> {order.source}
-        </p>
-        <p>
-          <span className="font-semibold text-black">Status:</span> {order.details.fulfillment}
-        </p>
-        <p>{order.details.eta}</p>
-        <p>{order.details.support}</p>
-      </div>
-    );
-  }
-
-  if (order.type === "concierge") {
-    return (
-      <div className="space-y-2 text-base text-secondary lg:text-lg">
-        <p>
-          <span className="font-semibold text-black">Session date:</span> {order.details.sessionDate}
-        </p>
-        <p>
-          <span className="font-semibold text-black">Mode:</span> {order.details.sessionMode}
-        </p>
-        <p>{order.details.summary}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2 text-base text-secondary lg:text-lg">
-      <p>
-        <span className="font-semibold text-black">Generated at:</span> {order.details.generatedAt}
-      </p>
-      <p>{order.details.statusText}</p>
-      <p>{order.details.nextStep}</p>
-    </div>
-  );
-}
-
-export default function OrderSummaryPage() {
-  const params = useParams();
+export default function OrderDetailPage() {
+  const { orderId } = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
+  const { token, user } = useAuth();
 
-  const order = useMemo(
-    () => mockOrders.find((item) => item.id === params.orderId),
-    [params.orderId]
-  );
+  const [order, setOrder] = useState(null);
+  const [payment, setPayment] = useState(null);
+  const [tracking, setTracking] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const handleConfirm = async () => {
-    setSubmitting(true);
-    setTimeout(() => {
-      router.push("/orders");
-    }, 500);
+  const placed = searchParams.get("placed") === "1";
+  const failed = searchParams.get("failed") === "1";
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [oRes, tRes] = await Promise.all([orderAPI.get(orderId), orderAPI.tracking(orderId)]);
+      setOrder(oRes.data.order);
+      setPayment(oRes.data.payment);
+      setTracking(tRes.data);
+    } catch (e) {
+      setError(e.message || "Failed to load order");
+    } finally {
+      setLoading(false);
+    }
+  }, [orderId]);
+
+  useEffect(() => {
+    if (!token) { router.push("/login"); return; }
+    load();
+  }, [token, load, router]);
+
+  const cancel = async () => {
+    setBusy(true);
+    try {
+      await orderAPI.cancel(orderId, "Cancelled by customer");
+      await load();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
   };
 
-  if (!order) {
-    return (
-      <div className="min-h-screen bg-pageBackground px-4 py-8 font-inter">
-        <div className="mx-auto w-full max-w-[760px] rounded-2xl border border-borderColor bg-white p-6 text-center">
-          <h1 className="text-3xl font-semibold text-black">Order not found</h1>
-          <p className="mt-2 text-secondary">This order does not exist.</p>
-          <div className="mt-6">
-            <Button href="/orders" className="bg-black text-white hover:bg-gray-900">Back to orders</Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const retry = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await checkoutAPI.retry(orderId);
+      const p = res.data.payment;
+      const ok = await loadRazorpay();
+      if (!ok || !window.Razorpay) { setError("Payment gateway failed to load."); setBusy(false); return; }
+      const rzp = new window.Razorpay({
+        key: p.key_id, amount: p.amount, currency: p.currency, order_id: p.gatewayOrderId,
+        name: "Cyborg Healthcare", description: `Order ${order.orderNumber}`,
+        prefill: { email: user?.email, contact: user?.phone }, theme: { color: "#541D7A" },
+        handler: async (resp) => {
+          try {
+            await checkoutAPI.verify({ orderId, transactionId: resp.razorpay_payment_id, signature: resp.razorpay_signature });
+            await load();
+          } catch (e) { setError("Payment verification failed."); }
+        },
+        modal: { ondismiss: () => setBusy(false) },
+      });
+      rzp.open();
+    } catch (e) {
+      setError(e.message);
+      setBusy(false);
+    }
+  };
+
+  if (loading) return <div className="min-h-screen bg-pageBackground flex items-center justify-center text-gray-500">Loading order…</div>;
+  if (error && !order) return (
+    <div className="min-h-screen bg-pageBackground flex flex-col items-center justify-center px-4 text-center">
+      <p className="text-gray-700">{error}</p>
+      <Link href="/orders" className="mt-4 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white">Back to orders</Link>
+    </div>
+  );
+  if (!order) return null;
+
+  const a = order.shippingAddress || {};
+  const canCancel = CANCELLABLE.includes(order.orderStatus);
+  const canRetry = payment && payment.gateway !== "cod" && order.paymentStatus !== "success" && order.orderStatus !== "Cancelled";
 
   return (
-    <div className="min-h-screen bg-pageBackground pb-10 font-inter">
-      <main className="mx-auto w-full max-w-[760px] px-4 pt-8 lg:pt-10">
-        <h1 className="text-5xl font-semibold text-black lg:text-4xl">Order Summary</h1>
-        <p className="mt-2 text-xl text-secondary lg:text-base">Confirm your order details below.</p>
+    <div className="min-h-screen bg-pageBackground pb-24">
+      <div className="mx-auto w-full max-w-[800px] px-4 py-6 lg:px-8">
+        <Link href="/orders" className="text-sm font-semibold text-primary hover:underline">← Back to my purchases</Link>
 
-        <div className="mt-6 space-y-6">
-          <SummaryCard order={order} />
-
-          <section>
-            <h2 className="text-4xl font-semibold text-black lg:text-3xl">{order.type === "test_booking" ? "Appointment Details" : "Order Details"}</h2>
-            <div className="mt-4 rounded-2xl border border-borderColor bg-white p-4 lg:p-5">
-              <DetailBlock order={order} />
-            </div>
-          </section>
-
-          <div className="space-y-3 pt-2">
-            <Button
-              fullWidth
-              size="lg"
-              disabled={submitting}
-              onClick={handleConfirm}
-              className="bg-black text-white hover:bg-gray-900"
-            >
-              {submitting ? "Confirming..." : "Confirm"}
-            </Button>
-            <Button
-              fullWidth
-              size="lg"
-              variant="secondary"
-              onClick={() => router.back()}
-              className="border border-borderColor bg-white text-black shadow-none"
-            >
-              Back
-            </Button>
+        {placed && order.paymentStatus !== "failed" && (
+          <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            🎉 Order placed successfully! {payment?.gateway === "cod" ? "Pay with cash on delivery." : "Payment received."}
           </div>
+        )}
+        {(failed || order.paymentStatus === "failed") && (
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Payment didn’t go through. You can retry below.
+          </div>
+        )}
+        {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+        <div className="mt-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{order.orderNumber}</h1>
+            <p className="text-sm text-gray-500">Payment: {order.paymentStatus} · {payment?.gateway === "cod" ? "Cash on Delivery" : "Online"}</p>
+          </div>
+          <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-primary">{order.orderStatus}</span>
         </div>
-      </main>
+
+        {/* Tracking timeline */}
+        <section className="mt-6 rounded-2xl border border-borderColor bg-white p-5">
+          <h2 className="text-lg font-semibold text-gray-900">Order Tracking</h2>
+          <ol className="mt-4 space-y-4">
+            {(tracking?.timeline || []).map((t, i) => (
+              <li key={i} className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <span className="h-3 w-3 rounded-full bg-primary" />
+                  {i < tracking.timeline.length - 1 && <span className="mt-1 h-full w-px flex-1 bg-borderColor" />}
+                </div>
+                <div className="pb-2">
+                  <p className="font-medium text-gray-900">{t.status}</p>
+                  {t.note && <p className="text-sm text-gray-500">{t.note}</p>}
+                  <p className="text-xs text-gray-400">{fmtDateTime(t.createdAt)}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Items */}
+        <section className="mt-4 rounded-2xl border border-borderColor bg-white p-5">
+          <h2 className="text-lg font-semibold text-gray-900">Items</h2>
+          <div className="mt-3 space-y-2">
+            {order.items.map((it, i) => (
+              <div key={i} className="flex justify-between text-sm">
+                <span className="text-gray-700">{it.productName} × {it.quantity}</span>
+                <span className="font-medium text-gray-900">{formatPaise(it.totalPrice, order.currency)}</span>
+              </div>
+            ))}
+            <div className="mt-2 border-t border-borderColor pt-2 space-y-1 text-sm">
+              <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>{formatPaise(order.subtotal, order.currency)}</span></div>
+              <div className="flex justify-between text-gray-600"><span>Tax</span><span>{formatPaise(order.tax, order.currency)}</span></div>
+              <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{order.shipping ? formatPaise(order.shipping, order.currency) : "Free"}</span></div>
+              <div className="flex justify-between border-t border-borderColor pt-1 font-semibold text-gray-900"><span>Total</span><span>{formatPaise(order.totalAmount, order.currency)}</span></div>
+            </div>
+          </div>
+        </section>
+
+        {/* Delivery address */}
+        <section className="mt-4 rounded-2xl border border-borderColor bg-white p-5">
+          <h2 className="text-lg font-semibold text-gray-900">Delivery Address</h2>
+          <p className="mt-2 text-sm font-medium text-gray-900">{a.fullName} · {a.phoneNumber}</p>
+          <p className="text-sm text-gray-600">{a.addressLine1}{a.addressLine2 ? `, ${a.addressLine2}` : ""}{a.landmark ? `, ${a.landmark}` : ""}</p>
+          <p className="text-sm text-gray-600">{a.city}, {a.state} {a.pincode}, {a.country}</p>
+        </section>
+
+        {(canCancel || canRetry) && (
+          <div className="mt-4 flex gap-3">
+            {canRetry && (
+              <button onClick={retry} disabled={busy} className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-purple-800 disabled:opacity-60">
+                Retry payment
+              </button>
+            )}
+            {canCancel && (
+              <button onClick={cancel} disabled={busy} className="rounded-xl border border-red-300 px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">
+                Cancel order
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

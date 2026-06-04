@@ -1,9 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { cartAPI } from "@/services/api";
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, onAdded }) {
+  const router = useRouter();
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAdding(true);
+    try {
+      await cartAPI.addItem(product.id, 1);
+      setAdded(true);
+      onAdded?.();
+      setTimeout(() => setAdded(false), 1500);
+    } catch (err) {
+      // Most likely unauthenticated → send to login.
+      if (String(err.message).toLowerCase().includes("token") || err.message === "Request failed") {
+        router.push("/login");
+      }
+    } finally {
+      setAdding(false);
+    }
+  };
+
   const content = (
     <>
       {/* Product Image */}
@@ -26,7 +52,7 @@ export default function ProductCard({ product }) {
       <div className="space-y-1 font-inter">
         <p className="text-xs text-gray-500">{product.brand || product.category}</p>
         <h3 className="font-semibold text-sm text-gray-900 line-clamp-2">{product.name}</h3>
-        
+
         {/* Price */}
         <div className="flex items-center gap-2 pt-1">
           <span className="text-lg font-bold text-gray-900">${product.price}</span>
@@ -34,14 +60,6 @@ export default function ProductCard({ product }) {
             <span className="text-sm text-gray-400 line-through">${product.originalPrice}</span>
           )}
         </div>
-
-        {/* Sale Badge */}
-        {product.onSale && (
-          <div className="flex items-center gap-1 bg-saleBadgeBg text-purple-600 text-xs font-semibold px-3 py-1 rounded-md w-fit">
-            <span>✓</span>
-            <span>Sale</span>
-          </div>
-        )}
       </div>
     </>
   );
@@ -57,8 +75,20 @@ export default function ProductCard({ product }) {
   }
 
   return (
-    <div className="rounded-xl p-4 lg:p-5 shadow-sm hover:shadow-md transition lg:border lg:border-borderColor lg:bg-white">
+    <div className="flex flex-col rounded-xl p-4 lg:p-5 shadow-sm hover:shadow-md transition lg:border lg:border-borderColor lg:bg-white">
       {content}
+      <button
+        type="button"
+        onClick={handleAdd}
+        disabled={adding}
+        className={`mt-3 w-full rounded-xl py-2.5 text-sm font-semibold transition ${
+          added
+            ? "bg-green-600 text-white"
+            : "bg-primary text-white hover:bg-purple-800 disabled:opacity-60"
+        }`}
+      >
+        {added ? "✓ Added" : adding ? "Adding…" : "Add to cart"}
+      </button>
     </div>
   );
 }

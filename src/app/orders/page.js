@@ -1,157 +1,127 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import { ChevronRight } from "lucide-react";
-import Button from "@/components/Button";
-import { mockOrders, orderTabs } from "@/mocks/mockOrders";
+import { useAuth } from "@/contexts/AuthContext";
+import { purchaseHistoryAPI } from "@/services/api";
+import { formatPaise } from "@/utils/money";
 
-function OrderTabButton({ tab, activeTab, onTabChange }) {
-  const isActive = activeTab === tab.id;
+const STATUS_COLORS = {
+  Delivered: "bg-green-100 text-green-700",
+  Cancelled: "bg-red-100 text-red-700",
+  Returned: "bg-amber-100 text-amber-700",
+  Refunded: "bg-gray-200 text-gray-700",
+  Active: "bg-green-100 text-green-700",
+  Expired: "bg-gray-200 text-gray-600",
+  Pending: "bg-amber-100 text-amber-700",
+};
+const badge = (s) => STATUS_COLORS[s] || "bg-purple-100 text-primary";
 
-  return (
-    <button
-      type="button"
-      onClick={() => onTabChange(tab.id)}
-      className={`shrink-0 rounded-full px-4 py-2 text-base font-medium transition lg:px-5 lg:py-2.5 lg:text-base ${
-        isActive
-          ? "bg-black text-white"
-          : "bg-gray-100 text-secondary hover:bg-gray-200"
-      }`}
-    >
-      {tab.label}
-    </button>
-  );
-}
-
-function OrderCard({ order }) {
-  return (
-    <Link
-      href={`/orders/${order.id}`}
-      className="rounded-2xl border border-borderColor bg-white p-4 transition hover:shadow-sm"
-    >
-      <div className="flex items-start gap-4">
-        <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-[#F7F7F8]">
-          <Image
-            src={order.image}
-            alt={order.title}
-            fill
-            className="object-contain p-2"
-          />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          {order.badge && (
-            <p className="mb-2 inline-flex rounded-full bg-[#ECE3F7] px-2.5 py-1 text-sm font-medium text-primary">
-              {order.badge}
-            </p>
-          )}
-          <h3 className="text-2xl leading-tight font-semibold text-black lg:text-[1.7rem]">
-            {order.title}
-          </h3>
-          <p className="mt-1 text-base text-secondary">{order.amount > 0 ? `$${order.amount}` : "Included"}</p>
-        </div>
-
-        <ChevronRight className="mt-1 h-5 w-5 flex-shrink-0 text-secondary" />
-      </div>
-    </Link>
-  );
-}
-
-function EmptyState({ title, subtitle }) {
-  return (
-    <div className="rounded-3xl border border-dashed border-[#B9BCC6] bg-white/40 px-6 py-12 text-center lg:px-10 lg:py-14">
-      <h3 className="text-3xl font-semibold text-black lg:text-4xl">{title}</h3>
-      <p className="mt-3 text-lg text-secondary lg:text-xl">{subtitle}</p>
-      <div className="mt-8 flex justify-center">
-        <Button
-          href="/market-place"
-          className="h-12 min-w-[180px] bg-black px-8 text-xl font-semibold hover:bg-gray-900 lg:h-12 lg:min-w-[180px] lg:text-lg"
-        >
-          Get Started
-        </Button>
-      </div>
-    </div>
-  );
+function fmtDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
 export default function OrdersPage() {
-  const [activeTab, setActiveTab] = useState("all");
+  const router = useRouter();
+  const { token } = useAuth();
+  const [tab, setTab] = useState("orders");
+  const [data, setData] = useState({ plans: [], orders: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const activeOrders = useMemo(
-    () => mockOrders.filter((order) => order.status === "active"),
-    []
-  );
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await purchaseHistoryAPI.get();
+      setData(res.data || { plans: [], orders: [] });
+    } catch (e) {
+      setError(e.message || "Failed to load purchases");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const pastOrders = useMemo(
-    () => mockOrders.filter((order) => order.status === "past"),
-    []
-  );
+  useEffect(() => {
+    if (!token) { router.push("/login"); return; }
+    load();
+  }, [token, load, router]);
 
-  const tabOrders = useMemo(() => {
-    if (activeTab === "active") return activeOrders;
-    if (activeTab === "past") return pastOrders;
-    return mockOrders;
-  }, [activeTab, activeOrders, pastOrders]);
+  const tabs = [
+    { id: "orders", label: `Product Orders (${data.orders.length})` },
+    { id: "plans", label: `Plans (${data.plans.length})` },
+  ];
 
   return (
-    <div className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10">
-      <main className="mx-auto w-full max-w-[1240px] px-4 pt-8 lg:px-8 lg:pt-10">
-        <h1 className="text-4xl font-semibold text-black lg:text-4xl">Your orders</h1>
+    <div className="min-h-screen bg-pageBackground pb-24">
+      <div className="mx-auto w-full max-w-[900px] px-4 py-6 lg:px-8">
+        <h1 className="text-2xl font-bold text-gray-900">My Purchases</h1>
 
-        <div className="mt-5 flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {orderTabs.map((tab) => (
-            <OrderTabButton
-              key={tab.id}
-              tab={tab}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
+        <div className="mt-4 flex gap-2">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${tab === t.id ? "bg-black text-white" : "bg-gray-100 text-secondary hover:bg-gray-200"}`}
+            >
+              {t.label}
+            </button>
           ))}
         </div>
 
-        <div className="mt-8 space-y-8 lg:space-y-10">
-          {(activeTab === "all" || activeTab === "active") && (
-            <section>
-              <h2 className="text-4xl font-semibold text-black lg:text-3xl">Active orders</h2>
-              <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-                {activeOrders.length > 0 ? (
-                  activeOrders.map((order) => <OrderCard key={order.id} order={order} />)
-                ) : (
-                  <EmptyState
-                    title="No active orders"
-                    subtitle="You have no active orders"
-                  />
-                )}
-              </div>
-            </section>
-          )}
+        {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-          {(activeTab === "all" || activeTab === "past") && (
-            <section>
-              <h2 className="text-4xl font-semibold text-black lg:text-3xl">Past orders</h2>
-              <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-                {pastOrders.length > 0 ? (
-                  pastOrders.map((order) => <OrderCard key={order.id} order={order} />)
-                ) : (
-                  <EmptyState
-                    title="No completed orders yet"
-                    subtitle="You have no completed orders"
-                  />
-                )}
+        {loading ? (
+          <div className="mt-10 text-center text-gray-500">Loading…</div>
+        ) : tab === "orders" ? (
+          data.orders.length === 0 ? (
+            <div className="mt-16 text-center">
+              <p className="text-lg font-medium text-gray-700">No product orders yet</p>
+              <Link href="/market-place" className="mt-4 inline-block rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white">Shop the Marketplace</Link>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-3">
+              {data.orders.map((o) => (
+                <Link key={o.id} href={`/orders/${o.id}`} className="block rounded-2xl border border-borderColor bg-white p-4 transition hover:shadow-md">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-gray-500">{o.orderNumber} · {fmtDate(o.createdAt)}</p>
+                      <p className="mt-1 font-semibold text-gray-900">
+                        {o.items.slice(0, 2).map((i) => `${i.productName} ×${i.quantity}`).join(", ")}
+                        {o.items.length > 2 ? ` +${o.items.length - 2} more` : ""}
+                      </p>
+                      <p className="mt-1 text-sm text-gray-500">{o.itemCount} item(s) · {formatPaise(o.totalAmount, o.currency)} · Payment: {o.paymentStatus}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${badge(o.orderStatus)}`}>{o.orderStatus}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )
+        ) : data.plans.length === 0 ? (
+          <div className="mt-16 text-center">
+            <p className="text-lg font-medium text-gray-700">No plans purchased yet</p>
+            <Link href="/membership" className="mt-4 inline-block rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white">View Membership</Link>
+          </div>
+        ) : (
+          <div className="mt-6 space-y-3">
+            {data.plans.map((p) => (
+              <div key={p.id} className="rounded-2xl border border-borderColor bg-white p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-gray-900">{p.planName}</p>
+                    <p className="mt-1 text-sm text-gray-500">Purchased {fmtDate(p.purchaseDate)} · {formatPaise(p.amount, p.currency)}</p>
+                    <p className="text-sm text-gray-500">{fmtDate(p.startDate)} → {fmtDate(p.endDate)}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${badge(p.status)}`}>{p.status}</span>
+                </div>
               </div>
-            </section>
-          )}
-
-          {tabOrders.length === 0 && (
-            <EmptyState
-              title="No orders found"
-              subtitle="Try a different filter"
-            />
-          )}
-        </div>
-      </main>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
