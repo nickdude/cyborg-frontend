@@ -50,8 +50,9 @@ export default function MembershipSection() {
 
   return (
     <section className="bg-[#ECECEC] text-black">
-      <div className="mx-auto w-full max-w-[430px] px-4 pb-12 pt-10 md:max-w-[820px] md:px-8 md:pb-14 md:pt-14 lg:max-w-[1180px] lg:pb-16 lg:pt-16">
-        <h2 className="max-w-[11ch] text-[clamp(2.2rem,8.2vw,4rem)] font-semibold leading-[1.08] tracking-[-0.02em]">
+      <div className="mx-auto w-full max-w-[430px] px-4 pb-12 pt-10 md:max-w-[820px] md:px-8 md:pb-14 md:pt-14 lg:grid lg:max-w-[1280px] lg:grid-cols-2 lg:items-center lg:gap-20 lg:py-40">
+        <div>
+        <h2 className="max-w-[11ch] text-[clamp(2.2rem,8.2vw,4rem)] font-semibold leading-[1.08] tracking-[-0.02em] lg:text-[60px] lg:leading-[1.04]">
             What’s included in your membership
         </h2>
 
@@ -66,8 +67,9 @@ export default function MembershipSection() {
         >
           Join Today <span className="text-[1.9rem] leading-none">›</span>
         </Link>
+        </div>
 
-        <div className="mt-10">
+        <div className="mt-10 lg:mt-0">
           <TestimonialCarousel items={allInOneItems} onChange={setActiveIndex} />
 
           {/* <article className="mx-auto mt-6 max-w-[620px] rounded-[28px] bg-white px-5 py-6 text-center shadow-[0_16px_40px_rgba(0,0,0,0.06)] ring-1 ring-black/5 md:px-7 md:py-7">

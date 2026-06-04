@@ -587,8 +587,8 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-pageBackground font-inter lg:flex lg:items-center lg:justify-center lg:p-8">
-      <div className="max-w-md flex flex-col justify-between min-h-screen mx-auto bg-pageBackground rounded-xl p-8 relative w-full lg:max-w-[1180px] lg:min-h-[760px] lg:grid lg:grid-cols-[360px_1fr] lg:gap-8 lg:p-0">
+    <div className="flex flex-col h-[100dvh] bg-pageBackground font-inter lg:h-auto lg:min-h-screen lg:flex-row lg:items-center lg:justify-center lg:p-8">
+      <div className="max-w-md flex flex-col justify-between min-h-0 flex-1 mx-auto bg-pageBackground rounded-xl p-8 relative w-full lg:max-w-[1180px] lg:flex-initial lg:min-h-[760px] lg:grid lg:grid-cols-[360px_1fr] lg:gap-8 lg:p-0">
         <aside className="hidden lg:flex lg:flex-col lg:justify-between lg:rounded-2xl lg:bg-primary lg:p-8 lg:text-white">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">CYBORG</h1>
@@ -606,7 +606,7 @@ export default function Onboarding() {
           </div>
         </aside>
 
-        <div className="flex flex-col justify-between min-h-screen rounded-xl bg-pageBackground p-8 relative lg:min-h-[760px] lg:rounded-2xl lg:bg-white lg:shadow-sm">
+        <div className="flex flex-col justify-between min-h-0 flex-1 overflow-y-auto rounded-xl bg-pageBackground p-8 relative lg:min-h-[760px] lg:flex-none lg:overflow-visible lg:rounded-2xl lg:bg-white lg:shadow-sm">
         {/* Progress bar */}
         <div className="">
             <div className="w-full h-1 bg-gray-200 rounded mb-6">
@@ -623,7 +623,7 @@ export default function Onboarding() {
                 </div>
             </div>
 
-                <div className="min-h-[60vh] flex flex-col gap-8 lg:min-h-[430px]">
+                <div className="min-h-0 flex flex-col gap-8 lg:min-h-[430px]">
                     <h1 className="text-2xl font-extrabold tracking-tight mb-2">CYBORG</h1>
 
                     <div className="space-y-4">

@@ -44,11 +44,11 @@ export default function TagOverlaySection({ images, tags, interval = 3000 }) {
   }, [imgs.length, interval]);
 
   return (
-    <section className="relative bg-white px-0">
-      <div className="mx-auto w-full max-w-[980px]">
+    <section className="relative bg-white px-0 lg:py-20">
+      <div className="mx-auto w-full max-w-[980px] lg:max-w-[1180px] lg:px-12">
         <div className="relative overflow-hidden">
             <p className="px-6 py-8 font-medium text-base font-inter ">&ldquo;Day-to-day life silently disrupts your metabolic signaling — blunting your body&apos;s critical appetite and energy regulator, GLP-1.&rdquo;</p>
-          <div className="relative w-full h-[80vh] sm:h-[360px] md:h-[420px] lg:h-[480px]">
+          <div className="relative w-full h-[80vh] sm:h-[360px] md:h-[420px] lg:h-[620px] lg:rounded-[32px] lg:overflow-hidden">
             {imgs.map((src, i) => (
               <img
                 key={`${src}-${i}`}

@@ -37,7 +37,7 @@ export default function TestimonialCarousel({ items: propItems, onChange }) {
             type="button"
             onClick={prev}
             aria-label="Previous"
-            className="absolute left-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black p-2 text-white shadow-lg"
+            className="absolute left-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black text-lg leading-none text-white shadow-lg"
           >
             ‹
           </button>
@@ -46,7 +46,7 @@ export default function TestimonialCarousel({ items: propItems, onChange }) {
             type="button"
             onClick={next}
             aria-label="Next"
-            className="absolute right-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black p-2 text-white shadow-lg"
+            className="absolute right-3 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black text-lg leading-none text-white shadow-lg"
           >
             ›
           </button>

@@ -279,74 +279,73 @@ export default function MembershipPage() {
             {/* Plans Grid */}
             <div className="mb-8 lg:mb-10">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Select a Membership Plan</h2>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3 lg:gap-6">
-                {plans.map((p) => (
-                  <div
-                    key={p.id}
-                    onClick={() => setSelectedPlan(p)}
-                    className={`rounded-2xl p-6 cursor-pointer transition border-2 ${
-                      selectedPlan?.id === p.id
-                        ? "border-primary bg-primary/5"
-                        : "border-tertiary hover:border-primary/50"
-                    }`}
-                  >
-                    {p.highlighted && (
-                      <div className="inline-block bg-gradient-to-r from-primary to-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold mb-3">
-                        Most Popular
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-6">
+                {plans.map((p) => {
+                  const selected = selectedPlan?.id === p.id;
+                  return (
+                    <button
+                      type="button"
+                      key={p.id}
+                      onClick={() => setSelectedPlan(p)}
+                      aria-pressed={selected}
+                      className={`relative flex flex-col rounded-3xl bg-white p-5 text-left shadow-sm transition lg:p-6 ${
+                        selected
+                          ? "ring-2 ring-primary shadow-md"
+                          : "ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-md hover:ring-primary/40"
+                      }`}
+                    >
+                      {p.highlighted && (
+                        <span className="absolute right-4 top-4 z-10 rounded-full bg-gradient-to-r from-primary to-purple-600 px-3 py-1 text-xs font-semibold text-white shadow">
+                          Most Popular
+                        </span>
+                      )}
+
+                      <div className="overflow-hidden rounded-2xl border border-tertiary">
+                        <Image
+                          src="/assets/plans/plan1.jpg"
+                          alt={p.name}
+                          width={480}
+                          height={240}
+                          className="h-44 w-full object-cover lg:h-52"
+                        />
                       </div>
-                    )}
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{p.name}</h3>
-                    <div className="mb-4">
-                      <span className="text-3xl font-bold text-primary">₹{p.price}</span>
-                      <span className="text-gray-600 ml-2">/year</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-4">{p.description}</p>
-                    <ul className="space-y-2 mb-6">
-                      {p.features?.map((feature, idx) => (
-                        <li key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                          <span className="text-primary">✓</span>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className={`h-1 w-full rounded-full ${selectedPlan?.id === p.id ? "bg-primary" : "bg-gray-200"}`} />
-                  </div>
-                ))}
+
+                      <h3 className="mt-5 text-2xl font-bold text-gray-900">{p.name}</h3>
+                      <p className="mt-2 text-[15px] leading-relaxed text-secondary">{p.description}</p>
+
+                      <ul className="mt-4 space-y-2">
+                        {p.features?.map((feature, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                            <span className="mt-0.5 text-primary">✓</span>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="mt-auto flex items-end gap-1 border-t border-tertiary pt-6">
+                        <span className="text-3xl font-bold text-primary">₹{p.price?.toLocaleString("en-IN")}</span>
+                        <span className="mb-1 text-sm text-secondary">/{p.billingPeriod || "month"}</span>
+                      </div>
+
+                      <span
+                        className={`mt-4 flex h-10 items-center justify-center rounded-xl text-sm font-semibold transition ${
+                          selected ? "bg-primary text-white" : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {selected ? "✓ Selected" : "Select plan"}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Purchase Section */}
             {selectedPlan && (
-              <section className="space-y-6 font-inter lg:grid lg:grid-cols-[0.92fr_1.08fr] lg:items-start lg:gap-8 lg:space-y-0 xl:gap-10">
-                <div className="rounded-2xl bg-white p-5 shadow-sm lg:sticky lg:top-24 lg:p-6">
-                  <p className="text-lg font-medium text-secondary">Order Summary</p>
-                  <div className="mt-4 flex justify-center">
-                    <Image
-                      src="/assets/plans/plan1.jpg"
-                      alt="Membership plan"
-                      width={384}
-                      height={192}
-                      className="h-48 w-full max-w-xs rounded-xl border border-tertiary object-cover"
-                    />
-                  </div>
-
-                  <div className="mt-4 text-sm text-gray-800 space-y-3">
-                    <p className="font-semibold text-xl">{selectedPlan.name}</p>
-                    <p className="font-medium text-[16px] text-secondary">{selectedPlan.description}</p>
-                    <div className="flex justify-between font-medium">
-                      <span>{selectedPlan.name}</span>
-                      <span>₹{selectedPlan.price}</span>
-                    </div>
-                    <div className="flex justify-between border-t-[1px] border-tertiary pt-2 font-semibold">
-                      <span className="text-secondary">Total</span>
-                      <span>₹{selectedPlan.price}</span>
-                    </div>
-                  </div>
-                </div>
-
+              <section className="mx-auto max-w-2xl font-inter">
                 <div className="rounded-2xl bg-white p-5 shadow-sm lg:p-6">
                   <h2 className="text-xl font-medium text-black">Purchase Membership</h2>
-                  <p className="text-secondary font-medium text-[16px] mt-3">Your membership auto-renews each year. Cancel anytime.</p>
+                  <p className="text-secondary font-medium text-[16px] mt-3">Your subscription renews at the end of each term. Cancel anytime.</p>
                   <div className="mt-5 space-y-3 lg:space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <Input
@@ -457,11 +456,11 @@ export default function MembershipPage() {
 
             <div className="mt-6">
               <Button fullWidth size="lg" onClick={handlePurchase} disabled={loading}>
-                {loading ? "Processing..." : `Pay ₹${selectedPlan?.price || 199}`}
+                {loading ? "Processing..." : `Pay ₹${(selectedPlan?.price || 0).toLocaleString("en-IN")}`}
               </Button>
             </div>
             <p className="text-secondary text-[14px] mt-8 lg:mt-9">
-                By purchasing this subscription, you agree that your membership will automatically renew at the end of each term for the same duration and at the then-current rate, unless you cancel in accordance with the Membership Agreement. You authorize Superpower to charge your payment method for the initial term and any subsequent renewal terms unless canceled. To cancel, email concierge@superpower.com or log into your account and follow the cancellation instructions. No refunds are provided for the remainder of the subscription term after cancellation. For full details, please refer to your Membership Agreement.
+                By purchasing this subscription, you agree that your membership will automatically renew at the end of each term for the same duration and at the then-current rate, unless you cancel in accordance with the Membership Agreement. You authorize Cyborg to charge your payment method for the initial term and any subsequent renewal terms unless canceled. To cancel, email concierge@cyborg.men or log into your account and follow the cancellation instructions. No refunds are provided for the remainder of the subscription term after cancellation. For full details, please refer to your Membership Agreement.
             </p>
           </div>
         </section>

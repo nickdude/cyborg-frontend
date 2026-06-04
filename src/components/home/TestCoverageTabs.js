@@ -119,10 +119,10 @@ export default function TestCoverageTabs() {
   const [active, setActive] = useState(0);
 
   return (
-    <section className="bg-white px-4 py-10 md:px-8">
-      <div className="mx-auto max-w-[980px]">
-        <h2 className="text-2xl font-semibold">See everything we test</h2>
-        <p className="mt-2 text-sm text-gray-600 max-w-[56ch]">
+    <section className="bg-white px-4 py-10 md:px-8 lg:pb-40 lg:pt-20">
+      <div className="mx-auto max-w-[980px] lg:max-w-[1100px]">
+        <h2 className="text-2xl font-semibold lg:text-[44px] lg:tracking-[-0.02em]">See everything we test</h2>
+        <p className="mt-2 text-sm text-gray-600 max-w-[56ch] lg:mt-4 lg:text-lg">
           The following 100+ biomarkers are included with your annual Superpower membership.
         </p>
 

@@ -9,9 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
-import SocialButton from "@/components/SocialButton";
+import GoogleAuthButton from "@/components/GoogleAuthButton";
 import CyborgLogo from "@/components/CyborgLogo";
-import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { getNextRoute } from "@/utils/navigationFlow";
 
@@ -86,12 +85,10 @@ export default function RegisterPage() {
 }
 
 function Register() {
-  const [step, setStep] = useState(1); // 1: email, 2: otp, 3: phone, 4: email-password, 5: phone-password
-  const [registrationMethod, setRegistrationMethod] = useState("email-otp"); // email-otp, email-password, phone-otp, phone-password
+  const [step, setStep] = useState(1); // 1: email, 2: otp, 4: email-password
   const [useOTP, setUseOTP] = useState(true); // Toggle between OTP and password
   const [formData, setFormData] = useState({
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
     userType: "user",
@@ -156,9 +153,9 @@ function Register() {
     setError("");
     try {
       // Backend expects { userId, type: "email"|"phone" } — not the raw value.
-      const type = formData.email ? "email" : "phone";
+      const type = "email";
       await authAPI.resendOTP({ userId, type });
-      setSuccessMsg("OTP resent successfully! Check your " + (formData.email ? "email" : "phone"));
+      setSuccessMsg("OTP resent successfully! Check your email");
       setResendTimer(60);
       setCanResend(false);
       // Restart the countdown
@@ -195,22 +192,15 @@ function Register() {
     setError("");
 
     // Validation
-    if (!formData.email && !formData.phone) {
-      setError("Please enter an email or phone number");
+    if (!formData.email) {
+      setError("Please enter an email address");
       setLoading(false);
       return;
     }
 
     // Email validation
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       setError("Please enter a valid email address");
-      setLoading(false);
-      return;
-    }
-
-    // Phone validation (10 digits)
-    if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ""))) {
-      setError("Please enter a valid 10-digit phone number");
       setLoading(false);
       return;
     }
@@ -240,7 +230,6 @@ function Register() {
       };
 
       if (formData.email) payload.email = formData.email;
-      if (formData.phone) payload.phone = formData.phone;
       if (!useOTP && formData.password) payload.password = formData.password;
       if (referralCode && formData.userType === "user") payload.referralCode = referralCode;
 
@@ -251,9 +240,9 @@ function Register() {
       // Always go to OTP verification step
       setStep(2);
       if (useOTP) {
-        setSuccessMsg("OTP sent successfully! Check your " + (formData.email ? "email" : "phone"));
+        setSuccessMsg("OTP sent successfully! Check your email");
       } else {
-        setSuccessMsg("Account created! Please verify your " + (formData.email ? "email" : "phone") + " with the OTP we sent.");
+        setSuccessMsg("Account created! Please verify your email with the OTP we sent.");
       }
     } catch (err) {
       const errorMsg = err.message || "Registration failed";
@@ -281,7 +270,7 @@ function Register() {
     setError("");
 
     try {
-      const type = formData.email ? "email" : "phone";
+      const type = "email";
       const response = await authAPI.verifyOTP({
         userId,
         otp,
@@ -308,29 +297,6 @@ function Register() {
     }
   };
 
-  const handlePhoneSignUp = () => {
-    setStep(3);
-    setRegistrationMethod("phone-otp");
-    setFormData({ ...formData, email: "", password: "", confirmPassword: "" });
-    setError("");
-    setSuccessMsg("");
-  };
-
-  const handleEmailWithPassword = () => {
-    setStep(4);
-    setRegistrationMethod("email-password");
-    setError("");
-    setSuccessMsg("");
-  };
-
-  const handlePhoneWithPassword = () => {
-    setStep(5);
-    setRegistrationMethod("phone-password");
-    setFormData({ ...formData, email: "" });
-    setError("");
-    setSuccessMsg("");
-  };
-
   // OTP Verification Step
   if (step === 2) {
     return (
@@ -344,7 +310,7 @@ function Register() {
           <p className="text-secondary text-sm mb-8">
             Enter the 6-digit code sent to{" "}
             <span className="font-semibold text-gray-900">
-              {formData.email || formData.phone}
+              {formData.email}
             </span>
           </p>
 
@@ -406,72 +372,10 @@ function Register() {
                 onClick={() => setStep(1)}
                 className="text-primary font-semibold hover:underline"
               >
-                Change {formData.email ? "email" : "phone"}
+                Change email
               </button>
             </p>
           </div>
-        </div>
-      </AuthShell>
-    );
-  }
-
-  // Phone Sign Up Step
-  if (step === 3) {
-    return (
-      <AuthShell>
-        <div className="w-full max-w-md bg-white p-8 rounded-3xl">
-          <div className="mb-8 w-32">
-            <CyborgLogo />
-          </div>
-
-          <h2 className="text-2xl font-medium text-black mb-2">Sign up with Phone</h2>
-          <p className="text-secondary text-sm mb-8">Enter your phone number to get started</p>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleRegister}>
-            <Input
-              type="tel"
-              name="phone"
-              placeholder="+1 (555) 000-0000"
-              value={formData.phone}
-              onChange={handleInputChange}
-            />
-
-            <DoctorToggle
-              value={formData.userType}
-              onChange={handleUserTypeChange}
-              className="mt-4 mb-3"
-              disabled={!!referralCode}
-              disabledReason="Referral codes are for patient accounts."
-            />
-
-            <Button fullWidth variant="primary" disabled={loading || !formData.phone}>
-              {loading ? "Sending OTP..." : "Get Started"}
-            </Button>
-          </form>
-
-          <p className="text-center mt-6 text-secondary text-sm">
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="text-primary font-semibold hover:underline"
-            >
-              Back to email
-            </button>
-            {" · "}
-            <button
-              type="button"
-              onClick={handlePhoneWithPassword}
-              className="text-primary font-semibold hover:underline"
-            >
-              Use password instead
-            </button>
-          </p>
         </div>
       </AuthShell>
     );
@@ -565,101 +469,6 @@ function Register() {
               className="text-primary font-semibold hover:underline"
             >
               Back to email signup
-            </button>
-          </p>
-        </div>
-      </AuthShell>
-    );
-  }
-
-  // Phone with Password Step
-  if (step === 5) {
-    return (
-      <AuthShell>
-        <div className="w-full max-w-md bg-white p-8 rounded-3xl">
-          <div className="mb-8 w-32">
-            <CyborgLogo />
-          </div>
-
-          <h2 className="text-2xl font-medium text-black mb-2">Create Account</h2>
-          <p className="text-secondary text-sm mb-8">Set up your account with phone and password</p>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleRegister}>
-            <Input
-              label="Phone Number"
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-              placeholder="+1 (555) 000-0000"
-              required
-              className="mb-4"
-            />
-
-            <div className="relative mb-4">
-              <Input
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="At least 8 characters"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-[42px] text-gray-500 hover:text-gray-700"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
-            <div className="relative">
-              <Input
-                label="Confirm Password"
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                placeholder="Re-enter password"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-[42px] text-gray-500 hover:text-gray-700"
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
-            <DoctorToggle
-              value={formData.userType}
-              onChange={handleUserTypeChange}
-              className="mt-4 mb-3"
-              disabled={!!referralCode}
-              disabledReason="Referral codes are for patient accounts."
-            />
-
-            <Button fullWidth variant="primary" disabled={loading || !formData.phone || !formData.password}>
-              {loading ? "Creating Account..." : "Create Account"}
-            </Button>
-          </form>
-
-          <p className="text-center mt-6 text-secondary text-sm">
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              className="text-primary font-semibold hover:underline"
-            >
-              Back to phone signup
             </button>
           </p>
         </div>
@@ -801,19 +610,11 @@ function Register() {
           <div className="flex-1 border-t border-lightGray"></div>
         </div>
 
-        <SocialButton
-          icon="/assets/icons/google.svg"
-          className="mb-3"
-        >
-          Sign up using Google
-        </SocialButton>
-
-        <SocialButton
-          icon="/assets/icons/phone.svg"
-          onClick={handlePhoneSignUp}
-        >
-          Sign up using Phone
-        </SocialButton>
+        <GoogleAuthButton
+          label="Sign up with Google"
+          userType={formData.userType}
+          onError={setError}
+        />
 
         <div className="mt-8 pt-6 text-center space-y-1">
           <Link href="/privacy" className="text-secondary hover:text-gray-900 text-lg block">

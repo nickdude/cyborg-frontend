@@ -23,11 +23,11 @@ const DOCTORS = [
 
 function DoctorCard({ doctor }) {
   return (
-    <article className="flex items-start gap-4 rounded-2xl">
+    <article className="flex items-start gap-4 rounded-2xl lg:gap-6 lg:rounded-3xl lg:bg-white lg:p-6 lg:shadow-[0_2px_10px_rgba(0,0,0,0.04)] lg:ring-1 lg:ring-black/5 lg:transition-all lg:duration-300 lg:hover:-translate-y-1 lg:hover:shadow-[0_20px_50px_rgba(0,0,0,0.10)]">
       <img
         src={doctor.image}
         alt={doctor.name}
-        className="h-[96px] w-[96px] rounded-2xl object-cover md:h-[110px] md:w-[110px]"
+        className="h-[96px] w-[96px] rounded-2xl object-cover md:h-[110px] md:w-[110px] lg:h-[120px] lg:w-[120px]"
       />
 
       <div className="pt-1">
@@ -44,8 +44,8 @@ function DoctorCard({ doctor }) {
 
 export default function MedicalProfessionalsSection() {
   return (
-    <section className="bg-[#ECECEC] px-5 pb-14 pt-14 text-black md:px-8 md:pb-20 md:pt-16">
-      <div className="mx-auto w-full max-w-[430px] md:max-w-[980px]">
+    <section className="bg-[#ECECEC] px-5 pb-14 pt-14 text-black md:px-8 md:pb-20 md:pt-16 lg:py-40">
+      <div className="mx-auto w-full max-w-[430px] md:max-w-[980px] lg:max-w-[1180px]">
         <h2 className="max-w-[12ch] text-[clamp(2.4rem,8.3vw,4rem)] font-semibold leading-[1.1] tracking-[-0.02em] text-[#0f1013]">
           Developed by world-class medical professionals
         </h2>
@@ -79,7 +79,7 @@ export default function MedicalProfessionalsSection() {
         </div>
 
         <p className="mt-14 text-[clamp(1.35rem,4.4vw,2rem)] leading-[1.3] text-[#666973] md:mt-16">
-          What would cost you 15,000 is 4999
+          World-class clinical care, made accessible.
         </p>
       </div>
     </section>

@@ -3,15 +3,20 @@
 import Link from "next/link";
 import Button from "@/components/Button";
 import HeroSection from "@/components/home/HeroSection";
+import CompletePictureSection from "@/components/home/CompletePictureSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import MedicalProfessionalsSection from "@/components/home/MedicalProfessionalsSection";
 import MembershipSection from "@/components/home/MembershipSection";
 import MembershipPlanSection from "@/components/home/MembershipPlanSection";
 import AllInOneImageSwitcher from "@/components/home/AllInOneImageSwitcher";
-import TestimonialCarousel from "@/components/home/TestimonialCarousel";
 import TagOverlaySection from "@/components/home/TagOverlaySection";
+import VsDifferenceSection from "@/components/home/VsDifferenceSection";
+import CyborgLabsSection from "@/components/home/CyborgLabsSection";
+import ChangeHealthSection from "@/components/home/ChangeHealthSection";
 import FaqAccordion from "@/components/home/FaqAccordion";
 import TestCoverageTabs from "@/components/home/TestCoverageTabs";
+import Footer from "@/components/home/Footer";
+import Reveal from "@/components/home/Reveal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -62,85 +67,94 @@ export default function Home() {
     <main className="overflow-x-hidden bg-black">
       <HeroSection />
 
-      <section className="bg-[#5B2487] px-5 pb-14 pt-12 text-white md:px-8 md:pb-20 md:pt-16">
-        <div className="mx-auto w-full max-w-[430px] md:max-w-[980px]">
-          <h2 className="md:max-w-[40ch] text-[24px] font-bold leading-[1.1] tracking-[-0.02em]">
+      <Reveal><CompletePictureSection /></Reveal>
+
+      <Reveal>
+      <section className="bg-[#5B2487] px-5 pb-14 pt-12 text-white md:px-8 md:pb-20 md:pt-16 lg:px-12 lg:py-32">
+        <div className="mx-auto w-full max-w-[430px] md:max-w-[980px] lg:max-w-[1400px]">
+          <h2 className="md:max-w-[40ch] text-[24px] font-bold leading-[1.1] tracking-[-0.02em] lg:max-w-[18ch] lg:text-[44px] lg:leading-[1.05]">
             Whole body health starts with the right signal.
           </h2>
 
-          <p className="mt-7 md:max-w-[40ch] leading-[1.35] text-white/95 ">
+          <p className="mt-7 md:max-w-[40ch] leading-[1.35] text-white/95 lg:mt-6 lg:max-w-[60ch] lg:text-lg lg:text-white/80">
             Formulations that provide fast-acting and sustained support using scientifically and clinically studied ingredients.
           </p>
 
-          <div className="mt-10 grid grid-cols-2 gap-3 md:mt-12 md:gap-5">
+          <div className="mt-10 grid grid-cols-2 gap-3 md:mt-12 md:gap-5 lg:mt-16 lg:grid-cols-4 lg:gap-7">
             {featuredProducts.map((product) => (
               <article
                 key={product.name}
-                className="rounded-[24px] bg-[#9C7DB9] px-4 pb-4 pt-4 text-center md:px-6 md:pb-5 md:pt-5"
+                className="group rounded-[24px] bg-[#9C7DB9] px-4 pb-4 pt-4 text-center md:px-6 md:pb-5 md:pt-5 lg:rounded-[28px] lg:bg-white/10 lg:p-7 lg:ring-1 lg:ring-white/15 lg:backdrop-blur-sm lg:transition-all lg:duration-300 lg:hover:-translate-y-1.5 lg:hover:bg-white/15 lg:hover:shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
               >
-                <div className="inline-flex rounded-xl bg-[#5B2487] px-3 py-1.5 text-[clamp(0.9rem,2.2vw,1rem)] font-medium leading-none text-white">
+                <div className="inline-flex rounded-xl bg-[#5B2487] px-3 py-1.5 text-[clamp(0.9rem,2.2vw,1rem)] font-medium leading-none text-white lg:bg-white/20">
                   Best Seller
                 </div>
 
-                <h3 className="mt-2 text-left  font-semibold leading-[1.1] text-white">
+                <h3 className="mt-2 text-left  font-semibold leading-[1.1] text-white lg:mt-4 lg:text-xl">
                   {product.name}
                 </h3>
 
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="mx-auto  h-[120px] w-auto object-contain md:h-[250px]"
+                  className="mx-auto  h-[120px] w-auto object-contain md:h-[250px] lg:h-[240px] lg:transition-transform lg:duration-500 lg:group-hover:scale-105"
                 />
 
                 <Button
                   href="/login"
                   variant="secondary"
-                  className="mt-3  w-full rounded-2xl border-none bg-[#ECECEC] py-3 font-semibold text-[#101010] shadow-none hover:bg-[#e2e2e2]"
+                  className="mt-3  w-full rounded-2xl border-none bg-[#ECECEC] py-3 font-semibold text-[#101010] shadow-none hover:bg-[#e2e2e2] lg:py-3.5"
                 >
                   Join Today
                 </Button>
 
-                <p className="mt-3 font-medium text-white/95">Starting at $49.99</p>
+                <p className="mt-3 font-medium text-white/95 lg:text-white/70">Starting at $49.99</p>
               </article>
             ))}
           </div>
 
-          <div className="mt-8 flex justify-end md:mt-10">
+          <div className="mt-8 flex justify-end md:mt-10 lg:mt-12">
             <Link
               href="/market-place"
-              className=" font-semibold text-white underline underline-offset-8"
+              className=" font-semibold text-white underline underline-offset-8 lg:inline-flex lg:items-center lg:gap-2 lg:rounded-full lg:bg-white/10 lg:px-6 lg:py-3 lg:text-lg lg:no-underline lg:ring-1 lg:ring-white/20 lg:transition lg:hover:bg-white/20"
             >
               Shop All →
             </Link>
           </div>
         </div>
       </section>
+      </Reveal>
 
-      <section className="bg-[#ECECEC] px-5 pb-16 pt-14 text-black md:px-8 md:pb-20 md:pt-16">
-        <div className="mx-auto w-full max-w-[430px] text-center md:max-w-[820px]">
-          <h2 className="mx-auto max-w-[8ch] text-[clamp(2.2rem,8.6vw,4rem)] font-semibold leading-[0.95] tracking-[-0.02em]">
+      <Reveal>
+      <section className="bg-[#ECECEC] px-5 pb-16 pt-14 text-black md:px-8 md:pb-20 md:pt-16 lg:py-32">
+        <div className="mx-auto w-full max-w-[430px] text-center md:max-w-[820px] lg:max-w-[1040px]">
+          <h2 className="mx-auto max-w-[8ch] text-[clamp(2.2rem,8.6vw,4rem)] font-semibold leading-[0.95] tracking-[-0.02em] lg:text-[64px]">
             All in one app.
           </h2>
 
           <AllInOneImageSwitcher images={allInOneImages} />
 
-          <p className="mx-auto mt-8 max-w-[28ch] text-[clamp(1.2rem,4.2vw,1.75rem)] leading-[1.34] text-black/95 md:mt-10 md:max-w-[34ch]">
+          <p className="mx-auto mt-8 max-w-[28ch] text-[clamp(1.2rem,4.2vw,1.75rem)] leading-[1.34] text-black/95 md:mt-10 md:max-w-[34ch] lg:mt-12 lg:max-w-[46ch] lg:text-[22px] lg:leading-[1.45] lg:text-black/70">
             Leverage the Cyborg&apos;s advanced, discreet and preventive health monitoring to guide your path toward vitality and a longer, healthier life
           </p>
         </div>
       </section>
+      </Reveal>
 
-      <section className="relative overflow-hidden bg-[#ECECEC] px-5 pb-0 pt-14 text-black md:px-8 md:pt-16">
-        <div className="mx-auto w-full max-w-[430px] md:max-w-[820px]">
-          <h2 className="max-w-[12ch] text-[clamp(1.8rem,7.2vw,3.2rem)] font-semibold leading-[1.12] tracking-[-0.02em]">
+      <Reveal>
+      <section className="relative overflow-hidden bg-[#ECECEC] px-5 pb-0 pt-14 text-black md:px-8 md:pt-16 lg:pb-24 lg:pt-36">
+        <div className="mx-auto w-full max-w-[430px] md:max-w-[820px] lg:max-w-[1280px] lg:grid lg:grid-cols-[0.85fr_1fr] lg:items-center lg:gap-20">
+          <div className="lg:py-10">
+          <h2 className="max-w-[12ch] text-[clamp(1.8rem,7.2vw,3.2rem)] font-semibold leading-[1.12] tracking-[-0.02em] lg:text-[48px] lg:leading-[1.08]">
             The only nudges you will ever need
           </h2>
 
-          <p className="mt-7 max-w-[27ch] text-[clamp(1.15rem,3.9vw,1.6rem)] leading-[1.38] text-black/95 md:max-w-[36ch]">
+          <p className="mt-7 max-w-[27ch] text-[clamp(1.15rem,3.9vw,1.6rem)] leading-[1.38] text-black/95 md:max-w-[36ch] lg:mt-6 lg:max-w-[40ch] lg:text-[20px] lg:text-black/65">
             Personalized nudges for a healthier you. Get tailor-made insights and alerts to help you make better choices in real time.
           </p>
+          </div>
 
-          <div className="mt-8 space-y-3 pb-12">
+          <div className="mt-8 space-y-3 pb-12 lg:mt-0 lg:pb-16">
             <article className="rounded-3xl border-2 border-[#d6d7ef] bg-white/45 p-5 opacity-30">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 h-12 w-12 rounded-xl bg-[#eceef4]" />
@@ -223,11 +237,13 @@ export default function Home() {
 
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#ECECEC] to-transparent" />
       </section>
+      </Reveal>
 
-      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_-4%,#cb86ff_0%,#a14ff1_34%,#7f31d3_68%,#631aa6_100%)] px-5 pb-10 pt-16 text-white md:px-8 md:pb-16 md:pt-20">
+      <Reveal>
+      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_-4%,#cb86ff_0%,#a14ff1_34%,#7f31d3_68%,#631aa6_100%)] px-5 pb-10 pt-16 text-white md:px-8 md:pb-16 md:pt-20 lg:py-28">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,255,255,0.22),transparent_56%)]" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#5f1aa5]/35" />
-        <div className="mx-auto w-full max-w-[430px] lg:max-w-[1180px]">
+        <div className="mx-auto w-full max-w-[430px] lg:max-w-[1180px] xl:max-w-[1320px]">
           <div className="text-center lg:grid lg:grid-cols-[1fr_1.03fr] lg:items-end lg:gap-12 lg:text-left">
             <div className="lg:pb-6">
               <h2 className="text-[clamp(2.3rem,9vw,4.3rem)] font-semibold leading-[1.06] tracking-[-0.02em] lg:max-w-[12ch]">
@@ -298,14 +314,19 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </Reveal>
 
-      <HowItWorksSection />
-      <MembershipSection />
-      <MedicalProfessionalsSection />
-      <MembershipPlanSection />
-      <TagOverlaySection image="/assets/testinomial/test1.png" />
-      <FaqAccordion />
-      <TestCoverageTabs />
+      <Reveal><HowItWorksSection /></Reveal>
+      <Reveal><MembershipSection /></Reveal>
+      <Reveal><MedicalProfessionalsSection /></Reveal>
+      <Reveal><MembershipPlanSection /></Reveal>
+      <Reveal><TagOverlaySection image="/assets/testinomial/test1.png" /></Reveal>
+      <Reveal><VsDifferenceSection /></Reveal>
+      <Reveal><CyborgLabsSection /></Reveal>
+      <Reveal><ChangeHealthSection /></Reveal>
+      <Reveal><FaqAccordion /></Reveal>
+      <Reveal><TestCoverageTabs /></Reveal>
+      <Footer />
     </main>
   );
 }
