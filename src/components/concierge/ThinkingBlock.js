@@ -23,7 +23,7 @@ const thinkingMarkdownComponents = {
         {children}
       </code>
     ) : (
-      <pre className="bg-gray-50 border border-gray-200 rounded p-2 my-1.5 overflow-x-auto text-[11px] font-mono not-italic">
+      <pre className="bg-gray-50 border border-gray-200/60 rounded p-2 my-1.5 overflow-x-auto text-[11px] font-mono not-italic">
         <code>{children}</code>
       </pre>
     ),

@@ -40,12 +40,12 @@ function MarkdownBody({ text }) {
               {children}
             </code>
           ) : (
-            <pre className="bg-gray-50 border border-gray-200 rounded-lg p-3 my-3 overflow-x-auto text-[13px] font-mono">
+            <pre className="bg-gray-50 border border-gray-200/60 rounded-lg p-3 my-3 overflow-x-auto text-[13px] font-mono">
               <code>{children}</code>
             </pre>
           ),
         table: ({ children }) => (
-          <div className="overflow-x-auto my-3 rounded-lg border border-gray-200">
+          <div className="overflow-x-auto my-3 rounded-lg border border-gray-200/60">
             <table className="w-full text-[13px]">{children}</table>
           </div>
         ),
@@ -53,14 +53,14 @@ function MarkdownBody({ text }) {
           <thead className="bg-gray-50 text-left">{children}</thead>
         ),
         th: ({ children }) => (
-          <th className="px-3 py-2 font-medium text-gray-600 border-b border-gray-200">
+          <th className="px-3 py-2 font-medium text-gray-600 border-b border-gray-200/60">
             {children}
           </th>
         ),
         td: ({ children }) => (
           <td className="px-3 py-2 border-b border-gray-100">{children}</td>
         ),
-        hr: () => <hr className="my-4 border-gray-200" />,
+        hr: () => <hr className="my-4 border-gray-200/60" />,
         a: ({ href, children }) => (
           <a
             href={href}

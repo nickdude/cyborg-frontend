@@ -107,7 +107,7 @@ export default function ToolChip({ block }) {
         className={`inline-flex items-center gap-2 text-xs rounded-lg px-3 py-2 transition-all duration-200 border ${
           isRunning
             ? "bg-primary/5 border-primary/10 text-primary"
-            : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:border-gray-300 cursor-pointer"
+            : "bg-gray-50 border-gray-200/60 text-gray-600 hover:bg-gray-100 hover:border-gray-300 cursor-pointer"
         }`}
       >
         <ToolIcon
@@ -134,14 +134,14 @@ export default function ToolChip({ block }) {
             : "max-h-0 opacity-0"
         }`}
       >
-        <div className="text-[11px] border border-gray-200 rounded-lg overflow-hidden bg-gray-50/50">
-          <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-medium bg-gray-50 border-b border-gray-200">
+        <div className="text-[11px] border border-gray-200/60 rounded-lg overflow-hidden bg-gray-50/50">
+          <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-medium bg-gray-50 border-b border-gray-200/60">
             Input
           </div>
           <pre className="px-3 py-2 overflow-x-auto whitespace-pre-wrap text-gray-600 bg-white font-mono">
             {prettyJson(input)}
           </pre>
-          <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-medium bg-gray-50 border-y border-gray-200">
+          <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-gray-400 font-medium bg-gray-50 border-y border-gray-200/60">
             Result
           </div>
           <pre className="px-3 py-2 overflow-x-auto whitespace-pre-wrap text-gray-600 bg-white max-h-60 overflow-y-auto font-mono">

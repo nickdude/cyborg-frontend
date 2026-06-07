@@ -35,8 +35,8 @@ export default function ProductCard({ product, onAdded }) {
       {/* Product Image */}
       <div className="relative aspect-square mb-3 flex items-center justify-center rounded-lg ">
         <Image
-          src={product.image}
-          alt={product.name}
+          src={product.image || "/assets/preview/product-1.png"}
+          alt={product.name || "Product"}
           width={100}
           height={100}
           className="object-contain"

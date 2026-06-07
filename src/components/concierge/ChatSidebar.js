@@ -97,7 +97,7 @@ export default function ChatSidebar({
         </div>
 
         <div className="px-3 pt-3">
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus-within:bg-white focus-within:border-primary/30 transition-all duration-200">
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200/60 rounded-lg px-3 py-2 focus-within:bg-white focus-within:border-primary/30 transition-all duration-200">
             <Search className="w-3.5 h-3.5 text-gray-400" />
             <input
               value={query}

@@ -54,7 +54,7 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
                 <button
                   key={p}
                   onClick={() => onQuickPrompt?.(p)}
-                  className="text-sm text-left bg-white border border-gray-200 rounded-xl px-4 py-3 hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-200 text-gray-700 cursor-pointer"
+                  className="text-sm text-left bg-white border border-gray-200/60 rounded-xl px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-200 text-gray-700 cursor-pointer"
                 >
                   {p}
                 </button>
