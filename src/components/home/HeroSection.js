@@ -53,8 +53,8 @@ export default function HeroSection() {
     };
   }, []);
 
-  // Draw a frame to the canvas: cover on mobile (fills the screen), contain on
-  // desktop (zooms out so the whole composition is visible, no harsh crop).
+  // Draw a frame to the canvas using "cover" on every breakpoint, so the frame
+  // always fills the viewport edge-to-edge (full screen width, no letterboxing).
   const drawFrame = useCallback((index) => {
     const canvas = canvasRef.current;
     const img = imagesRef.current[index];
@@ -77,10 +77,7 @@ export default function HeroSection() {
     const iw = img.naturalWidth;
     const ih = img.naturalHeight;
 
-    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-    const scale = isDesktop
-      ? Math.min(cw / iw, ch / ih) // contain → zoomed out
-      : Math.max(cw / iw, ch / ih); // cover → fills viewport
+    const scale = Math.max(cw / iw, ch / ih); // cover → fills the viewport
 
     const dw = iw * scale;
     const dh = ih * scale;
