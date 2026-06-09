@@ -43,7 +43,7 @@ function HowItWorksStep({ step, isLast }) {
         <img
           src={step.image}
           alt={step.imageAlt}
-          className="h-[152px] w-full rounded-3xl object-cover sm:h-[186px] md:h-[220px] lg:h-[360px] lg:rounded-[32px] lg:shadow-[0_24px_60px_rgba(0,0,0,0.12)] lg:transition-transform lg:duration-500 lg:hover:scale-[1.02]"
+          className="h-[152px] w-full rounded-3xl object-cover sm:h-[186px] md:h-[220px] lg:h-[280px] lg:rounded-[32px] lg:shadow-[0_24px_60px_rgba(0,0,0,0.12)] lg:transition-transform lg:duration-500 lg:hover:scale-[1.02]"
         />
 
         <div>
@@ -61,13 +61,13 @@ function HowItWorksStep({ step, isLast }) {
 
 export default function HowItWorksSection() {
   return (
-    <section className="bg-[#ECECEC] px-5 pb-16 pt-14 text-black md:px-8 md:pb-24 md:pt-20 lg:py-40">
+    <section className="bg-[#ECECEC] px-5 pb-16 pt-14 text-black md:px-8 md:pb-24 md:pt-20 lg:py-24">
       <div className="mx-auto w-full max-w-[430px] md:max-w-[860px] lg:max-w-[1180px]">
         <h2 className="text-center text-[clamp(2.2rem,8vw,3.8rem)] font-semibold leading-[1.08] tracking-[-0.02em] text-[#0f0f13] lg:text-[64px]">
           How it works
         </h2>
 
-        <div className="mt-8 space-y-12 md:mt-12 md:space-y-16 lg:mt-24 lg:space-y-28">
+        <div className="mt-8 space-y-12 md:mt-12 md:space-y-16 lg:mt-14 lg:space-y-16">
           {HOW_IT_WORKS_STEPS.map((step, index) => (
             <HowItWorksStep key={step.id} step={step} isLast={index === HOW_IT_WORKS_STEPS.length - 1} />
           ))}

@@ -38,11 +38,11 @@ export default function AllInOneImageSwitcher({
 
   return (
     <div className="mx-auto mt-6 w-full max-w-[620px]">
-      <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_16px_40px_rgba(0,0,0,0.08)]">
+      <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_16px_40px_rgba(0,0,0,0.08)] lg:mx-auto lg:w-fit">
         <img
           src={activeImage.src}
           alt={`${altPrefix} ${activeIndex + 1}`}
-          className="h-auto w-full"
+          className="h-auto w-full lg:h-[42vh] lg:w-auto lg:max-w-full"
         />
       </div>
 

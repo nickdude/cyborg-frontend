@@ -72,15 +72,17 @@ export default function Home() {
       <Reveal>
       <section className="bg-[#5B2487] px-5 pb-14 pt-12 text-white md:px-8 md:pb-20 md:pt-16 lg:px-12 lg:py-32">
         <div className="mx-auto w-full max-w-[430px] md:max-w-[980px] lg:max-w-[1400px]">
-          <h2 className="md:max-w-[40ch] text-[24px] font-bold leading-[1.1] tracking-[-0.02em] lg:max-w-[18ch] lg:text-[44px] lg:leading-[1.05]">
-            Whole body health starts with the right signal.
-          </h2>
+          <div className="lg:flex lg:items-end lg:justify-between lg:gap-16">
+            <h2 className="md:max-w-[40ch] text-[24px] font-bold leading-[1.1] tracking-[-0.02em] lg:max-w-[16ch] lg:text-[48px] lg:leading-[1.04] lg:tracking-[-0.03em]">
+              Whole body health starts with the right signal.
+            </h2>
 
-          <p className="mt-7 md:max-w-[40ch] leading-[1.35] text-white/95 lg:mt-6 lg:max-w-[60ch] lg:text-lg lg:text-white/80">
-            Formulations that provide fast-acting and sustained support using scientifically and clinically studied ingredients.
-          </p>
+            <p className="mt-7 md:max-w-[40ch] leading-[1.35] text-white/95 lg:mt-0 lg:max-w-[44ch] lg:shrink-0 lg:self-end lg:text-[19px] lg:leading-[1.5] lg:text-white/80">
+              Formulations that provide fast-acting and sustained support using scientifically and clinically studied ingredients.
+            </p>
+          </div>
 
-          <div className="mt-10 grid grid-cols-2 gap-3 md:mt-12 md:gap-5 lg:mt-16 lg:grid-cols-4 lg:gap-7">
+          <div className="mt-10 grid grid-cols-2 gap-3 md:mt-12 md:gap-5 lg:mt-20 lg:grid-cols-4 lg:gap-7">
             {featuredProducts.map((product) => (
               <article
                 key={product.name}
@@ -126,15 +128,15 @@ export default function Home() {
       </Reveal>
 
       <Reveal>
-      <section className="bg-[#ECECEC] px-5 pb-16 pt-14 text-black md:px-8 md:pb-20 md:pt-16 lg:py-32">
+      <section className="bg-[#ECECEC] px-5 pb-16 pt-14 text-black md:px-8 md:pb-20 md:pt-16 lg:flex lg:h-screen lg:flex-col lg:items-center lg:justify-center lg:py-10">
         <div className="mx-auto w-full max-w-[430px] text-center md:max-w-[820px] lg:max-w-[1040px]">
-          <h2 className="mx-auto max-w-[8ch] text-[clamp(2.2rem,8.6vw,4rem)] font-semibold leading-[0.95] tracking-[-0.02em] lg:text-[64px]">
+          <h2 className="mx-auto max-w-[8ch] text-[clamp(2.2rem,8.6vw,4rem)] font-semibold leading-[0.95] tracking-[-0.02em] lg:text-[72px] lg:tracking-[-0.03em]">
             All in one app.
           </h2>
 
           <AllInOneImageSwitcher images={allInOneImages} />
 
-          <p className="mx-auto mt-8 max-w-[28ch] text-[clamp(1.2rem,4.2vw,1.75rem)] leading-[1.34] text-black/95 md:mt-10 md:max-w-[34ch] lg:mt-12 lg:max-w-[46ch] lg:text-[22px] lg:leading-[1.45] lg:text-black/70">
+          <p className="mx-auto mt-8 max-w-[28ch] text-[clamp(1.2rem,4.2vw,1.75rem)] leading-[1.34] text-black/95 md:mt-10 md:max-w-[34ch] lg:mt-8 lg:max-w-[46ch] lg:text-[20px] lg:leading-[1.45] lg:text-black/70">
             Leverage the Cyborg&apos;s advanced, discreet and preventive health monitoring to guide your path toward vitality and a longer, healthier life
           </p>
         </div>
@@ -145,7 +147,7 @@ export default function Home() {
       <section className="relative overflow-hidden bg-[#ECECEC] px-5 pb-0 pt-14 text-black md:px-8 md:pt-16 lg:pb-24 lg:pt-36">
         <div className="mx-auto w-full max-w-[430px] md:max-w-[820px] lg:max-w-[1280px] lg:grid lg:grid-cols-[0.85fr_1fr] lg:items-center lg:gap-20">
           <div className="lg:py-10">
-          <h2 className="max-w-[12ch] text-[clamp(1.8rem,7.2vw,3.2rem)] font-semibold leading-[1.12] tracking-[-0.02em] lg:text-[48px] lg:leading-[1.08]">
+          <h2 className="max-w-[12ch] text-[clamp(1.8rem,7.2vw,3.2rem)] font-semibold leading-[1.12] tracking-[-0.02em] lg:text-[52px] lg:leading-[1.06] lg:tracking-[-0.03em]">
             The only nudges you will ever need
           </h2>
 
@@ -154,7 +156,7 @@ export default function Home() {
           </p>
           </div>
 
-          <div className="mt-8 space-y-3 pb-12 lg:mt-0 lg:pb-16">
+          <div className="mt-8 space-y-3 pb-12 lg:mt-0 lg:space-y-4 lg:pb-16">
             <article className="rounded-3xl border-2 border-[#d6d7ef] bg-white/45 p-5 opacity-30">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 h-12 w-12 rounded-xl bg-[#eceef4]" />
@@ -180,7 +182,7 @@ export default function Home() {
               </div>
             </article>
 
-            <article className="rounded-3xl border-2 border-[#d6d7ef] bg-white p-5 shadow-none">
+            <article className="rounded-3xl border-2 border-[#d6d7ef] bg-white p-5 shadow-none lg:shadow-[0_18px_50px_rgba(80,60,140,0.10)]">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-12 w-12 items-center justify-center rounded-xl bg-[#eceef4] text-[20px]">🌯</div>
                 <p className="truncate pt-1 text-[clamp(1.05rem,3.1vw,1.35rem)] font-medium leading-[1.2]">Beef stick, zero sugar, jalapeno, ...</p>
@@ -240,23 +242,25 @@ export default function Home() {
       </Reveal>
 
       <Reveal>
-      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_-4%,#cb86ff_0%,#a14ff1_34%,#7f31d3_68%,#631aa6_100%)] px-5 pb-10 pt-16 text-white md:px-8 md:pb-16 md:pt-20 lg:py-28">
+      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_-4%,#cb86ff_0%,#a14ff1_34%,#7f31d3_68%,#631aa6_100%)] px-5 pb-10 pt-16 text-white md:px-8 md:pb-16 md:pt-20 lg:flex lg:h-screen lg:items-center lg:py-12">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,255,255,0.22),transparent_56%)]" />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#5f1aa5]/35" />
         <div className="mx-auto w-full max-w-[430px] lg:max-w-[1180px] xl:max-w-[1320px]">
-          <div className="text-center lg:grid lg:grid-cols-[1fr_1.03fr] lg:items-end lg:gap-12 lg:text-left">
-            <div className="lg:pb-6">
-              <h2 className="text-[clamp(2.3rem,9vw,4.3rem)] font-semibold leading-[1.06] tracking-[-0.02em] lg:max-w-[12ch]">
-                Labs by CYBORG
-              </h2>
-              <p className="mx-auto mt-7 max-w-[18ch] text-[clamp(1.1rem,4.4vw,1.9rem)] font-medium leading-[1.34] lg:mx-0 lg:max-w-[20ch]">
-                Decoding the language of blood biomarkers
-              </p>
+          <div className="text-center lg:grid lg:grid-cols-[1fr_1.03fr] lg:items-stretch lg:gap-16 lg:text-left">
+            <div className="lg:flex lg:h-full lg:flex-col lg:justify-between lg:pb-2">
+              <div className="lg:pt-2">
+                <h2 className="text-[clamp(2.3rem,9vw,4.3rem)] font-semibold leading-[1.06] tracking-[-0.02em] lg:max-w-[12ch] lg:text-[clamp(3rem,4.2vw,4.2rem)] lg:leading-[1.03]">
+                  Labs by CYBORG
+                </h2>
+                <p className="mx-auto mt-7 max-w-[18ch] text-[clamp(1.1rem,4.4vw,1.9rem)] font-medium leading-[1.34] lg:mx-0 lg:mt-6 lg:max-w-[24ch] lg:text-[clamp(1.4rem,1.8vw,1.9rem)] lg:text-white/90">
+                  Decoding the language of blood biomarkers
+                </p>
+              </div>
 
               <img
                 src="/assets/preview/mobile-image-2.png"
                 alt="Labs by Cyborg app preview"
-                className="relative top-20 z-1 scale-150 mx-auto mb-[-52px] mt-9 w-full max-w-[388px] sm:max-w-[205px] md:mb-[-66px] md:mt-12 md:max-w-[228px] lg:z-0 lg:mx-0 lg:mb-[-120px] lg:mt-12 lg:max-w-[310px]"
+                className="relative top-20 z-1 scale-150 mx-auto mb-[-52px] mt-9 w-full max-w-[388px] sm:max-w-[205px] md:mb-[-66px] md:mt-12 md:max-w-[228px] lg:top-0 lg:z-0 lg:mx-0 lg:mb-0 lg:mt-0 lg:max-w-[420px] lg:scale-100 lg:rounded-[28px] lg:shadow-[0_24px_60px_rgba(0,0,0,0.28)]"
               />
             </div>
 
@@ -266,7 +270,7 @@ export default function Home() {
                 p-5 pt-14 text-white 
                 shadow-[0_10px_40px_rgba(0,0,0,0.25)] 
                 backdrop-blur-[70px]
-                md:pt-16 lg:mt-0 lg:self-end lg:p-7 lg:pt-7">
+                md:pt-16 lg:mt-0 lg:self-end lg:p-8 lg:pt-8 lg:transition-all lg:duration-300 lg:hover:-translate-y-1.5 lg:hover:shadow-[0_28px_70px_rgba(0,0,0,0.35)]">
               <div className="flex items-start justify-between gap-4">
                 <h3 className="text-[clamp(1.05rem,4.9vw,1.55rem)] font-semibold leading-[1.05] lg:text-[clamp(1.45rem,2.4vw,2.25rem)]">Labs by CYBORG</h3>
                 <p className="text-right text-[clamp(1.05rem,4.9vw,1.45rem)] font-semibold leading-[1.05] lg:text-[clamp(1.4rem,2.3vw,2.1rem)]">Starts at $100</p>
@@ -294,14 +298,14 @@ export default function Home() {
               <div className="mt-7 space-y-3">
                 <Link
                   href="/blood-reports"
-                  className="flex h-[54px] w-full items-center justify-center rounded-2xl bg-[#ECECEC] text-[clamp(1.25rem,4vw,1.8rem)] font-semibold text-black"
+                  className="flex h-[54px] w-full items-center justify-center rounded-2xl bg-[#ECECEC] text-[clamp(1.25rem,4vw,1.8rem)] font-semibold text-black lg:h-[60px] lg:text-[20px] lg:transition lg:duration-300 lg:hover:bg-white"
                 >
                   Buy Blood Vision
                 </Link>
 
                 <Link
                   href="/concierge"
-                  className="flex h-[54px] w-full items-center justify-center gap-3 rounded-2xl border-2 border-white/70 text-[clamp(1.25rem,4vw,1.8rem)] font-medium text-white"
+                  className="flex h-[54px] w-full items-center justify-center gap-3 rounded-2xl border-2 border-white/70 text-[clamp(1.25rem,4vw,1.8rem)] font-medium text-white lg:h-[60px] lg:text-[20px] lg:transition lg:duration-300 lg:hover:border-white lg:hover:bg-white/10"
                 >
                   <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M8.5 5.5C5.46 5.5 3 7.74 3 10.5C3 13.26 5.46 15.5 8.5 15.5C9.13 15.5 9.73 15.4 10.3 15.23L13.14 17.1C13.59 17.4 14.18 17.02 14.1 16.49L13.75 14.17C15.1 13.28 16 11.99 16 10.5C16 7.74 13.54 5.5 10.5 5.5H8.5Z" fill="currentColor"/>

@@ -26,7 +26,7 @@ export default function TestimonialCarousel({ items: propItems, onChange }) {
   const next = () => setActiveIndex(active + 1);
 
   return (
-    <section className="bg-[#f3f3f5] px-5 py-10 text-black md:px-8">
+    <section className="bg-transparent px-5 py-10 text-black md:px-8">
       <div className="mx-auto w-full max-w-[430px] md:max-w-[820px] lg:max-w-[980px]">
         <div className="relative">
             <div className="overflow-hidden rounded-2xl bg-white shadow-lg">

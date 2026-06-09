@@ -98,7 +98,7 @@ export default function Footer() {
           className="-z-10 object-cover object-center"
         />
         <div className="-z-10 absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
-        <div className="relative mx-auto flex min-h-screen w-full max-w-[1180px] flex-col justify-end px-6 pb-12 pt-28 text-white md:min-h-[520px] md:px-10 md:pb-16 lg:max-w-[1400px] lg:px-12">
+        <div className="relative mx-auto flex min-h-screen w-full max-w-[1180px] flex-col justify-end px-6 pb-12 pt-28 text-white md:min-h-[520px] md:px-10 md:pb-16 lg:min-h-screen lg:max-w-[1400px] lg:px-12 lg:pb-20">
           <h2 className="max-w-[14ch] text-[clamp(2.1rem,8.5vw,4rem)] font-bold leading-[1.05] tracking-[-0.02em]">
             Health is your greatest power. It’s time to unlock it
           </h2>
