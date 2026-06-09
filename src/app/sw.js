@@ -32,6 +32,22 @@ const serwist = new Serwist({
         },
       },
     },
+    // Hero scroll-sequence frames — a large fixed set (~171 files) that must
+    // ALL stay cached together. Dedicated bucket with a cap above the frame
+    // count so the sequence never evicts itself (the previous shared 100-entry
+    // image cache thrashed on every refresh, re-downloading frames). Listed
+    // before the generic image rule so it wins the match for these URLs.
+    {
+      urlPattern: /\/assets\/hero-images\/.*/i,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "hero-frames",
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 60 * 60 * 24 * 60, // 60 days
+        },
+      },
+    },
     // Images — cache first
     {
       urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
@@ -39,7 +55,7 @@ const serwist = new Serwist({
       options: {
         cacheName: "image-cache",
         expiration: {
-          maxEntries: 100,
+          maxEntries: 200,
           maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
         },
       },
