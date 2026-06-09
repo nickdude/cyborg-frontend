@@ -162,16 +162,32 @@ export default function Marketplace() {
         onTabChange={setActiveTab} 
       />
 
-      <div className="max-w-[1240px] mx-auto pt-20">
+      <div className="max-w-[1240px] mx-auto pt-20 lg:max-w-[1320px] lg:pt-28">
+        {/* Desktop page header */}
+        <div className="mb-8 hidden lg:flex lg:items-end lg:justify-between lg:border-b lg:border-borderColor lg:pb-7">
+          <div>
+            <h1 className="text-[34px] font-semibold tracking-[-0.02em] text-gray-900">Marketplace</h1>
+            <p className="mt-1.5 text-[15px] text-gray-500">
+              Tests, supplements and prescriptions — curated for your health goals.
+            </p>
+          </div>
+          <Link
+            href="/cart"
+            className="inline-flex items-center gap-2 rounded-full border border-borderColor bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+          >
+            🛒 View Cart
+          </Link>
+        </div>
+
         {/* Desktop Layout: Sidebar + Content */}
-        <div className="lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start space-y-6 lg:space-y-0">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start space-y-6 lg:space-y-0">
           {/* Left Sidebar - Filters (sticky on desktop) */}
-          <div className="lg:col-span-3 lg:sticky lg:top-24">
-            <div className="space-y-4 lg:bg-white lg:rounded-2xl lg:border lg:border-borderColor lg:p-5">
+          <div className="lg:col-span-3 lg:sticky lg:top-28">
+            <div className="space-y-4 lg:space-y-0 lg:rounded-2xl lg:border lg:border-borderColor lg:bg-white lg:p-6 lg:shadow-sm">
               <div className="hidden lg:block">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4">Filters</h3>
+                <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">Filters</h3>
               </div>
-              <FilterTabs 
+              <FilterTabs
                 filters={filters}
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
@@ -181,7 +197,7 @@ export default function Marketplace() {
 
           {/* Right Content Area */}
           <div className="lg:col-span-9 space-y-6">
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end lg:hidden">
               <Link
                 href="/cart"
                 className="inline-flex items-center gap-2 rounded-full border border-borderColor bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50"
@@ -190,11 +206,13 @@ export default function Marketplace() {
               </Link>
             </div>
             {/* Search Bar */}
-            <SearchBar
-              placeholder="Search anything"
-              value={searchQuery}
-              onChange={setSearchQuery}
-            />
+            <div className="lg:max-w-[520px]">
+              <SearchBar
+                placeholder="Search anything"
+                value={searchQuery}
+                onChange={setSearchQuery}
+              />
+            </div>
 
             {/* Filter Tabs Mobile */}
             {/* <div className="lg:hidden">
@@ -209,13 +227,13 @@ export default function Marketplace() {
             <div className="space-y-8">
               {loading ? (
                 /* Loading state */
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
-                  {Array.from({ length: 4 }).map((_, i) => (
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
                     <div
                       key={i}
                       className="animate-pulse rounded-xl p-4 lg:p-5 lg:border lg:border-borderColor lg:bg-white"
                     >
-                      <div className="aspect-square mb-3 rounded-lg bg-gray-100" />
+                      <div className="h-[150px] mb-3 rounded-lg bg-gray-100 lg:mb-4 lg:h-[180px]" />
                       <div className="h-3 w-1/2 rounded bg-gray-100" />
                       <div className="mt-2 h-3 w-3/4 rounded bg-gray-100" />
                       <div className="mt-3 h-4 w-1/3 rounded bg-gray-100" />
