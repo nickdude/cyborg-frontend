@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { ArrowDown, Sparkles } from "lucide-react";
+import { ArrowDown, ChevronUp } from "lucide-react";
 import { useConciergeStore } from "@/stores/concierge";
 import { useStickyScroll } from "@/hooks/useStickyScroll";
 import Message from "./Message";
@@ -12,6 +12,31 @@ const QUICK_PROMPTS = [
 ];
 
 const EMPTY_MESSAGES = [];
+
+// Radiating "spark" mark, shown above the greeting (brand color via currentColor).
+function Sunburst({ size = 30 }) {
+  const rays = [];
+  for (let a = 0; a < 360; a += 30) {
+    const r = (a * Math.PI) / 180;
+    rays.push(
+      <line
+        key={a}
+        x1={20 + 5.5 * Math.cos(r)}
+        y1={20 + 5.5 * Math.sin(r)}
+        x2={20 + 15 * Math.cos(r)}
+        y2={20 + 15 * Math.sin(r)}
+        stroke="currentColor"
+        strokeWidth="2.3"
+        strokeLinecap="round"
+      />
+    );
+  }
+  return (
+    <svg viewBox="0 0 40 40" width={size} height={size} className="text-primary">
+      {rays}
+    </svg>
+  );
+}
 
 export default function MessageList({ chatId, firstName, onQuickPrompt }) {
   const rawMessages = useConciergeStore((s) =>
@@ -36,25 +61,33 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
     <div className="relative flex-1 min-h-0">
       <div
         ref={containerRef}
-        className="h-full overflow-y-auto px-4 sm:px-6 py-6 space-y-4"
+        className="h-full overflow-y-auto px-4 py-6 sm:px-6 sm:py-8"
       >
         {isEmpty ? (
-          <div className="max-w-md mx-auto text-center mt-20">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
-              <Sparkles className="w-6 h-6 text-white" />
+          <div className="mx-auto flex min-h-full w-full max-w-2xl flex-col">
+            <div className="flex flex-1 flex-col items-center justify-center px-2 text-center">
+              <div className="mb-2 grid h-9 w-9 place-items-center rounded-full border border-borderColor text-secondary">
+                <ChevronUp className="h-4 w-4" />
+              </div>
+              <p className="text-[13.5px] text-secondary">
+                Scroll for chat history
+              </p>
+              <div className="mt-5 mb-4">
+                <Sunburst size={30} />
+              </div>
+              <h1 className="max-w-[18ch] text-[26px] font-bold leading-tight tracking-tight text-blue">
+                Hi {firstName || "there"}, how can we help you?
+              </h1>
+              <p className="mt-3 max-w-[30ch] text-[15px] text-secondary">
+                Ask about your labs, wearables, or anything health-related.
+              </p>
             </div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">
-              Hi {firstName || "there"}
-            </h1>
-            <p className="text-secondary text-sm mb-6">
-              Ask about your labs, wearables, or anything health-related.
-            </p>
-            <div className="flex flex-col gap-2">
+            <div className="-mx-4 flex gap-2.5 overflow-x-auto scrollbar-hide px-4 pb-1 pt-6 sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0">
               {QUICK_PROMPTS.map((p) => (
                 <button
                   key={p}
                   onClick={() => onQuickPrompt?.(p)}
-                  className="text-sm text-left bg-white border border-gray-200/60 rounded-xl px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-200 text-gray-700 cursor-pointer"
+                  className="flex-none rounded-2xl border border-borderColor bg-white px-5 py-3.5 text-center text-[14px] font-medium leading-snug text-blue transition-colors hover:border-lightGray hover:bg-pageBackground cursor-pointer"
                 >
                   {p}
                 </button>
@@ -62,7 +95,7 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
             </div>
           </div>
         ) : (
-          <>
+          <div className="mx-auto flex max-w-3xl flex-col gap-6">
             {messages.map((m) => {
               const isLastAssistant =
                 m.role === "assistant" &&
@@ -75,17 +108,17 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
                 />
               );
             })}
-          </>
+          </div>
         )}
       </div>
 
       {!isPinned && streaming && (
         <button
           onClick={jumpToBottom}
-          className="absolute bottom-4 right-4 bg-primary text-white rounded-full w-9 h-9 shadow-lg shadow-primary/25 hover:bg-primary/90 active:scale-95 transition-all duration-150 flex items-center justify-center"
+          className="absolute bottom-5 left-1/2 grid h-10 w-10 -translate-x-1/2 place-items-center rounded-full border border-borderColor bg-white text-blue shadow-md transition-all duration-150 hover:bg-pageBackground active:scale-95"
           aria-label="Jump to latest"
         >
-          <ArrowDown className="w-4 h-4" />
+          <ArrowDown className="h-4 w-4" />
         </button>
       )}
     </div>

@@ -63,7 +63,7 @@ export default function ChatSidebar({
         />
       )}
       <aside
-        className={`fixed z-50 top-0 left-0 h-full w-72 bg-white/95 backdrop-blur-xl border-r border-gray-100 flex flex-col transform transition-transform duration-300 ease-out ${
+        className={`fixed z-50 top-0 left-0 h-full w-72 bg-white/95 backdrop-blur-xl border-r border-borderColor flex flex-col transform transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:static lg:translate-x-0`}
       >
@@ -71,19 +71,19 @@ export default function ChatSidebar({
           <div className="flex items-center gap-1">
             <Link
               href="/dashboard"
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-pageBackground transition-colors"
               aria-label="Back to dashboard"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5 text-secondary" />
             </Link>
-            <span className="text-sm font-semibold text-gray-900">Chats</span>
+            <span className="text-sm font-semibold text-blue">Chats</span>
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-1 rounded-lg hover:bg-pageBackground transition-colors"
             aria-label="Close sidebar"
           >
-            <X className="w-4 h-4 text-gray-500" />
+            <X className="w-4 h-4 text-secondary" />
           </button>
         </div>
 
@@ -97,13 +97,13 @@ export default function ChatSidebar({
         </div>
 
         <div className="px-3 pt-3">
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200/60 rounded-lg px-3 py-2 focus-within:bg-white focus-within:border-primary/30 transition-all duration-200">
-            <Search className="w-3.5 h-3.5 text-gray-400" />
+          <div className="flex items-center gap-2 bg-pageBackground border border-borderColor rounded-lg px-3 py-2 focus-within:bg-white focus-within:border-primary/30 transition-all duration-200">
+            <Search className="w-3.5 h-3.5 text-secondary" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
-              className="flex-1 outline-none text-sm bg-transparent placeholder:text-gray-400"
+              className="flex-1 outline-none text-sm bg-transparent placeholder:text-secondary"
             />
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function ChatSidebar({
             if (!rows || !rows.length) return null;
             return (
               <div key={label} className="mt-3">
-                <div className="px-4 text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-1">
+                <div className="px-4 text-[10px] uppercase tracking-wider text-secondary font-medium mb-1">
                   {label}
                 </div>
                 {rows.map((c) => (
@@ -124,7 +124,7 @@ export default function ChatSidebar({
                     className={`w-full text-left px-4 py-2 text-[13px] transition-colors truncate rounded-lg mx-1 cursor-pointer ${
                       activeChatId === c._id
                         ? "bg-primary/10 text-primary font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
+                        : "text-blue hover:bg-pageBackground"
                     }`}
                     style={{ maxWidth: "calc(100% - 8px)" }}
                     title={c.title}
@@ -136,7 +136,7 @@ export default function ChatSidebar({
             );
           })}
           {!Object.keys(buckets).length && (
-            <div className="px-4 py-8 text-center text-sm text-gray-400">
+            <div className="px-4 py-8 text-center text-sm text-secondary">
               No chats yet
             </div>
           )}

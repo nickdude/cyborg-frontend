@@ -30,37 +30,37 @@ function MarkdownBody({ text }) {
         ),
         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
         blockquote: ({ children }) => (
-          <blockquote className="border-l-2 border-primary/30 pl-3 my-3 text-gray-600 italic">
+          <blockquote className="border-l-2 border-primary/30 pl-3 my-3 text-secondary italic">
             {children}
           </blockquote>
         ),
         code: ({ inline, children }) =>
           inline ? (
-            <code className="bg-gray-100 text-primary px-1.5 py-0.5 rounded text-[13px] font-mono">
+            <code className="bg-pageBackground text-primary px-1.5 py-0.5 rounded text-[13px] font-mono">
               {children}
             </code>
           ) : (
-            <pre className="bg-gray-50 border border-gray-200/60 rounded-lg p-3 my-3 overflow-x-auto text-[13px] font-mono">
+            <pre className="bg-pageBackground border border-borderColor rounded-lg p-3 my-3 overflow-x-auto text-[13px] font-mono">
               <code>{children}</code>
             </pre>
           ),
         table: ({ children }) => (
-          <div className="overflow-x-auto my-3 rounded-lg border border-gray-200/60">
+          <div className="overflow-x-auto my-3 rounded-lg border border-borderColor">
             <table className="w-full text-[13px]">{children}</table>
           </div>
         ),
         thead: ({ children }) => (
-          <thead className="bg-gray-50 text-left">{children}</thead>
+          <thead className="bg-pageBackground text-left">{children}</thead>
         ),
         th: ({ children }) => (
-          <th className="px-3 py-2 font-medium text-gray-600 border-b border-gray-200/60">
+          <th className="px-3 py-2 font-medium text-secondary border-b border-borderColor">
             {children}
           </th>
         ),
         td: ({ children }) => (
-          <td className="px-3 py-2 border-b border-gray-100">{children}</td>
+          <td className="px-3 py-2 border-b border-borderColor">{children}</td>
         ),
-        hr: () => <hr className="my-4 border-gray-200/60" />,
+        hr: () => <hr className="my-4 border-borderColor" />,
         a: ({ href, children }) => (
           <a
             href={href}
@@ -112,7 +112,7 @@ export default function Message({ message, streaming }) {
         />
 
         {!hasAnyContent && streaming && (
-          <div className="flex items-center gap-1.5 py-2 text-gray-400">
+          <div className="flex items-center gap-1.5 py-2 text-secondary">
             <div className="flex gap-1">
               <div
                 className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"
@@ -130,7 +130,7 @@ export default function Message({ message, streaming }) {
           </div>
         )}
 
-        <div className="text-sm text-gray-800 leading-relaxed">
+        <div className="text-sm text-blue leading-relaxed">
           {(message.content || []).map((block, i) => {
             if (block.type === "text") {
               const isLastText =

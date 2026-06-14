@@ -7,7 +7,7 @@ import remarkGfm from "remark-gfm";
 const thinkingMarkdownComponents = {
   p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
   strong: ({ children }) => (
-    <strong className="font-semibold text-gray-500 not-italic">{children}</strong>
+    <strong className="font-semibold text-secondary not-italic">{children}</strong>
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
   ul: ({ children }) => (
@@ -19,11 +19,11 @@ const thinkingMarkdownComponents = {
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   code: ({ inline, children }) =>
     inline ? (
-      <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px] font-mono not-italic">
+      <code className="bg-pageBackground px-1 py-0.5 rounded text-[11px] font-mono not-italic">
         {children}
       </code>
     ) : (
-      <pre className="bg-gray-50 border border-gray-200/60 rounded p-2 my-1.5 overflow-x-auto text-[11px] font-mono not-italic">
+      <pre className="bg-pageBackground border border-borderColor rounded p-2 my-1.5 overflow-x-auto text-[11px] font-mono not-italic">
         <code>{children}</code>
       </pre>
     ),
@@ -72,7 +72,7 @@ export default function ThinkingBlock({ thinking, streaming, hasText }) {
           <Sparkles className="w-3.5 h-3.5 animate-pulse" />
           <span>Thinking… {seconds}s</span>
         </div>
-        <div className="text-xs text-gray-500 italic line-clamp-3 leading-relaxed [&_p]:m-0">
+        <div className="text-xs text-secondary italic line-clamp-3 leading-relaxed [&_p]:m-0">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={thinkingMarkdownComponents}
@@ -89,7 +89,7 @@ export default function ThinkingBlock({ thinking, streaming, hasText }) {
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs text-secondary hover:text-blue transition-colors"
       >
         <ChevronRight
           className={`w-3 h-3 transition-transform duration-200 ${
@@ -104,7 +104,7 @@ export default function ThinkingBlock({ thinking, streaming, hasText }) {
           expanded ? "max-h-[2000px] opacity-100 mt-2" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="text-xs text-gray-400 border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed">
+        <div className="text-xs text-secondary border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed">
           {thinking.segments.map((s, i) => (
             <div key={i}>
               <ReactMarkdown

@@ -26,9 +26,9 @@ export default function Composer({
   };
 
   return (
-    <div className="border-t border-gray-100 bg-white px-4 py-3 sm:px-6">
-      <div className="max-w-3xl mx-auto flex items-end gap-2">
-        <div className="flex-1 border border-gray-200/60 rounded-2xl bg-gray-50/50 px-4 py-2.5 focus-within:bg-white focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200">
+    <div className="border-t border-borderColor bg-white px-4 pb-3 pt-3 sm:px-6">
+      <div className="mx-auto max-w-3xl">
+        <div className="flex items-center gap-2 rounded-[20px] border border-borderColor bg-white py-1.5 pl-5 pr-1.5 transition-colors duration-200 focus-within:border-lightGray">
           <textarea
             ref={textareaRef}
             rows={1}
@@ -36,18 +36,29 @@ export default function Composer({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKey}
             placeholder={placeholder || "Message Cyborg…"}
-            className="w-full resize-none outline-none text-sm bg-transparent placeholder:text-gray-400"
+            className="w-full resize-none self-center bg-transparent py-1.5 text-[16px] outline-none placeholder:text-secondary"
           />
+          <button
+            type="button"
+            aria-label="Attach"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-2xl leading-none text-secondary transition-colors hover:text-blue"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={disabled || !value.trim()}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue text-white transition-all duration-150 hover:bg-blue/90 active:scale-95 disabled:opacity-25"
+            aria-label="Send"
+          >
+            <ArrowUp className="h-[18px] w-[18px]" />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={disabled || !value.trim()}
-          className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-30 hover:bg-primary/90 active:scale-95 transition-all duration-150 shrink-0 shadow-sm"
-          aria-label="Send"
-        >
-          <ArrowUp className="w-4 h-4" />
-        </button>
+        <p className="mt-2.5 px-2 text-center text-[11px] leading-snug text-secondary">
+          Cyborg AI offers education and suggestions, not medical advice. For
+          urgent concerns, contact a licensed provider.
+        </p>
       </div>
     </div>
   );
