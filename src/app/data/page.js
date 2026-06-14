@@ -410,18 +410,18 @@ export default function DataDashboard() {
                   <button
                     type="button"
                     onClick={() => setReportFilter("all")}
-                    className="flex items-center gap-2 text-[30px] font-medium text-[#6c6d79]"
+                    className="flex items-center gap-2 text-xl font-medium text-[#6c6d79] lg:text-[28px]"
                   >
                     All Files
-                    <svg className="h-6 w-6" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <svg className="h-5 w-5 lg:h-6 lg:w-6" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                       <path d="M5 8L10 13L15 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
                 </div>
 
-                <div className="mt-28 flex flex-col items-center justify-center text-center">
-                  <h3 className="text-[50px] font-semibold leading-tight text-[#14151a]">No healthcare records yet</h3>
-                  <p className="mt-5 max-w-[640px] text-[20px] leading-[1.45] text-[#6d6f7b]">
+                <div className="mt-16 flex flex-col items-center justify-center px-2 text-center lg:mt-28">
+                  <h3 className="text-[28px] font-semibold leading-tight text-[#14151a] sm:text-[36px] lg:text-[50px]">No healthcare records yet</h3>
+                  <p className="mt-4 max-w-[36ch] text-[15px] leading-[1.5] text-[#6d6f7b] lg:mt-5 lg:max-w-[640px] lg:text-[20px]">
                     Integrate your healthcare records into superpower. Drop your files here or click to upload
                   </p>
 
@@ -437,7 +437,7 @@ export default function DataDashboard() {
                     type="button"
                     onClick={() => triggerUpload()}
                     disabled={twinUploading}
-                    className="mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-black px-6 text-[20px] font-medium text-white disabled:opacity-60"
+                    className="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-black px-6 text-base font-medium text-white disabled:opacity-60 lg:mt-8 lg:h-12 lg:text-[18px]"
                   >
                     <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
