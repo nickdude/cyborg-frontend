@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI, questionnaireAPI } from "@/services/api";
-import Link from "next/link";
 import { getNextRoute } from "@/utils/navigationFlow";
 import { Loader2 } from "lucide-react";
 
@@ -588,7 +587,7 @@ export default function Onboarding() {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-pageBackground font-inter lg:h-auto lg:min-h-screen lg:flex-row lg:items-center lg:justify-center lg:p-8">
-      <div className="max-w-md flex flex-col justify-between min-h-0 flex-1 mx-auto bg-pageBackground rounded-xl p-8 relative w-full lg:max-w-[1180px] lg:flex-initial lg:min-h-[760px] lg:grid lg:grid-cols-[360px_1fr] lg:gap-8 lg:p-0">
+      <div className="max-w-md flex flex-col justify-between min-h-0 flex-1 mx-auto bg-pageBackground rounded-xl relative w-full lg:max-w-[1180px] lg:flex-initial lg:min-h-[760px] lg:grid lg:grid-cols-[360px_1fr] lg:gap-8 lg:p-0">
         <aside className="hidden lg:flex lg:flex-col lg:justify-between lg:rounded-2xl lg:bg-primary lg:p-8 lg:text-white">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">CYBORG</h1>
@@ -606,33 +605,43 @@ export default function Onboarding() {
           </div>
         </aside>
 
-        <div className="flex flex-col justify-between min-h-0 flex-1 overflow-y-auto rounded-xl bg-pageBackground p-8 relative lg:min-h-[760px] lg:flex-none lg:overflow-visible lg:rounded-2xl lg:bg-white lg:shadow-sm">
+        <div className="flex flex-col justify-between min-h-0 flex-1 overflow-y-auto rounded-xl bg-pageBackground px-5 pt-6 pb-8 relative lg:p-8 lg:min-h-[760px] lg:flex-none lg:overflow-visible lg:rounded-2xl lg:bg-white lg:shadow-sm">
         {/* Progress bar */}
         <div className="">
-            <div className="w-full h-1 bg-gray-200 rounded mb-6">
+            <div className="mb-4 flex items-center justify-between">
+                {(sectionIndex > 0 || stepIndex > 0) ? (
+                    <button
+                        onClick={handleBack}
+                        aria-label="Go back"
+                        className="-ml-1 flex h-6 w-6 items-center justify-center text-lg leading-none text-gray-700 hover:text-black"
+                    >
+                        ←
+                    </button>
+                ) : (
+                    <span className="h-6 w-6" aria-hidden="true" />
+                )}
+                <span className="text-sm font-medium text-gray-500 lg:hidden">
+                    Section {sectionIndex + 1} of {sections.length} · Step {stepIndex + 1} of {sectionTotal}
+                </span>
+            </div>
+
+            <div className="w-full h-1 rounded-full bg-gray-200">
                 <div
-                    className="h-1 bg-primary rounded"
+                    className="h-1 rounded-full bg-primary transition-all"
                     style={{ width: `${sectionProgress}%` }}
                 />
             </div>
 
-            <div className="flex items-center justify-between mb-4 text-sm text-gray-500">
-                <button onClick={handleBack} className="text-gray-600 hover:text-black">←</button>
-                <div>
-                    Section {sectionIndex + 1} of {sections.length} · Step {stepIndex + 1} of {sectionTotal}
-                </div>
-            </div>
+                <div className="mt-7 min-h-0 flex flex-col gap-6 lg:min-h-[430px] lg:gap-8">
+                    <h1 className="text-xl font-extrabold tracking-tight lg:text-2xl">CYBORG</h1>
 
-                <div className="min-h-0 flex flex-col gap-8 lg:min-h-[430px]">
-                    <h1 className="text-2xl font-extrabold tracking-tight mb-2">CYBORG</h1>
-
-                    <div className="space-y-4">
-                    <div className="text-xl font-semibold leading-tight">{step.title}</div>
-                    {step.description && <p className="text-sm text-black leading-relaxed">{step.description}</p>}
-                    {step.subtitle && <p className="text-xs text-gray-500 leading-relaxed">{step.subtitle}</p>}
+                    <div className="space-y-3">
+                    <div className="text-xl font-bold leading-snug">{step.title}</div>
+                    {step.description && <p className="text-sm leading-relaxed text-gray-600">{step.description}</p>}
+                    {step.subtitle && <p className="text-xs leading-relaxed text-gray-500">{step.subtitle}</p>}
                     </div>
 
-                    <div className="mt-6 mb-6">{renderInput()}</div>
+                    {step.type !== "intro" && <div>{renderInput()}</div>}
 
                     {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -643,34 +652,13 @@ export default function Onboarding() {
             </div>
             
         </div>
-       
-       {/* <div className="min-h-[60vh] flex flex-col gap-8 bg-red-300">
-            <h1 className="text-2xl font-extrabold tracking-tight mb-2">CYBORG</h1>
 
-            <div className="space-y-4">
-            <div className="text-xl font-semibold leading-tight">{step.title}</div>
-            {step.description && <p className="text-sm text-black leading-relaxed">{step.description}</p>}
-            {step.subtitle && <p className="text-xs text-gray-500 leading-relaxed">{step.subtitle}</p>}
-            </div>
-
-            <div className="mt-6 mb-6">{renderInput()}</div>
-
-            {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                {error}
-            </div>
-            )}
-
-       </div> */}
-
-        
-
-        <div>
+        <div className="pt-8">
             <div className="flex flex-col gap-3">
                     <button
                         onClick={handleNext}
                         disabled={loading}
-                        className={`flex-1 py-3 rounded-lg font-semibold transition ${
+                        className={`w-full py-4 rounded-2xl font-semibold transition ${
                         loading ? "bg-gray-300 text-gray-500" : "bg-black text-white hover:bg-gray-900"
                         }`}
                     >
@@ -683,30 +671,22 @@ export default function Onboarding() {
                         type="button"
                         onClick={handleSkip}
                         disabled={loading}
-                        className="flex-1 py-3 rounded-lg font-semibold border border-gray-300 text-gray-600 hover:bg-gray-50"
+                        className="w-full py-4 rounded-2xl font-semibold border border-gray-300 text-gray-600 hover:bg-gray-50"
                         >
                         Skip
                         </button>
                     )}
                     </div>
 
-                    <div className="mt-6 flex items-center justify-center gap-2 text-primary text-xs">
+                    <div className="mt-6 flex items-center justify-center gap-1.5">
                     {Array.from({ length: sectionTotal }).map((_, idx) => (
                         <span
                         key={idx}
-                        className={`w-1.5 h-2.5 ${idx === stepIndex ? "bg-primary" : "bg-tertiary"}`}
+                        className={`h-1.5 rounded-full transition-all ${idx === stepIndex ? "w-5 bg-primary" : "w-1.5 bg-gray-300"}`}
                         />
                     ))}
             </div>
         </div>
-
-      
-
-        {/* <div className="mt-6 text-center">
-          <Link href="/dashboard" className="text-sm text-gray-500 hover:underline">
-            Skip
-          </Link>
-        </div> */}
       </div>
       </div>
     </div>

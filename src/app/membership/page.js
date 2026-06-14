@@ -313,7 +313,7 @@ export default function MembershipPage() {
     <div className="min-h-screen bg-pageBackground text-gray-900">
       <Navbar backHref="/dashboard" />
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 lg:max-w-[1240px] lg:px-6 xl:px-8">
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 lg:max-w-[1200px] lg:px-8 lg:py-10 xl:max-w-[1280px] 2xl:max-w-[1320px]">
 
         {subscription && (
           <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
@@ -334,9 +334,9 @@ export default function MembershipPage() {
         ) : (
           <>
             {/* Plans Grid */}
-            <div className="mb-8 lg:mb-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Select a Membership Plan</h2>
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-6">
+            <div className="mb-8 lg:mb-14">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 lg:mb-8 lg:text-center lg:text-[32px] lg:leading-tight">Select a Membership Plan</h2>
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:mx-auto lg:max-w-[1040px] lg:gap-8 xl:max-w-[1100px] xl:gap-10">
                 {plans.map((p) => {
                   const selected = selectedPlan?.id === p.id;
                   return (
@@ -345,7 +345,7 @@ export default function MembershipPage() {
                       key={p.id}
                       onClick={() => setSelectedPlan(p)}
                       aria-pressed={selected}
-                      className={`relative flex flex-col rounded-3xl bg-white p-5 text-left shadow-sm transition lg:p-6 ${
+                      className={`relative flex flex-col rounded-3xl bg-white p-5 text-left shadow-sm transition lg:p-7 ${
                         selected
                           ? "ring-2 ring-primary shadow-md"
                           : "ring-1 ring-black/5 hover:-translate-y-0.5 hover:shadow-md hover:ring-primary/40"
@@ -363,7 +363,7 @@ export default function MembershipPage() {
                           alt={p.name}
                           width={480}
                           height={240}
-                          className="h-44 w-full object-cover lg:h-52"
+                          className="h-44 w-full object-cover lg:h-56"
                         />
                       </div>
 
@@ -399,9 +399,9 @@ export default function MembershipPage() {
 
             {/* Purchase Section */}
             {selectedPlan && (
-              <section className="mx-auto max-w-2xl font-inter">
-                <div className="rounded-2xl bg-white p-5 shadow-sm lg:p-6">
-                  <h2 className="text-xl font-medium text-black">Purchase Membership</h2>
+              <section className="mx-auto max-w-2xl font-inter lg:max-w-[720px]">
+                <div className="rounded-2xl bg-white p-5 shadow-sm lg:rounded-3xl lg:p-8">
+                  <h2 className="text-xl font-medium text-black lg:text-2xl">Purchase Membership</h2>
                   <p className="text-secondary font-medium text-[16px] mt-3">Your subscription renews at the end of each term. Cancel anytime.</p>
                   <div className="mt-5 space-y-3 lg:space-y-4">
               <div className="grid grid-cols-2 gap-3">
