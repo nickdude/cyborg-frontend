@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function SearchBar({ placeholder = "Search anything", value, onChange }) {
   return (
-    <div className="bg-white border border-borderColor rounded-full px-5 py-3 flex items-center gap-3 font-inter">
+    <div className="bg-white border border-borderColor rounded-full px-5 py-3 flex items-center gap-3 font-inter transition-all lg:shadow-sm lg:focus-within:border-primary/40 lg:focus-within:ring-2 lg:focus-within:ring-primary/10">
       <Image src="/assets/icons/search.svg" alt="Search" width={20} height={20} className="opacity-60" />
       <input
         type="text"

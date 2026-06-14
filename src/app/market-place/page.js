@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { ShoppingCart } from "lucide-react";
 import IconTabs from "@/components/IconTabs";
 import SearchBar from "@/components/SearchBar";
 import FilterTabs from "@/components/FilterTabs";
@@ -155,48 +156,57 @@ export default function Marketplace() {
   };
 
   return (
-    <div className="min-h-screen pb-24 px-4 lg:px-8">
+    <div className="min-h-screen pb-24 px-4 lg:bg-[#FAFBFC] lg:px-8">
       <IconTabs 
         categories={dataCategories} 
         activeTab={activeTab} 
         onTabChange={setActiveTab} 
       />
 
-      <div className="max-w-[1240px] mx-auto pt-20 lg:max-w-[1320px] lg:pt-28">
-        {/* Desktop page header */}
-        <div className="mb-8 hidden lg:flex lg:items-end lg:justify-between lg:border-b lg:border-borderColor lg:pb-7">
-          <div>
-            <h1 className="text-[34px] font-semibold tracking-[-0.02em] text-gray-900">Marketplace</h1>
-            <p className="mt-1.5 text-[15px] text-gray-500">
+      {/* Desktop: glass strip behind the floating tab bar so content scrolls cleanly underneath */}
+      <div className="hidden lg:block fixed inset-x-0 top-0 z-10 h-20 bg-[#FAFBFC]/90 backdrop-blur-xl" />
+
+      <div className="mx-auto max-w-[1240px] pt-20 lg:max-w-[1440px]">
+        {/* Desktop sticky header — title · search · cart */}
+        <div className="mb-8 hidden lg:sticky lg:top-20 lg:z-20 lg:flex lg:items-center lg:justify-between lg:gap-5 lg:border-b lg:border-borderColor lg:bg-[#FAFBFC]/90 lg:py-4 lg:shadow-sm lg:backdrop-blur-xl">
+          <div className="min-w-0 shrink">
+            <h1 className="text-[30px] font-semibold tracking-[-0.02em] text-blue xl:text-[34px]">Marketplace</h1>
+            <p className="mt-1 truncate text-[14px] text-secondary xl:text-[15px]">
               Tests, supplements and prescriptions — curated for your health goals.
             </p>
           </div>
+          <div className="w-full min-w-0 max-w-[460px] shrink">
+            <SearchBar
+              placeholder="Search tests, supplements, prescriptions…"
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+          </div>
           <Link
             href="/cart"
-            className="inline-flex items-center gap-2 rounded-full border border-borderColor bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition hover:border-gray-300 hover:bg-gray-50"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-md shadow-primary/25 transition hover:bg-purple-800 hover:shadow-lg hover:shadow-primary/30 active:scale-[0.98]"
           >
-            🛒 View Cart
+            <ShoppingCart className="h-[18px] w-[18px]" /> View Cart
           </Link>
         </div>
 
-        {/* Desktop Layout: Sidebar + Content */}
-        <div className="lg:grid lg:grid-cols-12 lg:gap-8 lg:items-start space-y-6 lg:space-y-0">
-          {/* Left Sidebar - Filters (sticky on desktop) */}
-          <div className="lg:col-span-3 lg:sticky lg:top-28">
+        {/* Layout: Sidebar + Content */}
+        <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
+          {/* Left Sidebar — Filters (desktop, sticky) */}
+          <aside className="lg:col-span-3 lg:sticky lg:top-48 lg:self-start lg:max-h-[calc(100vh-13rem)] lg:overflow-y-auto scrollbar-hide">
             <div className="space-y-4 lg:space-y-0 lg:rounded-2xl lg:border lg:border-borderColor lg:bg-white lg:p-6 lg:shadow-sm">
-              <div className="hidden lg:block">
-                <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">Filters</h3>
-              </div>
+              <h3 className="mb-4 hidden text-xs font-semibold uppercase tracking-[0.08em] text-secondary lg:block">Filters</h3>
               <FilterTabs
                 filters={filters}
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
               />
             </div>
-          </div>
+          </aside>
 
           {/* Right Content Area */}
-          <div className="lg:col-span-9 space-y-6">
+          <div className="lg:col-span-9 space-y-6 lg:space-y-0">
+            {/* Mobile cart link */}
             <div className="flex items-center justify-end lg:hidden">
               <Link
                 href="/cart"
@@ -205,59 +215,52 @@ export default function Marketplace() {
                 🛒 View Cart
               </Link>
             </div>
-            {/* Search Bar */}
-            <div className="lg:max-w-[520px]">
+            {/* Mobile search */}
+            <div className="lg:hidden">
               <SearchBar
                 placeholder="Search anything"
                 value={searchQuery}
                 onChange={setSearchQuery}
               />
             </div>
-
-            {/* Filter Tabs Mobile */}
-            {/* <div className="lg:hidden">
-              <FilterTabs 
-                filters={filters}
-                activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
-              />
-            </div> */}
-
             {/* Product Sections */}
-            <div className="space-y-8">
+            <div className="space-y-8 lg:space-y-10">
               {loading ? (
                 /* Loading state */
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                  {Array.from({ length: 6 }).map((_, i) => (
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-6 xl:grid-cols-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
                     <div
                       key={i}
-                      className="animate-pulse rounded-xl p-4 lg:p-5 lg:border lg:border-borderColor lg:bg-white"
+                      className="animate-pulse rounded-2xl border border-borderColor bg-white p-4 lg:p-5"
                     >
-                      <div className="h-[150px] mb-3 rounded-lg bg-gray-100 lg:mb-4 lg:h-[180px]" />
-                      <div className="h-3 w-1/2 rounded bg-gray-100" />
-                      <div className="mt-2 h-3 w-3/4 rounded bg-gray-100" />
-                      <div className="mt-3 h-4 w-1/3 rounded bg-gray-100" />
+                      <div className="mb-3 h-[150px] rounded-xl bg-borderColor lg:mb-4 lg:h-[190px]" />
+                      <div className="h-3 w-1/2 rounded bg-borderColor" />
+                      <div className="mt-2 h-3 w-3/4 rounded bg-borderColor" />
+                      <div className="mt-3 h-4 w-1/3 rounded bg-borderColor" />
                     </div>
                   ))}
                 </div>
               ) : error ? (
                 /* Error state */
-                <div className="text-center py-12">
-                  <p className="text-gray-700 font-medium">Couldn&apos;t load the marketplace</p>
-                  <p className="mt-1 text-sm text-gray-500">{error}</p>
+                <div className="rounded-2xl border border-borderColor bg-white py-12 text-center">
+                  <p className="font-medium text-blue">Couldn&apos;t load the marketplace</p>
+                  <p className="mt-1 text-sm text-secondary">{error}</p>
                   <button
                     type="button"
                     onClick={fetchProducts}
-                    className="mt-4 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-purple-800"
+                    className="mt-4 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-800"
                   >
                     Try again
                   </button>
                 </div>
               ) : filteredProducts.length === 0 ? (
                 /* Empty state */
-                <div className="text-center py-16 text-gray-500">
-                  <p className="text-base font-medium text-gray-700">No products available yet</p>
-                  <p className="mt-1 text-sm">
+                <div className="rounded-2xl border border-borderColor bg-white py-16 text-center">
+                  <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-pageBackground text-secondary">
+                    <ShoppingCart className="h-6 w-6" />
+                  </div>
+                  <p className="text-base font-medium text-blue">No products available yet</p>
+                  <p className="mx-auto mt-1 max-w-sm text-sm text-secondary">
                     {searchQuery
                       ? "Try a different search."
                       : activeTab === "vial"
@@ -280,6 +283,7 @@ export default function Marketplace() {
           </div>
         </div>
       </div>
+
     </div>
   );
 }
