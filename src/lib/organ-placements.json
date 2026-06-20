@@ -1,0 +1,79 @@
+{
+  "Brain Health": {
+    "file": "/organs/brain-health.png",
+    "yFrac": 0.9672,
+    "xFrac": 0.02,
+    "wFrac": 0.1525,
+    "hFrac": 0.0588
+  },
+  "DNA Health": {
+    "file": "/organs/dna-health.png",
+    "yFrac": 0.5,
+    "xFrac": -0.0125,
+    "wFrac": 0.6425,
+    "hFrac": 1.0013
+  },
+  "Heart & Vascular Health": {
+    "file": "/organs/heart-vascular-health.png",
+    "yFrac": 0.7141,
+    "xFrac": 0.0462,
+    "wFrac": 0.165,
+    "hFrac": 0.1053
+  },
+  "Immune System": {
+    "file": "/organs/immune-system.png",
+    "yFrac": 0.7401,
+    "xFrac": 0.0112,
+    "wFrac": 0.165,
+    "hFrac": 0.1874
+  },
+  "Inflammation": {
+    "file": "/organs/inflammation.png",
+    "yFrac": 0.4631,
+    "xFrac": -0.015,
+    "wFrac": 0.6075,
+    "hFrac": 0.9275
+  },
+  "Kidney Health": {
+    "file": "/organs/kidney-health.png",
+    "yFrac": 0.6135,
+    "xFrac": -0.0575,
+    "wFrac": 0.2125,
+    "hFrac": 0.1204
+  },
+  "Liver Health": {
+    "file": "/organs/liver-health.png",
+    "yFrac": 0.6587,
+    "xFrac": -0.0912,
+    "wFrac": 0.18,
+    "hFrac": 0.104
+  },
+  "Metabolic Health": {
+    "file": "/organs/metabolic-health.png",
+    "yFrac": 0.658,
+    "xFrac": 0.0437,
+    "wFrac": 0.185,
+    "hFrac": 0.0834
+  },
+  "Nutrients": {
+    "file": "/organs/nutrients.png",
+    "yFrac": 0.6443,
+    "xFrac": -0.045,
+    "wFrac": 0.2525,
+    "hFrac": 0.3434
+  },
+  "Sex Hormones": {
+    "file": "/organs/sex-hormones.png",
+    "yFrac": 0.6772,
+    "xFrac": 0.0063,
+    "wFrac": 0.275,
+    "hFrac": 0.5048
+  },
+  "Thyroid Health": {
+    "file": "/organs/thyroid-health.png",
+    "yFrac": 0.8304,
+    "xFrac": -0.015,
+    "wFrac": 0.1825,
+    "hFrac": 0.0862
+  }
+}

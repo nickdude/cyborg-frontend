@@ -1,0 +1,864 @@
+"use client";
+
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import StatsGrid from "@/components/StatsGrid";
+import ProgressBar from "@/components/ProgressBar";
+import DropdownFilter from "@/components/DropdownFilter";
+import SearchBar from "@/components/SearchBar";
+import { transformPanel, computeSummary } from "@/utils/biomarkerAdapter";
+import { userAPI, biomarkerAPI } from "@/services/api";
+import DataTopNav from "@/components/data/DataTopNav";
+import { BodyModelClient } from "@/components/data/BodyModelClient";
+import { organKeyForCategory, categoryStatus, STATUS_COLORS } from "@/components/data/organStatus";
+
+function ElapsedTimer({ since }) {
+  const [elapsed, setElapsed] = useState("");
+  useEffect(() => {
+    if (!since) return;
+    const start = new Date(since).getTime();
+    if (isNaN(start)) return;
+    function update() {
+      const diff = Math.max(0, Math.floor((Date.now() - start) / 1000));
+      const m = Math.floor(diff / 60);
+      const s = diff % 60;
+      setElapsed(m > 0 ? `${m}m ${s}s` : `${s}s`);
+    }
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [since]);
+  if (!elapsed) return null;
+  return <span className="ml-1 tabular-nums">{elapsed}</span>;
+}
+
+const STATUS_META = {
+  optimal: { color: "#05BC7E", label: "Optimal", text: "text-biomarkerOptimal" },
+  normal: { color: "#D7D82E", label: "Normal", text: "text-biomarkerNormal" },
+  out_of_range: { color: "#F865DD", label: "Out of range", text: "text-biomarkerOutOfRange" },
+};
+
+// Letter grade derived purely from this category's real optimal/total ratio.
+function gradeFor(optimal, total) {
+  if (!total) return { letter: "—", ratio: 0, color: "#A3A3AB" };
+  const ratio = optimal / total;
+  if (ratio >= 0.8) return { letter: "A", ratio, color: "#05BC7E" };
+  if (ratio >= 0.6) return { letter: "B", ratio, color: "#34c77b" };
+  if (ratio >= 0.4) return { letter: "C", ratio, color: "#D7D82E" };
+  return { letter: "D", ratio, color: "#F865DD" };
+}
+
+// Circular progress ring with the grade letter centered (category header).
+function GradeRing({ grade, size = 96, stroke = 6 }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - Math.max(0.06, grade.ratio));
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#EFEFF1" strokeWidth={stroke} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={grade.color}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={offset}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+      <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize={size * 0.34} fontWeight="600" fill={grade.color}>
+        {grade.letter}
+      </text>
+    </svg>
+  );
+}
+
+// Compact history sparkline from a biomarker's trend values.
+function Sparkline({ trend, color }) {
+  if (!trend || trend.length === 0) {
+    return <span className="text-xs text-secondary">—</span>;
+  }
+  const w = 120;
+  const h = 32;
+  const pad = 4;
+  const min = Math.min(...trend);
+  const max = Math.max(...trend);
+  const range = max - min || 1;
+  const pts = trend.map((v, i) => {
+    const x = trend.length === 1 ? w / 2 : pad + (i / (trend.length - 1)) * (w - 2 * pad);
+    const y = h - pad - ((v - min) / range) * (h - 2 * pad);
+    return [x, y];
+  });
+  const poly = pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  const last = pts[pts.length - 1];
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} className="block">
+      {pts.length > 1 && (
+        <polyline points={poly} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.85" />
+      )}
+      <circle cx={last[0]} cy={last[1]} r="3" fill={color} stroke="#fff" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+// One biomarker row: a 4-col table row on desktop, compact stacked row on mobile.
+function BiomarkerRow({ bm }) {
+  const { name, value, unit, status, trend } = bm;
+  const meta = STATUS_META[status] || { color: "#71717B", label: status || "—", text: "text-secondary" };
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3.5 transition hover:bg-pageBackground/60 lg:grid-cols-[1.7fr_1fr_1fr_1.3fr] lg:gap-4 lg:px-5 lg:py-4">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-blue lg:text-[15px]">{name || "N/A"}</p>
+        <span className="mt-1 flex items-center gap-1.5 text-xs text-secondary lg:hidden">
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
+          <span className={meta.text}>{meta.label}</span>
+          <span>· {value ?? "N/A"} {unit}</span>
+        </span>
+      </div>
+      <div className="hidden items-center gap-2 text-sm font-medium lg:flex">
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.color }} />
+        <span className={meta.text}>{meta.label}</span>
+      </div>
+      <div className="hidden text-sm tabular-nums text-blue lg:block">
+        {value ?? "N/A"} <span className="text-secondary">{unit}</span>
+      </div>
+      <div className="justify-self-end lg:justify-self-start">
+        <Sparkline trend={trend} color={meta.color} />
+      </div>
+    </div>
+  );
+}
+
+export default function DataDashboard() {
+  const { user, updateUser } = useAuth();
+  const userId = user?._id || user?.id;
+  const userName = user?.firstName || "User";
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || userName;
+
+  const [activeTab, setActiveTab] = useState("data");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [rangeFilter, setRangeFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const [reportFilter, setReportFilter] = useState("all");
+  const [reportSearch, setReportSearch] = useState("");
+  const [reports, setReports] = useState([]);
+  const [twinLoading, setTwinLoading] = useState(false);
+  const [twinUploading, setTwinUploading] = useState(false);
+  const [uploadElapsedSec, setUploadElapsedSec] = useState(0);
+  const [twinError, setTwinError] = useState("");
+  const [deletingReportId, setDeletingReportId] = useState(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const uploadRef = useRef(null);
+  const pollingRef = useRef(null);
+
+  const [biomarkers, setBiomarkers] = useState([]);
+  const [bioLoading, setBioLoading] = useState(false);
+  const [bioError, setBioError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  // Upload elapsed timer
+  useEffect(() => {
+    if (!twinUploading) {
+      setUploadElapsedSec(0);
+      return;
+    }
+    const start = Date.now();
+    setUploadElapsedSec(0);
+    const id = setInterval(() => setUploadElapsedSec(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [twinUploading]);
+
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+  const staticBaseUrl = apiBaseUrl.replace(/\/api\/?$/, "");
+
+  const fetchBiomarkerPanel = useCallback(async () => {
+    try {
+      setBioLoading(true);
+      setBioError("");
+      const [panelRes, trendsRes] = await Promise.all([
+        biomarkerAPI.panel(),
+        biomarkerAPI.trends().catch(() => null),
+      ]);
+      const data = panelRes?.data || panelRes;
+      if (data?.biomarkerPanel) {
+        const panel = transformPanel(data.biomarkerPanel);
+        const trends = trendsRes?.data?.trends || {};
+        const withTrends = panel.map((bm) => {
+          const history = trends[bm.id];
+          if (history && history.length >= 1) {
+            return { ...bm, trend: history.map((p) => p.value) };
+          }
+          return bm;
+        });
+        setBiomarkers(withTrends);
+        setLastUpdated(data.reportDate);
+      } else {
+        setBiomarkers([]);
+      }
+    } catch (error) {
+      const msg = error?.message || "";
+      if (error?.statusCode === 404 || msg.includes("not found") || msg.includes("No ") || msg.includes("404")) {
+        setBiomarkers([]);
+      } else {
+        setBioError("Failed to load biomarker data");
+      }
+    } finally {
+      setBioLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "data") {
+      fetchBiomarkerPanel();
+    }
+  }, [activeTab, fetchBiomarkerPanel]);
+
+  const rangeOptions = [
+    { id: "all", label: "All ranges" },
+    { id: "optimal", label: "Optimal" },
+    { id: "normal", label: "Normal" },
+    { id: "out_of_range", label: "Out of Range" },
+  ];
+
+  const categories = useMemo(() => {
+    const uniqueCategories = [...new Set(biomarkers.map((b) => b.category))];
+    return [
+      { id: "all", label: "Category" },
+      ...uniqueCategories.map((cat) => ({ id: cat.toLowerCase().replace(/\s+/g, "-"), label: cat })),
+    ];
+  }, [biomarkers]);
+
+  const filteredBiomarkers = useMemo(() => {
+    return biomarkers.filter((biomarker) => {
+      const matchesSearch = biomarker.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRange = rangeFilter === "all" || biomarker.status === rangeFilter;
+      const matchesCategory =
+        categoryFilter === "all" || biomarker.category.toLowerCase().replace(/\s+/g, "-") === categoryFilter;
+
+      return matchesSearch && matchesRange && matchesCategory;
+    });
+  }, [biomarkers, searchQuery, rangeFilter, categoryFilter]);
+
+  const stats = useMemo(() => {
+    return computeSummary(biomarkers);
+  }, [biomarkers]);
+
+  // Per-category derived grade (from real optimal/total) for the nav icons.
+  const categoryGrades = useMemo(() => {
+    const counts = {};
+    biomarkers.forEach((b) => {
+      counts[b.category] = counts[b.category] || { optimal: 0, total: 0 };
+      counts[b.category].total += 1;
+      if (b.status === "optimal") counts[b.category].optimal += 1;
+    });
+    const out = {};
+    Object.entries(counts).forEach(([cat, v]) => {
+      out[cat] = gradeFor(v.optimal, v.total);
+    });
+    return out;
+  }, [biomarkers]);
+
+  // Per-category 3-level status (good / neutral / bad) for the sidebar dots + body colour.
+  const categoryStatuses = useMemo(() => {
+    const byCat = {};
+    biomarkers.forEach((b) => {
+      (byCat[b.category] = byCat[b.category] || []).push(b);
+    });
+    const out = {};
+    Object.entries(byCat).forEach(([cat, items]) => {
+      out[cat] = categoryStatus(items);
+    });
+    return out;
+  }, [biomarkers]);
+
+  // Header data for the currently-selected category (null = Summary view).
+  const activeCategoryMeta = useMemo(() => {
+    if (categoryFilter === "all") return null;
+    const cat = categories.find((c) => c.id === categoryFilter);
+    if (!cat) return null;
+    const items = biomarkers.filter((b) => b.category === cat.label);
+    const optimal = items.filter((b) => b.status === "optimal").length;
+    const outOfRange = items.filter((b) => b.status === "out_of_range").length;
+    return {
+      label: cat.label,
+      total: items.length,
+      optimal,
+      outOfRange,
+      grade: gradeFor(optimal, items.length),
+    };
+  }, [categoryFilter, categories, biomarkers]);
+
+  // Which organ to light up on the 3D body, and in which status colour.
+  const selectedCategoryLabel = activeCategoryMeta?.label || null;
+  const organHighlight = useMemo(
+    () => (selectedCategoryLabel ? organKeyForCategory(selectedCategoryLabel) : null),
+    [selectedCategoryLabel],
+  );
+  const organStatusValue = useMemo(() => {
+    if (!selectedCategoryLabel) return "good";
+    return categoryStatuses[selectedCategoryLabel] || "good";
+  }, [selectedCategoryLabel, categoryStatuses]);
+
+  const fetchReports = useCallback(async ({ silent = false } = {}) => {
+    if (!userId) return;
+
+    try {
+      if (!silent) setTwinLoading(true);
+      if (!silent) setTwinError("");
+      const response = await userAPI.getBloodReports(userId);
+      setReports(response?.data || []);
+    } catch (error) {
+      if (!silent) setTwinError("Failed to load healthcare records");
+    } finally {
+      if (!silent) setTwinLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (activeTab === "twin") {
+      fetchReports();
+    }
+  }, [activeTab, fetchReports]);
+
+  // Auto-refresh polling: re-fetch reports every 10s while any are still processing.
+  // Also refresh the biomarker panel once a report finishes so the body + table update.
+  useEffect(() => {
+    const hasProcessing = reports.some(
+      (r) => r.status === "uploaded" || r.status === "analyzing"
+    );
+    if (hasProcessing && activeTab === "twin" && userId) {
+      pollingRef.current = setInterval(() => {
+        fetchReports({ silent: true });
+      }, 10000);
+    }
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [reports, activeTab, userId, fetchReports]);
+
+  // When a report transitions to ready, refresh biomarker data in the background so the
+  // digital twin recolours automatically.
+  const prevReadyCount = useRef(0);
+  useEffect(() => {
+    const readyCount = reports.filter((r) => !r.status || r.status === "ready").length;
+    if (readyCount > prevReadyCount.current) {
+      fetchBiomarkerPanel();
+    }
+    prevReadyCount.current = readyCount;
+  }, [reports, fetchBiomarkerPanel]);
+
+  const handleUploadFile = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file || !userId) return;
+
+    try {
+      setTwinUploading(true);
+      setTwinError("");
+      setUploadSuccess(false);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await userAPI.uploadBloodReport(userId, formData);
+      setTwinUploading(false);
+      setUploadSuccess(true);
+      await fetchReports();
+      if (!user?.latestReportReady) {
+        updateUser({ ...user, latestReportReady: true });
+      }
+      // Auto-dismiss the success message after 5 seconds
+      setTimeout(() => setUploadSuccess(false), 5000);
+    } catch (error) {
+      const serverMsg = error?.response?.data?.message;
+      setTwinError(serverMsg || error?.message || "Failed to upload report");
+      setTwinUploading(false);
+    } finally {
+      if (uploadRef.current) {
+        uploadRef.current.value = "";
+      }
+    }
+  };
+
+  const triggerUpload = () => {
+    uploadRef.current?.click();
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    if (!userId || !reportId) return;
+    if (!window.confirm("Delete this report? This cannot be undone.")) return;
+    try {
+      setDeletingReportId(reportId);
+      setTwinError("");
+      await userAPI.deleteBloodReport(userId, reportId);
+      await fetchReports();
+    } catch (error) {
+      const serverMsg = error?.response?.data?.message;
+      setTwinError(serverMsg || "Failed to delete report");
+    } finally {
+      setDeletingReportId(null);
+    }
+  };
+
+  // Fetch the stored file with auth, re-wrap as a blob, open in a new tab.
+  const handleViewReport = async (reportId) => {
+    try {
+      setTwinError("");
+      const raw = await userAPI.getBloodReportFile(reportId);
+      const bodyType =
+        raw?.type && raw.type.startsWith("application/") && raw.type !== "application/json"
+          ? raw.type
+          : "application/pdf";
+      const blob = new Blob([raw], { type: bodyType });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      setTwinError(error?.message || "Could not open this report");
+    }
+  };
+
+  const filteredReports = useMemo(() => {
+    const normalizedSearch = reportSearch.trim().toLowerCase();
+
+    return reports.filter((report) => {
+      const matchesSearch = !normalizedSearch || report.filename?.toLowerCase().includes(normalizedSearch);
+
+      if (reportFilter === "all") {
+        return matchesSearch;
+      }
+
+      return matchesSearch;
+    });
+  }, [reports, reportSearch, reportFilter]);
+
+  const hasReports = filteredReports.length > 0;
+
+  return (
+    <div
+      className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10"
+      style={{ fontFamily: "'nbinternationalproboo', Inter, ui-sans-serif, system-ui, sans-serif" }}
+    >
+      <style
+        dangerouslySetInnerHTML={{
+          __html:
+            "@font-face{font-family:'nbinternationalproboo';src:url('/fonts/nbinternationalproboo.woff2') format('woff2');font-weight:400 700;font-style:normal;font-display:swap;}",
+        }}
+      />
+      <div className="mx-auto w-full max-w-[1240px] px-4 pt-4 lg:px-8 lg:pt-5">
+        <DataTopNav />
+
+        {/* Twin / Records toggle */}
+        <div className="flex items-center gap-3 pb-5 pt-3 lg:pt-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab("data")}
+            className={`text-3xl font-semibold tracking-tight transition lg:text-[40px] ${
+              activeTab === "data" ? "text-[#131316]" : "text-black/25"
+            }`}
+          >
+            Twin
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("twin")}
+            className={`text-3xl font-semibold tracking-tight transition lg:text-[40px] ${
+              activeTab === "twin" ? "text-[#131316]" : "text-black/25"
+            }`}
+          >
+            Records
+          </button>
+        </div>
+
+        {activeTab === "data" ? (
+          bioLoading ? (
+            <div className="py-12 text-center text-gray-500">Loading biomarker data...</div>
+          ) : bioError ? (
+            <div className="py-12 text-center text-red-500">{bioError}</div>
+          ) : biomarkers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center lg:py-28">
+              <div className="mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-borderColor bg-white text-secondary">
+                <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 3h6" />
+                  <path d="M10 3v5L5.6 16.5A2 2 0 0 0 7.4 19.5h9.2a2 2 0 0 0 1.8-3L14 8V3" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-semibold tracking-tight text-blue lg:text-3xl">No biomarker data yet</h3>
+              <p className="mt-2.5 max-w-md text-sm text-secondary lg:text-base">Upload a blood report to see your biomarkers here.</p>
+              <button
+                type="button"
+                onClick={() => setActiveTab("twin")}
+                className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-black px-6 text-sm font-medium text-white transition hover:bg-black/90 lg:text-[15px]"
+              >
+                Upload a report
+              </button>
+            </div>
+          ) : (
+            <section className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)_minmax(0,1.3fr)] lg:items-start lg:gap-6">
+              {/* Left: category nav with 3-colour status dots */}
+              <aside className="hidden lg:sticky lg:top-4 lg:block">
+                <nav className="flex flex-col gap-0.5">
+                  {categories.map((cat) => {
+                    const isAll = cat.id === "all";
+                    const active = categoryFilter === cat.id;
+                    const st = !isAll ? categoryStatuses[cat.label] || "good" : null;
+                    const dotColor = st ? STATUS_COLORS[st] : "#a1a1aa";
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setCategoryFilter(cat.id)}
+                        className={`flex w-full items-center gap-2.5 self-start truncate rounded-full border px-1 py-1 pr-3 text-left text-[15px] transition ${
+                          active
+                            ? "border-zinc-300 bg-white text-zinc-900 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
+                            : "border-transparent text-zinc-600 hover:text-zinc-900"
+                        }`}
+                      >
+                        <span
+                          className="grid h-6 w-6 shrink-0 place-items-center rounded-full border"
+                          style={{ borderColor: isAll ? "#d4d4d8" : dotColor }}
+                        >
+                          {isAll ? (
+                            <svg className="h-3.5 w-3.5 text-zinc-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                              <path d="M12 4.5l1.8 4 4.4.4-3.3 2.9 1 4.3L12 13.9 8.1 16l1-4.3L5.8 8.9l4.4-.4L12 4.5z" />
+                            </svg>
+                          ) : (
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
+                          )}
+                        </span>
+                        <span className="truncate">{isAll ? "Summary" : cat.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </aside>
+
+              {/* Center: 3D digital-twin body, organ coloured by the selected category status */}
+              <div className="hidden lg:sticky lg:top-4 lg:block">
+                <div className="relative h-[680px] w-full overflow-hidden rounded-2xl">
+                  <BodyModelClient
+                    highlight={organHighlight}
+                    status={organStatusValue}
+                    className="h-full w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Right: content panel */}
+              <div className="pt-6 lg:pt-0">
+                <div className="overflow-hidden rounded-3xl border border-borderColor bg-white">
+                  {/* Header — Summary or Category */}
+                  {activeCategoryMeta ? (
+                    <div className="border-b border-borderColor p-6 text-center lg:p-7">
+                      <h2 className="text-left text-xl font-semibold text-blue lg:text-[22px]">{activeCategoryMeta.label}</h2>
+                      <div className="mt-5 flex justify-center">
+                        <GradeRing grade={activeCategoryMeta.grade} />
+                      </div>
+                      <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-secondary">
+                        {activeCategoryMeta.optimal} of {activeCategoryMeta.total} markers are optimal in {activeCategoryMeta.label}.
+                        {activeCategoryMeta.outOfRange > 0 && ` ${activeCategoryMeta.outOfRange} need attention.`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("twin")}
+                        className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                      >
+                        Update my health <span aria-hidden="true">↗</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-b border-borderColor p-6 lg:p-7">
+                      <div className="flex items-start justify-between gap-4">
+                        <h2 className="text-xl font-semibold text-blue lg:text-2xl">{fullName}</h2>
+                        {lastUpdated && (
+                          <span className="shrink-0 pt-1 text-xs text-secondary">
+                            Last updated {new Date(lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1.5 text-sm text-secondary">{fullName.split(" ")[0]}, here&apos;s a look at your latest results.</p>
+
+                      <div className="mt-5 rounded-2xl border border-borderColor bg-pageBackground/50 p-5">
+                        <p className="mb-4 text-sm font-semibold text-secondary">Biomarkers</p>
+                        <StatsGrid stats={stats} />
+                        <div className="mt-4">
+                          <ProgressBar stats={stats} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Search + range filter (category dropdown is mobile-only; desktop uses the nav) */}
+                  <div className="flex flex-col gap-3 border-b border-borderColor p-4 sm:flex-row sm:items-center lg:px-5">
+                    <div className="sm:flex-1">
+                      <SearchBar placeholder="Search..." value={searchQuery} onChange={setSearchQuery} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:flex sm:shrink-0 sm:gap-2.5">
+                      <DropdownFilter label="All ranges" options={rangeOptions} value={rangeFilter} onChange={setRangeFilter} />
+                      <div className="lg:hidden">
+                        <DropdownFilter label="Category" options={categories} value={categoryFilter} onChange={setCategoryFilter} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  {filteredBiomarkers.length === 0 ? (
+                    <div className="py-12 text-center text-sm text-secondary">No biomarkers found</div>
+                  ) : (
+                    <div>
+                      <div className="hidden grid-cols-[1.7fr_1fr_1fr_1.3fr] gap-4 border-b border-borderColor px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-secondary lg:grid">
+                        <span>Name</span>
+                        <span>Status</span>
+                        <span>Value</span>
+                        <span>History</span>
+                      </div>
+                      <div className="divide-y divide-borderColor">
+                        {filteredBiomarkers.map((bm) => (
+                          <BiomarkerRow key={bm.id} bm={bm} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )
+        ) : (
+          <section className="mx-auto w-full max-w-[760px]">
+            {twinError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {twinError}
+              </div>
+            )}
+
+            {twinUploading && (
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-[#e4e6ef] bg-white px-4 py-3">
+                <span className="relative flex h-3 w-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-black opacity-40"></span>
+                  <span className="relative inline-flex h-3 w-3 rounded-full bg-black"></span>
+                </span>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-[#1e2027]">Uploading your report…</div>
+                  <div className="text-xs text-[#6d6f7b]">
+                    {uploadElapsedSec}s elapsed · uploading your report
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {uploadSuccess && (
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+                <svg className="h-5 w-5 flex-shrink-0 text-green-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-green-800">Upload complete!</div>
+                  <div className="text-xs text-green-700">
+                    Feel free to explore other pages. We&apos;ll notify you when your report is ready.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {twinLoading ? (
+              <div className="rounded-2xl border border-borderColor bg-white p-8 text-center text-gray-500">
+                Loading twin records...
+              </div>
+            ) : !hasReports ? (
+              <div className="min-h-[70vh]">
+                <div className="space-y-4">
+                  <SearchBar placeholder="Search...." value={reportSearch} onChange={setReportSearch} />
+                  <button
+                    type="button"
+                    onClick={() => setReportFilter("all")}
+                    className="flex items-center gap-2 text-xl font-medium text-[#6c6d79] lg:text-[28px]"
+                  >
+                    All Files
+                    <svg className="h-5 w-5 lg:h-6 lg:w-6" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="M5 8L10 13L15 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="mt-16 flex flex-col items-center justify-center px-2 text-center lg:mt-28">
+                  <h3 className="text-[28px] font-semibold leading-tight text-[#14151a] sm:text-[36px] lg:text-[50px]">No healthcare records yet</h3>
+                  <p className="mt-4 max-w-[36ch] text-[15px] leading-[1.5] text-[#6d6f7b] lg:mt-5 lg:max-w-[640px] lg:text-[20px]">
+                    Integrate your healthcare records into Cyborg. Drop your files here or click to upload
+                  </p>
+
+                  <input
+                    ref={uploadRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleUploadFile}
+                    className="hidden"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => triggerUpload()}
+                    disabled={twinUploading}
+                    className="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-black px-6 text-base font-medium text-white disabled:opacity-60 lg:mt-8 lg:h-12 lg:text-[18px]"
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M5 14V18C5 19.1046 5.89543 20 7 20H17C18.1046 20 19 19.1046 19 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {twinUploading ? "Uploading…" : "Upload"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 pb-10">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-full border border-[#9ea3b1] bg-white px-4 py-2 text-[20px] font-medium text-[#2f3139]"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12.62 20.63C12.28 20.84 11.86 20.84 11.52 20.63C6.7 17.53 3.5 14.58 3.5 10.74C3.5 7.92 5.74 5.75 8.43 5.75C10.06 5.75 11.25 6.49 12.07 7.56C12.89 6.49 14.08 5.75 15.71 5.75C18.4 5.75 20.64 7.92 20.64 10.74C20.64 14.58 17.44 17.53 12.62 20.63Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Summary
+                </button>
+
+                <div className="rounded-2xl bg-white p-4">
+                  <div className="relative h-[480px] w-full overflow-hidden rounded-xl bg-[#f7f7fa]">
+                    <BodyModelClient highlight={null} status="good" className="h-full w-full" />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#d5d9e6] bg-[#f6f7fb] p-5">
+                  <h3 className="text-[36px] font-medium text-[#1b1d24]">Hi {userName},</h3>
+                  <p className="mt-3 text-[20px] leading-[1.45] text-[#666b78]">
+                    We are currently awaiting and analyzing your test results. Once a report is ready it appears on the data page and your digital twin updates automatically. You&apos;ll receive an e-mail once your results are ready.
+                  </p>
+                  <p className="mt-3 text-[20px] leading-[1.45] text-[#666b78]">
+                    Until then feel free to upload your existing health records or connect your wearables
+                  </p>
+
+                  <div className="mt-4 space-y-4">
+                    {filteredReports.map((report) => {
+                      const fileName = report?.filename || report?.fileName || "Uploaded report";
+                      const isDeleting = deletingReportId === report._id;
+                      const isProcessing = report.status === "uploaded" || report.status === "analyzing";
+                      const isFailed = report.status === "failed";
+                      const isReady = !report.status || report.status === "ready";
+                      return (
+                        <div
+                          key={report._id}
+                          role={isReady ? "button" : undefined}
+                          tabIndex={isReady ? 0 : undefined}
+                          onClick={() => isReady && handleViewReport(report._id)}
+                          onKeyDown={(e) => {
+                            if (isReady && (e.key === "Enter" || e.key === " ")) {
+                              e.preventDefault();
+                              handleViewReport(report._id);
+                            }
+                          }}
+                          className={`w-full rounded-2xl border p-4 text-left transition ${
+                            isReady
+                              ? "cursor-pointer border-[#cfd5e4] bg-white hover:border-[#9ea3b1]"
+                              : isProcessing
+                              ? "border-[#e4e6ef] bg-[#fafbfc]"
+                              : "border-red-200 bg-red-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${
+                              isFailed ? "bg-red-100 text-red-500" : "bg-[#f4f5f9] text-[#636776]"
+                            }`}>
+                              {isProcessing ? (
+                                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
+                                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                                </svg>
+                              ) : (
+                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <path d="M7 3H13L19 9V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2"/>
+                                  <path d="M13 3V9H19" stroke="currentColor" strokeWidth="2"/>
+                                </svg>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-[17px] font-medium text-[#1e2027]">{fileName}</div>
+                              <div className="text-xs text-[#787d8b]">
+                                {isProcessing ? (
+                                  <span className="text-[#6d6f7b]">Processing… <ElapsedTimer since={report.uploadedAt || report.createdAt} /></span>
+                                ) : isFailed ? (
+                                  <span className="font-medium text-red-600">Failed</span>
+                                ) : (
+                                  <>
+                                    {report.reportDate
+                                      ? new Date(report.reportDate).toISOString().slice(0, 10)
+                                      : ""}
+                                    {report.testCount ? ` · ${report.testCount} tests` : ""}
+                                    {report.flaggedCount ? ` · ${report.flaggedCount} flagged` : ""}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteReport(report._id);
+                              }}
+                              disabled={isDeleting}
+                              aria-label={isDeleting ? "Deleting report" : "Delete report"}
+                              title="Delete report"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            >
+                              {isDeleting ? (
+                                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
+                                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                                </svg>
+                              ) : (
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <path d="M3 6H21M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6L18.1327 19.0114C18.0579 20.1342 17.125 21 16 21H8C6.87502 21 5.94211 20.1342 5.86734 19.0114L5 6H19Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                                  <path d="M10 11V17M14 11V17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={triggerUpload}
+                      disabled={twinUploading}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-black px-5 text-sm font-medium text-white disabled:opacity-60"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M5 14V18C5 19.1046 5.89543 20 7 20H17C18.1046 20 19 19.1046 19 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {twinUploading ? "Uploading…" : "Upload another report"}
+                    </button>
+                  </div>
+
+                  <input
+                    ref={uploadRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleUploadFile}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}

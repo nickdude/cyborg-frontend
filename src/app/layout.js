@@ -1,0 +1,42 @@
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
+import LayoutWrapper from "@/components/LayoutWrapper";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+});
+
+export const metadata = {
+  title: "Cyborg Healthcare",
+  description: "Healthcare platform with AI-powered insights",
+  manifest: "/manifest.json",
+  themeColor: "#000000",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Cyborg",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <AuthProvider>
+          <LayoutWrapper>{children}</LayoutWrapper>
+          <PWAInstallPrompt />
+        </AuthProvider>
+      </body>
+    </html>
+  );
+}

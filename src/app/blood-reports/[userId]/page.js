@@ -1,0 +1,360 @@
+"use client";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { userAPI, actionPlanAPI } from "@/services/api";
+import Image from "next/image";
+import Navbar from "@/components/Navbar";
+import Button from "@/components/Button";
+
+export default function BloodReports() {
+  const params = useParams();
+  const userId = params.userId;
+  const router = useRouter();
+  const { user, token, loading: authLoading, updateUser } = useAuth();
+
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadPhase, setUploadPhase] = useState(null); // "uploading" | "processing"
+  const [error, setError] = useState("");
+  const [file, setFile] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [generatingReportId, setGeneratingReportId] = useState(null);
+  const inputRef = useRef(null);
+
+  const fetchReports = useCallback(async () => {
+    try {
+      const response = await userAPI.getBloodReports(userId);
+      setReports(response.data || []);
+    } catch (err) {
+      setError("Failed to load blood reports");
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (authLoading) return; // Wait for auth to hydrate
+    if (!token) {
+      router.push("/login");
+    } else {
+      fetchReports();
+    }
+  }, [token, authLoading, fetchReports, router]);
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      // Check file size (max 10MB)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setError("File size exceeds 10MB limit");
+        return;
+      }
+      setFile(selectedFile);
+      setError("");
+    }
+  };
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    if (!file) {
+      setError("Please select a file");
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+    setUploadPhase("uploading");
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await userAPI.uploadBloodReport(userId, formData, {
+        onUploadProgress: (e) => {
+          if (e.total) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(pct);
+            if (pct >= 100) setUploadPhase("processing");
+          }
+        },
+      });
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = "";
+      if (user && !user.latestReportReady) {
+        updateUser({ ...user, latestReportReady: true });
+      }
+      fetchReports();
+    } catch (err) {
+      setError(err.message || "Failed to upload report");
+    } finally {
+      setUploading(false);
+      setUploadPhase(null);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleDelete = async (reportId) => {
+    if (window.confirm("Are you sure you want to delete this report?")) {
+      try {
+        await userAPI.deleteBloodReport(userId, reportId);
+        fetchReports();
+      } catch (err) {
+        setError("Failed to delete report");
+      }
+    }
+  };
+
+  const handleGeneratePlan = async (reportId) => {
+    setGeneratingReportId(reportId);
+    setToast({
+      type: "info",
+      message: "Generating action plan... You'll be notified when it's ready.",
+    });
+
+    try {
+      await actionPlanAPI.create(reportId);
+      // Plan is now generating in the background
+      // User will get notification when ready
+    } catch (err) {
+      setToast({
+        type: "error",
+        message: err.message || "Failed to start plan generation",
+      });
+    } finally {
+      setGeneratingReportId(null);
+      setTimeout(() => setToast(null), 4000);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-xl font-semibold text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-pageBackground text-gray-900">
+      <Navbar backHref="/dashboard" />
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 bg-white px-4 py-3 rounded-lg shadow-lg text-primary z-50 animate-in fade-in slide-in-from-top-5 max-w-xs ${
+            toast.type === "success"
+              ? "bg-green-800"
+              : toast.type === "error"
+              ? "bg-red-800"
+              : "bg-blue-800"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+        {/* Title */}
+        <div className="flex flex-col items-center text-center gap-3">
+          <h1 className="text-3xl font-bold">Blood Reports</h1>
+          <p className="text-gray-600 text-base">
+            Upload your latest labs and access action plans generated by Cyborg.
+          </p>
+        </div>
+
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        {/* Upload Section */}
+        <form
+          onSubmit={handleUpload}
+          className="border border-tertiary rounded-2xl p-6 bg-white shadow-sm space-y-4"
+        >
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-xl font-semibold">Upload new report</h2>
+              <p className="text-sm text-gray-600 mt-1">PDF, JPG, or PNG — up to 10MB</p>
+            </div>
+            <div className="text-sm text-gray-600">
+              {file ? <span className="font-semibold text-gray-900">{file.name}</span> : "No file chosen"}
+            </div>
+          </div>
+
+          <label
+            className="group flex flex-col items-center justify-center gap-3 border-2 border-dashed border-tertiary rounded-xl py-6 px-4 cursor-pointer hover:border-primary transition bg-pageBackground/40"
+          >
+            <div className="flex items-center gap-3 text-gray-800">
+              <div className="h-12 w-12 rounded-full bg-white shadow flex items-center justify-center text-xl">
+                ⬆
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold">Drag & drop or click to browse</p>
+                <p className="text-xs text-gray-600">We keep your reports private and secure.</p>
+              </div>
+            </div>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
+
+          {uploading && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-700 font-medium">
+                  {uploadPhase === "processing"
+                    ? "Processing with AI..."
+                    : `Uploading... ${uploadProgress}%`}
+                </span>
+                {uploadPhase === "processing" && (
+                  <span className="text-xs text-gray-500">This may take up to 90 seconds</span>
+                )}
+              </div>
+              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                {uploadPhase === "processing" ? (
+                  <div className="h-full bg-purple-500 rounded-full animate-pulse w-full" />
+                ) : (
+                  <div
+                    className="h-full bg-black rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <p className="text-xs text-gray-500">Max file size 10MB. Supported: PDF, JPG, PNG.</p>
+            <Button
+              type="submit"
+              disabled={uploading || !file}
+              className="bg-black hover:bg-gray-900 text-white"
+            >
+              {uploading
+                ? uploadPhase === "processing"
+                  ? "Processing..."
+                  : "Uploading..."
+                : "Upload report"}
+            </Button>
+          </div>
+        </form>
+
+        {/* Reports List */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h2 className="text-xl font-semibold">Your reports</h2>
+            <p className="text-sm text-gray-600">Tap a report to view or generate an action plan.</p>
+          </div>
+
+          {reports.length === 0 ? (
+            <div className="rounded-2xl border border-tertiary bg-pageBackground/60 p-6 text-center text-gray-600">
+              No blood reports uploaded yet.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {reports.map((report) => {
+                const uploadedDate = report.uploadedAt
+                  ? new Date(report.uploadedAt).toLocaleDateString()
+                  : "";
+                const planStatus = report.actionPlanStatus;
+                const isGenerating = planStatus === "pending" || planStatus === "generating";
+                const isPlanViewable = planStatus === "ready" || planStatus === "approved" || planStatus === "pending_review" || planStatus === "draft";
+                const isPlanFailed = planStatus === "failed";
+
+                return (
+                  <div
+                    key={report._id}
+                    className="border border-tertiary rounded-2xl p-4 bg-white shadow-sm flex flex-col gap-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <h3 className="font-semibold text-lg leading-tight">{report.filename || "Untitled report"}</h3>
+                        <p className="text-sm text-gray-600">Uploaded {uploadedDate}</p>
+                        {isPlanViewable && (
+                          <span className="inline-flex items-center gap-1 text-green-700 text-sm font-medium">
+                            ✓ Action plan ready
+                          </span>
+                        )}
+                        {isGenerating && (
+                          <span className="inline-flex items-center gap-1 text-blue-600 text-sm font-medium">
+                            ⏳ Generating action plan...
+                          </span>
+                        )}
+                        {isPlanFailed && (
+                          <span className="inline-flex items-center gap-1 text-red-600 text-sm font-medium">
+                            ✗ Plan generation failed
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Button
+                        fullWidth
+                        size="md"
+                        className="bg-primary hover:bg-purple-800 text-white"
+                        onClick={() => router.push(`/blood-reports/analysis/${report._id}`)}
+                      >
+                        View AI Analysis
+                      </Button>
+                      <Button
+                        fullWidth
+                        size="md"
+                        className="bg-black hover:bg-gray-900 text-white"
+                        disabled={generatingReportId === report._id || isGenerating}
+                        onClick={() =>
+                          isPlanViewable
+                            ? router.push(`/action-plan/${userId}?planId=${report.actionPlanId}`)
+                            : handleGeneratePlan(report._id)
+                        }
+                      >
+                        {generatingReportId === report._id || isGenerating
+                          ? "Generating..."
+                          : isPlanViewable
+                          ? "View plan"
+                          : isPlanFailed
+                          ? "Retry plan"
+                          : "Generate plan"}
+                      </Button>
+                      <Button
+                        fullWidth
+                        size="md"
+                        variant="secondary"
+                        className="border border-gray-300 text-gray-800 hover:bg-gray-50"
+                        onClick={() => handleDelete(report._id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Skip Button */}
+        <div className="flex justify-center pt-4">
+          <Button
+            onClick={() => router.push('/concierge')}
+            variant="secondary"
+            className="border border-gray-300 text-gray-800 hover:bg-gray-50 px-8"
+          >
+            Skip for now
+          </Button>
+        </div>
+      </main>
+    </div>
+  );
+}

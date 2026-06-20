@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  /* ---- Landing page (ported from cyborgmen-rebuild) ---- */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  /* Labs by CYBORG radial purple */
+  .bg-cyborg-labs {
+    background: radial-gradient(circle at 50% -4%, #cb86ff 0px, #a14ff1 34%, #7f31d3 68%, #631aa6 100%);
+  }
+  /* Change your health CTA radial purple */
+  .bg-cyborg-cta {
+    background: radial-gradient(circle at 50% 35%, #8b5cf6 0px, #5b21b6 45%, #330a63 100%);
+  }
+  /* Footer giant wordmark — animated orange gradient sweep */
+  .wordmark-shimmer {
+    background: linear-gradient(100deg, #1a1a1a 0%, #1a1a1a 30%, #ff7a00 45%, #ff3d00 55%, #1a1a1a 70%, #1a1a1a 100%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: wordmark-sweep 6s linear infinite;
+  }
+  @keyframes wordmark-sweep {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -50% 0;
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
