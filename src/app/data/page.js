@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import StatsGrid from "@/components/StatsGrid";
 import ProgressBar from "@/components/ProgressBar";
-import BiomarkersList from "@/components/BiomarkersList";
 import DropdownFilter from "@/components/DropdownFilter";
 import SearchBar from "@/components/SearchBar";
 import { transformPanel, computeSummary } from "@/utils/biomarkerAdapter";
@@ -30,10 +29,151 @@ function ElapsedTimer({ since }) {
   return <span className="ml-1 tabular-nums">{elapsed}</span>;
 }
 
+const STATUS_META = {
+  optimal: { color: "#05BC7E", label: "Optimal", text: "text-biomarkerOptimal" },
+  normal: { color: "#D7D82E", label: "Normal", text: "text-biomarkerNormal" },
+  out_of_range: { color: "#F865DD", label: "Out of range", text: "text-biomarkerOutOfRange" },
+};
+
+function statusColor(status) {
+  return STATUS_META[status]?.color || "#71717B";
+}
+
+// Letter grade derived purely from this category's real optimal/total ratio.
+function gradeFor(optimal, total) {
+  if (!total) return { letter: "—", ratio: 0, color: "#A3A3AB" };
+  const ratio = optimal / total;
+  if (ratio >= 0.8) return { letter: "A", ratio, color: "#05BC7E" };
+  if (ratio >= 0.6) return { letter: "B", ratio, color: "#34c77b" };
+  if (ratio >= 0.4) return { letter: "C", ratio, color: "#D7D82E" };
+  return { letter: "D", ratio, color: "#F865DD" };
+}
+
+// Circular progress ring with the grade letter centered (category header).
+function GradeRing({ grade, size = 96, stroke = 6 }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - Math.max(0.06, grade.ratio));
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#EFEFF1" strokeWidth={stroke} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={grade.color}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={offset}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+      <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize={size * 0.34} fontWeight="600" fill={grade.color}>
+        {grade.letter}
+      </text>
+    </svg>
+  );
+}
+
+// Small grade circle used as the category-nav icon.
+function GradeChip({ grade }) {
+  return (
+    <span
+      className="grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[10px] font-semibold"
+      style={{ borderColor: grade.color, color: grade.color }}
+    >
+      {grade.letter}
+    </span>
+  );
+}
+
+// Map a category label to organ highlight hotspots positioned as % of the body
+// image box ({x,y} = center, size in px). Keyword-matched so it works with
+// whatever category names the data provides.
+// Positions are % of the body IMAGE box. The figure in man.png occupies roughly
+// the vertical band 20%–93% (whitespace above the head), so y-values are
+// calibrated to that band. x: 50 = centerline; liver sits on the person's right
+// (viewer's left), heart slightly viewer-right.
+function bodyHotspots(label = "") {
+  const l = label.toLowerCase();
+  const P = (x, y, size = 68) => ({ x, y, size });
+  if (/kidney|renal/.test(l)) return [P(44, 51, 52), P(56, 51, 52)];
+  if (/liver|hepat/.test(l)) return [P(44, 44, 70)];
+  if (/heart|vascular|cardio|cholesterol|lipid|blood pressure/.test(l)) return [P(52, 39, 70)];
+  if (/brain|cogn|neuro|mental|mood/.test(l)) return [P(50, 25, 70)];
+  if (/gut|digest|stomach|gastro|microbiome/.test(l)) return [P(50, 54, 80)];
+  if (/thyroid/.test(l)) return [P(50, 31, 42)];
+  if (/hormone|sex|reproduct|fertility|testosterone|estrogen/.test(l)) return [P(50, 60, 68)];
+  if (/metabolic|glucose|diabet|sugar|insulin/.test(l)) return [P(50, 49, 82)];
+  if (/lung|respir|pulmon/.test(l)) return [P(43, 38, 62), P(57, 38, 62)];
+  if (/immune|inflamm/.test(l)) return [P(50, 43, 90)];
+  if (/bone|muscle|skelet|joint/.test(l)) return [P(50, 49, 92)];
+  // nutrients, energy, dna, toxin exposure, etc. → general torso glow
+  return [P(50, 49, 82)];
+}
+
+// Compact history sparkline from a biomarker's trend values.
+function Sparkline({ trend, color }) {
+  if (!trend || trend.length === 0) {
+    return <span className="text-xs text-secondary">—</span>;
+  }
+  const w = 120;
+  const h = 32;
+  const pad = 4;
+  const min = Math.min(...trend);
+  const max = Math.max(...trend);
+  const range = max - min || 1;
+  const pts = trend.map((v, i) => {
+    const x = trend.length === 1 ? w / 2 : pad + (i / (trend.length - 1)) * (w - 2 * pad);
+    const y = h - pad - ((v - min) / range) * (h - 2 * pad);
+    return [x, y];
+  });
+  const poly = pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  const last = pts[pts.length - 1];
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} className="block">
+      {pts.length > 1 && (
+        <polyline points={poly} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.85" />
+      )}
+      <circle cx={last[0]} cy={last[1]} r="3" fill={color} stroke="#fff" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+// One biomarker row: a 4-col table row on desktop, compact stacked row on mobile.
+function BiomarkerRow({ bm }) {
+  const { name, value, unit, status, trend } = bm;
+  const meta = STATUS_META[status] || { color: "#71717B", label: status || "—", text: "text-secondary" };
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3.5 transition hover:bg-pageBackground/60 lg:grid-cols-[1.7fr_1fr_1fr_1.3fr] lg:gap-4 lg:px-5 lg:py-4">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-blue lg:text-[15px]">{name || "N/A"}</p>
+        <span className="mt-1 flex items-center gap-1.5 text-xs text-secondary lg:hidden">
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
+          <span className={meta.text}>{meta.label}</span>
+          <span>· {value ?? "N/A"} {unit}</span>
+        </span>
+      </div>
+      <div className="hidden items-center gap-2 text-sm font-medium lg:flex">
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.color }} />
+        <span className={meta.text}>{meta.label}</span>
+      </div>
+      <div className="hidden text-sm tabular-nums text-blue lg:block">
+        {value ?? "N/A"} <span className="text-secondary">{unit}</span>
+      </div>
+      <div className="justify-self-end lg:justify-self-start">
+        <Sparkline trend={trend} color={meta.color} />
+      </div>
+    </div>
+  );
+}
+
 export default function DataDashboard() {
   const { user, updateUser } = useAuth();
   const userId = user?._id || user?.id;
   const userName = user?.firstName || "User";
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || userName;
 
   const [activeTab, setActiveTab] = useState("data");
 
@@ -145,16 +285,37 @@ export default function DataDashboard() {
     return computeSummary(biomarkers);
   }, [biomarkers]);
 
-  const groupedBiomarkers = useMemo(() => {
-    const groups = {};
-    filteredBiomarkers.forEach((biomarker) => {
-      if (!groups[biomarker.category]) {
-        groups[biomarker.category] = [];
-      }
-      groups[biomarker.category].push(biomarker);
+  // Per-category derived grade (from real optimal/total) for the nav icons.
+  const categoryGrades = useMemo(() => {
+    const counts = {};
+    biomarkers.forEach((b) => {
+      counts[b.category] = counts[b.category] || { optimal: 0, total: 0 };
+      counts[b.category].total += 1;
+      if (b.status === "optimal") counts[b.category].optimal += 1;
     });
-    return groups;
-  }, [filteredBiomarkers]);
+    const out = {};
+    Object.entries(counts).forEach(([cat, v]) => {
+      out[cat] = gradeFor(v.optimal, v.total);
+    });
+    return out;
+  }, [biomarkers]);
+
+  // Header data for the currently-selected category (null = Summary view).
+  const activeCategoryMeta = useMemo(() => {
+    if (categoryFilter === "all") return null;
+    const cat = categories.find((c) => c.id === categoryFilter);
+    if (!cat) return null;
+    const items = biomarkers.filter((b) => b.category === cat.label);
+    const optimal = items.filter((b) => b.status === "optimal").length;
+    const outOfRange = items.filter((b) => b.status === "out_of_range").length;
+    return {
+      label: cat.label,
+      total: items.length,
+      optimal,
+      outOfRange,
+      grade: gradeFor(optimal, items.length),
+    };
+  }, [categoryFilter, categories, biomarkers]);
 
   const fetchReports = useCallback(async ({ silent = false } = {}) => {
     if (!userId) return;
@@ -311,17 +472,6 @@ export default function DataDashboard() {
             </button>
           </div>
 
-          {activeTab === "data" && (
-            <>
-              <div className="flex items-end justify-between gap-4 lg:items-center">
-                <h2 className="text-2xl text-black lg:text-3xl font-semibold">{userName}</h2>
-                <p className="text-xs text-secondary lg:text-sm">{lastUpdated ? `Updated ${new Date(lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}</p>
-              </div>
-              <p className="pt-2 text-xs text-secondary lg:max-w-[70ch] lg:text-base lg:leading-relaxed">
-                {userName}, you&apos;re doing quite well. While there&apos;s room for improvement in some areas, your overall health markers are good.
-              </p>
-            </>
-          )}
         </div>
 
         {activeTab === "data" ? (
@@ -330,35 +480,170 @@ export default function DataDashboard() {
           ) : bioError ? (
             <div className="py-12 text-center text-red-500">{bioError}</div>
           ) : biomarkers.length === 0 ? (
-            <div className="py-12 text-center">
-              <h3 className="text-2xl font-semibold text-gray-900">No biomarker data yet</h3>
-              <p className="mt-2 text-gray-500">Upload a blood report to see your biomarkers</p>
+            <div className="flex flex-col items-center justify-center py-20 text-center lg:py-28">
+              <div className="mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-borderColor bg-white text-secondary">
+                <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 3h6" />
+                  <path d="M10 3v5L5.6 16.5A2 2 0 0 0 7.4 19.5h9.2a2 2 0 0 0 1.8-3L14 8V3" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-semibold tracking-tight text-blue lg:text-3xl">No biomarker data yet</h3>
+              <p className="mt-2.5 max-w-md text-sm text-secondary lg:text-base">Upload a blood report to see your biomarkers here.</p>
+              <button
+                type="button"
+                onClick={() => setActiveTab("twin")}
+                className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-black px-6 text-sm font-medium text-white transition hover:bg-black/90 lg:text-[15px]"
+              >
+                Upload a report
+              </button>
             </div>
           ) : (
-            <section className="lg:grid lg:grid-cols-12 lg:gap-7 lg:items-start">
-              <div className="bg-white rounded-2xl p-6 space-y-4 lg:col-span-3 lg:sticky lg:top-24 lg:p-8">
-                <div className="space-y-5">
-                  <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Biomarkers</h2>
-                  <StatsGrid stats={stats} />
-                  <ProgressBar stats={stats} />
+            <section className="lg:grid lg:grid-cols-[232px_minmax(0,1fr)_minmax(0,1.35fr)] lg:items-start lg:gap-6">
+              {/* Left: category nav with grade icons */}
+              <aside className="hidden lg:block lg:sticky lg:top-24">
+                <div className="rounded-2xl border border-borderColor bg-white p-2">
+                  {categories.map((cat) => {
+                    const isAll = cat.id === "all";
+                    const active = categoryFilter === cat.id;
+                    const grade = !isAll ? categoryGrades[cat.label] : null;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setCategoryFilter(cat.id)}
+                        className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
+                          active ? "bg-primary/[0.06] text-primary" : "text-blue hover:bg-pageBackground"
+                        }`}
+                      >
+                        {isAll ? (
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full border border-lightGray text-[10px] font-semibold text-secondary">★</span>
+                        ) : grade ? (
+                          <GradeChip grade={grade} />
+                        ) : (
+                          <span className="h-5 w-5 shrink-0 rounded-full border border-lightGray" />
+                        )}
+                        <span className="truncate">{isAll ? "Summary" : cat.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+              </aside>
 
-                <div className="border-t border-borderColor pt-5 space-y-3">
-                  <SearchBar placeholder="Search..." value={searchQuery} onChange={setSearchQuery} />
+              {/* Center: body model with organ highlight for the active category */}
+              <div className="hidden lg:sticky lg:top-24 lg:block">
+                <div className="relative flex h-[640px] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-white to-pageBackground">
+                  <div className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-biomarkerOptimal/10 blur-3xl" />
+                  {/* Flex-centered so the image sizes correctly, made taller than the card and
+                      shifted so the figure fills it and the PNG's empty margins are cropped.
+                      The offset is tuned to keep the full head visible (~24px top padding) while
+                      the feet stay just inside the bottom — vertically balanced, no clipping.
+                      Hotspots are % of this box, so they stay locked to the anatomy at any scale. */}
+                  <div className="relative h-[820px] shrink-0" style={{ transform: "translateY(-20px)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/assets/man.png" alt="Digital twin body" className="h-[820px] w-auto object-contain opacity-90" />
 
-                  <div className="grid grid-cols-2 gap-3 lg:gap-2.5">
-                    <DropdownFilter label="All ranges" options={rangeOptions} value={rangeFilter} onChange={setRangeFilter} />
-                    <DropdownFilter label="Category" options={categories} value={categoryFilter} onChange={setCategoryFilter} />
+                    {activeCategoryMeta && (
+                      <div
+                        key={activeCategoryMeta.label}
+                        className="pointer-events-none absolute inset-0 animate-[fadeIn_0.25s_ease-out]"
+                      >
+                        {bodyHotspots(activeCategoryMeta.label).map((h, i) => (
+                          <span
+                            key={i}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-300"
+                            style={{
+                              left: `${h.x}%`,
+                              top: `${h.y}%`,
+                              width: h.size,
+                              height: h.size,
+                              background:
+                                "radial-gradient(circle, rgba(5,188,126,0.6) 0%, rgba(5,188,126,0.28) 45%, rgba(5,188,126,0) 72%)",
+                              filter: "blur(3px)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-8 pt-6 lg:col-span-9 lg:pt-0">
-                {Object.entries(groupedBiomarkers).map(([category, items]) => (
-                  <BiomarkersList key={category} title={category} biomarkers={items} />
-                ))}
+              {/* Right: content panel */}
+              <div className="pt-6 lg:pt-0">
+                <div className="overflow-hidden rounded-3xl border border-borderColor bg-white">
+                  {/* Header — Summary or Category */}
+                  {activeCategoryMeta ? (
+                    <div className="border-b border-borderColor p-6 text-center lg:p-7">
+                      <h2 className="text-left text-xl font-semibold text-blue lg:text-[22px]">{activeCategoryMeta.label}</h2>
+                      <div className="mt-5 flex justify-center">
+                        <GradeRing grade={activeCategoryMeta.grade} />
+                      </div>
+                      <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-secondary">
+                        {activeCategoryMeta.optimal} of {activeCategoryMeta.total} markers are optimal in {activeCategoryMeta.label}.
+                        {activeCategoryMeta.outOfRange > 0 && ` ${activeCategoryMeta.outOfRange} need attention.`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("twin")}
+                        className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                      >
+                        Update my health <span aria-hidden="true">↗</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-b border-borderColor p-6 lg:p-7">
+                      <div className="flex items-start justify-between gap-4">
+                        <h2 className="text-xl font-semibold text-blue lg:text-2xl">{fullName}</h2>
+                        {lastUpdated && (
+                          <span className="shrink-0 pt-1 text-xs text-secondary">
+                            Last updated {new Date(lastUpdated).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1.5 text-sm text-secondary">{fullName.split(" ")[0]}, here&apos;s a look at your latest results.</p>
 
-                {filteredBiomarkers.length === 0 && <div className="py-12 text-center text-gray-500">No biomarkers found</div>}
+                      <div className="mt-5 rounded-2xl border border-borderColor bg-pageBackground/50 p-5">
+                        <p className="mb-4 text-sm font-semibold text-secondary">Biomarkers</p>
+                        <StatsGrid stats={stats} />
+                        <div className="mt-4">
+                          <ProgressBar stats={stats} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Search + range filter (category dropdown is mobile-only; desktop uses the nav) */}
+                  <div className="flex flex-col gap-3 border-b border-borderColor p-4 sm:flex-row sm:items-center lg:px-5">
+                    <div className="sm:flex-1">
+                      <SearchBar placeholder="Search..." value={searchQuery} onChange={setSearchQuery} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:flex sm:shrink-0 sm:gap-2.5">
+                      <DropdownFilter label="All ranges" options={rangeOptions} value={rangeFilter} onChange={setRangeFilter} />
+                      <div className="lg:hidden">
+                        <DropdownFilter label="Category" options={categories} value={categoryFilter} onChange={setCategoryFilter} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  {filteredBiomarkers.length === 0 ? (
+                    <div className="py-12 text-center text-sm text-secondary">No biomarkers found</div>
+                  ) : (
+                    <div>
+                      <div className="hidden grid-cols-[1.7fr_1fr_1fr_1.3fr] gap-4 border-b border-borderColor px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-secondary lg:grid">
+                        <span>Name</span>
+                        <span>Status</span>
+                        <span>Value</span>
+                        <span>History</span>
+                      </div>
+                      <div className="divide-y divide-borderColor">
+                        {filteredBiomarkers.map((bm) => (
+                          <BiomarkerRow key={bm.id} bm={bm} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </section>
           )
