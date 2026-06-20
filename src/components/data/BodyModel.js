@@ -1,64 +1,48 @@
 "use client";
 
-import { Suspense, useLayoutEffect, useMemo } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { useGLTF, useTexture } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import PLACEMENTS from "@/lib/organ-placements.json";
-import { STATUS_COLORS, DEFAULT_STATUS } from "./organStatus";
-
-const ENTRIES = Object.entries(PLACEMENTS);
-const FILES = ENTRIES.map(([, p]) => p.file);
+import { DEFAULT_STATUS } from "./organStatus";
 
 // Digital-twin body model per biological sex (same naming superpower uses:
-// `/{sex}OptimisedV8.glb`). Both are skinned bodies, so the identical organ
-// overlay / shader / status-colour system works on either.
+// `/{sex}OptimisedV8.glb`). Both are skinned bodies with the SAME UV layout the
+// status textures are baked against, so the organ overlays land pixel-perfect.
 const MODEL_BY_SEX = {
   male: "/maleOptimisedV8.glb",
   female: "/femaleOptimisedV8.glb",
 };
 const modelUrlForSex = (sex) => MODEL_BY_SEX[sex] || MODEL_BY_SEX.male;
 
-// Raw sRGB (display-space) components — the overlay is mixed into the already-sRGB
-// framebuffer, so the colour must NOT be linearized by three.
-function hexToSRGBVec(hex) {
-  const n = parseInt(hex.replace("#", ""), 16);
-  return new THREE.Vector3(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+// Pre-baked, UV-aligned textures live under /models/{sex}/textures/.
+// `base.jpg` is the plain body; `{organ}_{status}.jpg` paints one organ region in
+// its status colour (good/neutral/bad). This is exactly how superpower does it —
+// no projection maths, so it's perfectly accurate from every angle.
+const texDirForSex = (sex) => `/models/${sex}/textures`;
+const fileFor = (highlight, status) =>
+  highlight ? `${highlight}_${status}.jpg` : "base.jpg";
+
+// superpower's texture config: unflipped (GLB convention), sRGB, linear, no mipmaps.
+function configureTexture(t) {
+  t.flipY = false;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.minFilter = THREE.LinearFilter;
+  t.generateMipmaps = false;
+  return t;
 }
-const STATUS_VEC = {
-  good: hexToSRGBVec(STATUS_COLORS.good),
-  neutral: hexToSRGBVec(STATUS_COLORS.neutral),
-  bad: hexToSRGBVec(STATUS_COLORS.bad),
-};
 
-function BodyAndOrgans({ highlight, status = DEFAULT_STATUS, sex = "male" }) {
+function BodyTwin({ highlight, status = DEFAULT_STATUS, sex = "male" }) {
   const { scene } = useGLTF(modelUrlForSex(sex));
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
 
-  const textures = useTexture(FILES);
-  useMemo(() => {
-    textures.forEach((t) => {
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = 8;
-    });
-  }, [textures]);
+  const meshesRef = useRef([]);
+  const cacheRef = useRef(new Map()); // filename -> THREE.Texture (per-instance, sex-scoped)
+  const loaderRef = useRef(null);
+  const texDir = texDirForSex(sex);
 
-  // shared uniforms injected into the body material; updated live when category/status change
-  const u = useMemo(
-    () => ({
-      uMap: { value: null },
-      uHasOverlay: { value: 0 },
-      uHoriz: { value: new THREE.Vector3(1, 0, 0) },
-      uDepth: { value: new THREE.Vector3(0, 0, 1) },
-      uCenter: { value: new THREE.Vector2() },
-      uSize: { value: new THREE.Vector2(1, 1) },
-      uColor: { value: STATUS_VEC[DEFAULT_STATUS].clone() },
-    }),
-    [],
-  );
-
-  // Clone + center the model (static; the camera orbits) and inject a world-space
-  // projective organ overlay into every material so the organ paints onto the real body.
+  // Clone + center the model (static; the camera orbits), and give every mesh a
+  // fresh matte material whose `map` we swap to the active organ texture.
   const data = useMemo(() => {
     const s = scene.clone(true);
     s.updateMatrixWorld(true);
@@ -67,76 +51,72 @@ function BodyAndOrgans({ highlight, status = DEFAULT_STATUS, sex = "male" }) {
     const size = box.getSize(new THREE.Vector3());
     s.position.sub(center);
 
+    const meshes = [];
     s.traverse((o) => {
       if (!o.isMesh) return;
-      const mat = new THREE.MeshStandardMaterial({ color: "#ededed", roughness: 0.72, metalness: 0 });
-      mat.onBeforeCompile = (shader) => {
-        Object.assign(shader.uniforms, u);
-        shader.vertexShader = shader.vertexShader
-          .replace("#include <common>", "#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWN;")
-          .replace(
-            "#include <skinnormal_vertex>",
-            "#include <skinnormal_vertex>\nvWN = normalize(mat3(modelMatrix) * objectNormal);",
-          )
-          .replace(
-            "#include <skinning_vertex>",
-            "#include <skinning_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;",
-          );
-        shader.fragmentShader = shader.fragmentShader
-          .replace(
-            "#include <common>",
-            `#include <common>
-             varying vec3 vWPos; varying vec3 vWN;
-             uniform sampler2D uMap; uniform float uHasOverlay;
-             uniform vec3 uHoriz; uniform vec3 uDepth; uniform vec2 uCenter; uniform vec2 uSize; uniform vec3 uColor;`,
-          )
-          .replace(
-            "#include <dithering_fragment>",
-            `#include <dithering_fragment>
-             if (uHasOverlay > 0.5) {
-               float h = dot(vWPos, uHoriz);
-               vec2 ouv = vec2((h - uCenter.x) / uSize.x + 0.5, (vWPos.y - uCenter.y) / uSize.y + 0.5);
-               if (ouv.x >= 0.0 && ouv.x <= 1.0 && ouv.y >= 0.0 && ouv.y <= 1.0) {
-                 float nd = dot(normalize(vWN), uDepth);
-                 if (nd > 0.04) {
-                   vec4 oc = texture2D(uMap, ouv);
-                   float a = oc.a * smoothstep(0.04, 0.5, nd);
-                   gl_FragColor.rgb = mix(gl_FragColor.rgb, uColor, a);
-                 }
-               }
-             }`,
-          );
-      };
-      o.material = mat;
+      o.material = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.9,
+        metalness: 0,
+        map: null,
+      });
+      meshes.push(o);
     });
+    meshesRef.current = meshes;
 
     const lookAlongX = size.x < size.z;
-    return {
-      root: s,
-      size,
-      lookAlongX,
-      widthExtent: lookAlongX ? size.z : size.x,
-      depthExtent: lookAlongX ? size.x : size.z,
+    return { root: s, size, lookAlongX };
+  }, [scene]);
+
+  // Load (and cache) a texture from the current sex's texture directory.
+  const loadTexture = useCallback(
+    (file) =>
+      new Promise((resolve) => {
+        const cache = cacheRef.current;
+        if (cache.has(file)) return resolve(cache.get(file));
+        if (!loaderRef.current) loaderRef.current = new THREE.TextureLoader();
+        loaderRef.current.load(
+          `${texDir}/${file}`,
+          (t) => {
+            configureTexture(t);
+            gl.initTexture?.(t);
+            cache.set(file, t);
+            resolve(t);
+          },
+          undefined,
+          () => resolve(null),
+        );
+      }),
+    [texDir, gl],
+  );
+
+  const applyTexture = useCallback((t) => {
+    if (!t) return;
+    meshesRef.current.forEach((m) => {
+      m.material.map = t;
+      m.material.needsUpdate = true;
+    });
+  }, []);
+
+  // Swap the body texture whenever the selected organ/status (or model) changes.
+  // The body stays visible the whole time — only the map updates once it's loaded.
+  const activeFile = fileFor(highlight, status);
+  useEffect(() => {
+    let cancelled = false;
+    loadTexture(activeFile).then((t) => {
+      if (cancelled) return;
+      if (t) return applyTexture(t);
+      // Missing organ/status texture -> fall back to the plain base body.
+      if (activeFile !== "base.jpg") {
+        loadTexture("base.jpg").then((b) => !cancelled && applyTexture(b));
+      }
+    });
+    return () => {
+      cancelled = true;
     };
-  }, [scene, u]);
+  }, [activeFile, data, loadTexture, applyTexture]);
 
-  useMemo(() => {
-    const idx = ENTRIES.findIndex(([name]) => name === highlight);
-    if (idx < 0) {
-      u.uHasOverlay.value = 0;
-      return;
-    }
-    const p = ENTRIES[idx][1];
-    const { size, lookAlongX, widthExtent } = data;
-    u.uMap.value = textures[idx];
-    u.uHasOverlay.value = 1;
-    u.uHoriz.value.set(...(lookAlongX ? [0, 0, 1] : [1, 0, 0]));
-    u.uDepth.value.set(...(lookAlongX ? [1, 0, 0] : [0, 0, 1]));
-    u.uCenter.value.set(p.xFrac * widthExtent, -size.y / 2 + p.yFrac * size.y);
-    u.uSize.value.set(p.wFrac * widthExtent, p.hFrac * size.y);
-    u.uColor.value.copy(STATUS_VEC[status] || STATUS_VEC.good);
-  }, [highlight, status, data, textures, u]);
-
+  // Frame the body and gently orbit the camera (the body itself stays put).
   useLayoutEffect(() => {
     const dist = data.size.y * 2.5;
     if (data.lookAlongX) camera.position.set(dist, 0, 0);
@@ -145,7 +125,6 @@ function BodyAndOrgans({ highlight, status = DEFAULT_STATUS, sex = "male" }) {
     camera.updateProjectionMatrix();
   }, [data, camera]);
 
-  // Gentle camera orbit — the body appears to sway, organs stay painted on it.
   useFrame(({ clock }) => {
     const az = Math.sin(clock.elapsedTime * 0.45) * 0.3;
     const dist = data.size.y * 2.5;
@@ -165,6 +144,7 @@ export function BodyModel({ className, highlight, status, sex = "male" }) {
   return (
     <div className={className}>
       <Canvas
+        flat
         frameloop="always"
         camera={{ position: [0, 0, 4], fov: 28 }}
         gl={{ antialias: true, alpha: true }}
@@ -174,13 +154,13 @@ export function BodyModel({ className, highlight, status, sex = "male" }) {
           gl.domElement.addEventListener("webglcontextrestored", () => invalidate());
         }}
       >
-        <ambientLight intensity={0.65} />
-        <hemisphereLight intensity={0.75} groundColor="#d8d8d8" color="#ffffff" />
-        <directionalLight position={[3, 5, 6]} intensity={2.0} />
-        <directionalLight position={[-4, 1, -2]} intensity={0.45} />
+        <ambientLight intensity={0.7} />
+        <hemisphereLight intensity={0.6} groundColor="#d8d8d8" color="#ffffff" />
+        <directionalLight position={[3, 5, 6]} intensity={1.3} />
+        <directionalLight position={[-4, 1, -2]} intensity={0.35} />
         <Suspense fallback={null}>
-          {/* key on sex forces a clean remount so the new body/bbox/camera reset cleanly */}
-          <BodyAndOrgans key={sex} highlight={highlight} status={status} sex={sex} />
+          {/* key on sex forces a clean remount so the new body/textures/camera reset */}
+          <BodyTwin key={sex} highlight={highlight} status={status} sex={sex} />
         </Suspense>
       </Canvas>
     </div>

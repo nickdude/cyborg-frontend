@@ -48,6 +48,28 @@ function SexToggle({ value, onChange, className = "" }) {
   );
 }
 
+// The full, fixed digital-twin category list (superpower's order + labels). These
+// ALWAYS appear in the sidebar — whether or not a report has been uploaded, and even
+// after one is added that doesn't include every category. Grades/colours fill in from
+// the report when data exists; otherwise the category shows a neutral dot and a "—".
+const TWIN_CATEGORIES = [
+  "Heart & Vascular Health",
+  "Metabolic Health",
+  "Sex Hormones",
+  "Thyroid Health",
+  "Inflammation",
+  "Liver Health",
+  "Kidney Health",
+  "Nutrients",
+  "Energy",
+  "Immune System",
+  "DNA Health",
+  "Brain Health",
+  "Gut Health",
+  "Toxin Exposure",
+];
+const catId = (label) => String(label).toLowerCase().replace(/\s+/g, "-");
+
 function ElapsedTimer({ since }) {
   const [elapsed, setElapsed] = useState("");
   useEffect(() => {
@@ -290,10 +312,14 @@ export default function DataDashboard() {
   ];
 
   const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(biomarkers.map((b) => b.category))];
+    // Canonical list always shown; append any report categories not in the canon.
+    const present = [...new Set(biomarkers.map((b) => b.category))];
+    const extras = present.filter((c) => c && !TWIN_CATEGORIES.includes(c));
+    const ordered = [...TWIN_CATEGORIES, ...extras];
     return [
-      { id: "all", label: "Category" },
-      ...uniqueCategories.map((cat) => ({ id: cat.toLowerCase().replace(/\s+/g, "-"), label: cat })),
+      { id: "all", label: "Summary" },
+      { id: "wearables", label: "Wearables" },
+      ...ordered.map((cat) => ({ id: catId(cat), label: cat })),
     ];
   }, [biomarkers]);
 
@@ -345,6 +371,9 @@ export default function DataDashboard() {
     if (categoryFilter === "all") return null;
     const cat = categories.find((c) => c.id === categoryFilter);
     if (!cat) return null;
+    if (cat.id === "wearables") {
+      return { label: "Wearables", wearables: true, total: 0, optimal: 0, outOfRange: 0, grade: gradeFor(0, 0) };
+    }
     const items = biomarkers.filter((b) => b.category === cat.label);
     const optimal = items.filter((b) => b.status === "optimal").length;
     const outOfRange = items.filter((b) => b.status === "out_of_range").length;
@@ -546,24 +575,6 @@ export default function DataDashboard() {
             <div className="py-12 text-center text-gray-500">Loading biomarker data...</div>
           ) : bioError ? (
             <div className="py-12 text-center text-red-500">{bioError}</div>
-          ) : biomarkers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center lg:py-28">
-              <div className="mb-5 grid h-16 w-16 place-items-center rounded-2xl border border-borderColor bg-white text-secondary">
-                <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M9 3h6" />
-                  <path d="M10 3v5L5.6 16.5A2 2 0 0 0 7.4 19.5h9.2a2 2 0 0 0 1.8-3L14 8V3" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-semibold tracking-tight text-blue lg:text-3xl">No biomarker data yet</h3>
-              <p className="mt-2.5 max-w-md text-sm text-secondary lg:text-base">Upload a blood report to see your biomarkers here.</p>
-              <button
-                type="button"
-                onClick={() => setActiveTab("twin")}
-                className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-black px-6 text-sm font-medium text-white transition hover:bg-black/90 lg:text-[15px]"
-              >
-                Upload a report
-              </button>
-            </div>
           ) : (
             <section className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)_minmax(0,1.3fr)] lg:items-start lg:gap-6">
               {/* Left: category nav with 3-colour status dots */}
@@ -571,15 +582,20 @@ export default function DataDashboard() {
                 <nav className="flex flex-col gap-0.5">
                   {categories.map((cat) => {
                     const isAll = cat.id === "all";
+                    const isWearables = cat.id === "wearables";
+                    const isSpecial = isAll || isWearables;
                     const active = categoryFilter === cat.id;
-                    const st = !isAll ? categoryStatuses[cat.label] || "good" : null;
-                    const dotColor = st ? STATUS_COLORS[st] : "#a1a1aa";
+                    // status/grade exist only when the report has data for this category.
+                    // Default (no data) stays GREEN — never grey/black.
+                    const st = !isSpecial ? categoryStatuses[cat.label] : null;
+                    const dotColor = st ? STATUS_COLORS[st] : STATUS_COLORS.good;
+                    const grade = !isSpecial ? categoryGrades[cat.label] : null;
                     return (
                       <button
                         key={cat.id}
                         type="button"
                         onClick={() => setCategoryFilter(cat.id)}
-                        className={`flex w-full items-center gap-2.5 self-start truncate rounded-full border px-1 py-1 pr-3 text-left text-[15px] transition ${
+                        className={`flex w-full items-center gap-2.5 self-start rounded-full border px-1 py-1 pr-3 text-left text-[15px] transition ${
                           active
                             ? "border-zinc-300 bg-white text-zinc-900 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
                             : "border-transparent text-zinc-600 hover:text-zinc-900"
@@ -587,17 +603,30 @@ export default function DataDashboard() {
                       >
                         <span
                           className="grid h-6 w-6 shrink-0 place-items-center rounded-full border"
-                          style={{ borderColor: isAll ? "#d4d4d8" : dotColor }}
+                          style={{ borderColor: isSpecial ? "#d4d4d8" : dotColor }}
                         >
                           {isAll ? (
                             <svg className="h-3.5 w-3.5 text-zinc-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                               <path d="M12 4.5l1.8 4 4.4.4-3.3 2.9 1 4.3L12 13.9 8.1 16l1-4.3L5.8 8.9l4.4-.4L12 4.5z" />
                             </svg>
+                          ) : isWearables ? (
+                            <svg className="h-3.5 w-3.5 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <rect x="6" y="6" width="12" height="12" rx="3" />
+                              <path d="M9 6V3h6v3M9 18v3h6v-3" />
+                            </svg>
                           ) : (
                             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
                           )}
                         </span>
-                        <span className="truncate">{isAll ? "Summary" : cat.label}</span>
+                        <span className="flex-1 truncate">{cat.label}</span>
+                        {!isSpecial && (
+                          <span
+                            className="ml-auto shrink-0 text-xs font-semibold tabular-nums"
+                            style={{ color: grade?.color || "#c4c4cc" }}
+                          >
+                            {grade?.letter || "—"}
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -623,15 +652,34 @@ export default function DataDashboard() {
               <div className="pt-6 lg:pt-0">
                 <div className="overflow-hidden rounded-3xl border border-borderColor bg-white">
                   {/* Header — Summary or Category */}
-                  {activeCategoryMeta ? (
+                  {activeCategoryMeta?.wearables ? (
+                    <div className="border-b border-borderColor p-6 text-center lg:p-10">
+                      <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl border border-borderColor bg-pageBackground/50 text-secondary">
+                        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect x="6" y="6" width="12" height="12" rx="3" />
+                          <path d="M9 6V3h6v3M9 18v3h6v-3" />
+                        </svg>
+                      </div>
+                      <h2 className="text-xl font-semibold text-blue lg:text-[22px]">Wearables</h2>
+                      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-secondary">
+                        Connect a wearable to sync sleep, activity and heart-rate data into your digital twin. Coming soon.
+                      </p>
+                    </div>
+                  ) : activeCategoryMeta ? (
                     <div className="border-b border-borderColor p-6 text-center lg:p-7">
                       <h2 className="text-left text-xl font-semibold text-blue lg:text-[22px]">{activeCategoryMeta.label}</h2>
                       <div className="mt-5 flex justify-center">
                         <GradeRing grade={activeCategoryMeta.grade} />
                       </div>
                       <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-secondary">
-                        {activeCategoryMeta.optimal} of {activeCategoryMeta.total} markers are optimal in {activeCategoryMeta.label}.
-                        {activeCategoryMeta.outOfRange > 0 && ` ${activeCategoryMeta.outOfRange} need attention.`}
+                        {activeCategoryMeta.total > 0 ? (
+                          <>
+                            {activeCategoryMeta.optimal} of {activeCategoryMeta.total} markers are optimal in {activeCategoryMeta.label}.
+                            {activeCategoryMeta.outOfRange > 0 && ` ${activeCategoryMeta.outOfRange} need attention.`}
+                          </>
+                        ) : (
+                          <>No {activeCategoryMeta.label} markers yet. Upload a report to see your results here.</>
+                        )}
                       </p>
                       <button
                         type="button"
@@ -651,48 +699,75 @@ export default function DataDashboard() {
                           </span>
                         )}
                       </div>
-                      <p className="mt-1.5 text-sm text-secondary">{fullName.split(" ")[0]}, here&apos;s a look at your latest results.</p>
+                      <p className="mt-1.5 text-sm text-secondary">
+                        {biomarkers.length > 0
+                          ? `${fullName.split(" ")[0]}, here's a look at your latest results.`
+                          : `${fullName.split(" ")[0]}, your twin is ready — upload a report to bring it to life.`}
+                      </p>
 
-                      <div className="mt-5 rounded-2xl border border-borderColor bg-pageBackground/50 p-5">
-                        <p className="mb-4 text-sm font-semibold text-secondary">Biomarkers</p>
-                        <StatsGrid stats={stats} />
-                        <div className="mt-4">
-                          <ProgressBar stats={stats} />
+                      {biomarkers.length > 0 ? (
+                        <div className="mt-5 rounded-2xl border border-borderColor bg-pageBackground/50 p-5">
+                          <p className="mb-4 text-sm font-semibold text-secondary">Biomarkers</p>
+                          <StatsGrid stats={stats} />
+                          <div className="mt-4">
+                            <ProgressBar stats={stats} />
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="mt-5 flex flex-col items-center rounded-2xl border border-borderColor bg-pageBackground/50 p-6 text-center">
+                          <p className="max-w-sm text-sm leading-relaxed text-secondary">
+                            All your health categories are listed on the left. Upload a blood report and your twin lights up with your real results.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setActiveTab("twin")}
+                            className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-black px-5 text-sm font-medium text-white transition hover:bg-black/90"
+                          >
+                            Upload a report
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Search + range filter (category dropdown is mobile-only; desktop uses the nav) */}
-                  <div className="flex flex-col gap-3 border-b border-borderColor p-4 sm:flex-row sm:items-center lg:px-5">
-                    <div className="sm:flex-1">
-                      <SearchBar placeholder="Search..." value={searchQuery} onChange={setSearchQuery} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 sm:flex sm:shrink-0 sm:gap-2.5">
-                      <DropdownFilter label="All ranges" options={rangeOptions} value={rangeFilter} onChange={setRangeFilter} />
-                      <div className="lg:hidden">
-                        <DropdownFilter label="Category" options={categories} value={categoryFilter} onChange={setCategoryFilter} />
+                  {!activeCategoryMeta?.wearables && (
+                    <>
+                      {/* Search + range filter (category dropdown is mobile-only; desktop uses the nav) */}
+                      <div className="flex flex-col gap-3 border-b border-borderColor p-4 sm:flex-row sm:items-center lg:px-5">
+                        <div className="sm:flex-1">
+                          <SearchBar placeholder="Search..." value={searchQuery} onChange={setSearchQuery} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 sm:flex sm:shrink-0 sm:gap-2.5">
+                          <DropdownFilter label="All ranges" options={rangeOptions} value={rangeFilter} onChange={setRangeFilter} />
+                          <div className="lg:hidden">
+                            <DropdownFilter label="Category" options={categories} value={categoryFilter} onChange={setCategoryFilter} />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Table */}
-                  {filteredBiomarkers.length === 0 ? (
-                    <div className="py-12 text-center text-sm text-secondary">No biomarkers found</div>
-                  ) : (
-                    <div>
-                      <div className="hidden grid-cols-[1.7fr_1fr_1fr_1.3fr] gap-4 border-b border-borderColor px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-secondary lg:grid">
-                        <span>Name</span>
-                        <span>Status</span>
-                        <span>Value</span>
-                        <span>History</span>
-                      </div>
-                      <div className="divide-y divide-borderColor">
-                        {filteredBiomarkers.map((bm) => (
-                          <BiomarkerRow key={bm.id} bm={bm} />
-                        ))}
-                      </div>
-                    </div>
+                      {/* Table */}
+                      {filteredBiomarkers.length === 0 ? (
+                        <div className="py-12 text-center text-sm text-secondary">
+                          {biomarkers.length === 0
+                            ? "Upload a report to populate your biomarkers."
+                            : "No biomarkers found"}
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="hidden grid-cols-[1.7fr_1fr_1fr_1.3fr] gap-4 border-b border-borderColor px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-secondary lg:grid">
+                            <span>Name</span>
+                            <span>Status</span>
+                            <span>Value</span>
+                            <span>History</span>
+                          </div>
+                          <div className="divide-y divide-borderColor">
+                            {filteredBiomarkers.map((bm) => (
+                              <BiomarkerRow key={bm.id} bm={bm} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
