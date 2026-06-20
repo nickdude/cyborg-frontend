@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI, actionPlanAPI } from "@/services/api";
+import { prepareUpload } from "@/utils/prepareUpload";
+import { logRemote, logError } from "@/utils/remoteLogger";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Button from "@/components/Button";
@@ -48,9 +50,14 @@ export default function BloodReports() {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Check file size (max 10MB)
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        setError("File size exceeds 10MB limit");
+      const isPdf =
+        selectedFile.type === "application/pdf" || /\.pdf$/i.test(selectedFile.name || "");
+      // PDFs aren't compressed, so keep the 10MB cap. Images get downscaled to
+      // JPEG before upload (see prepareUpload), so large camera photos are fine
+      // — only reject absurdly large files as a sanity check.
+      const cap = isPdf ? 10 * 1024 * 1024 : 60 * 1024 * 1024;
+      if (selectedFile.size > cap) {
+        setError(isPdf ? "PDF exceeds 10MB limit" : "File is too large");
         return;
       }
       setFile(selectedFile);
@@ -71,8 +78,27 @@ export default function BloodReports() {
     setError("");
 
     try {
+      const { file: uploadFile, meta } = await prepareUpload(file);
+      logRemote("info", "blood-report upload starting", {
+        ...meta,
+        savedKB:
+          meta.originalSize && meta.outputSize
+            ? Math.round((meta.originalSize - meta.outputSize) / 1024)
+            : 0,
+      });
+
+      // Safety net: if compression couldn't shrink the file (rare decode
+      // fallback), don't let an oversized body hit the backend's 20MB limit.
+      if (uploadFile.size > 20 * 1024 * 1024) {
+        logRemote("warn", "blood-report upload aborted: too large after prepare", {
+          size: uploadFile.size,
+        });
+        setError("This file is too large to upload. Please use a smaller image or a PDF under 20MB.");
+        return;
+      }
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", uploadFile);
 
       await userAPI.uploadBloodReport(userId, formData, {
         onUploadProgress: (e) => {
@@ -83,6 +109,7 @@ export default function BloodReports() {
           }
         },
       });
+      logRemote("info", "blood-report upload succeeded", { userId });
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
       if (user && !user.latestReportReady) {
@@ -90,6 +117,7 @@ export default function BloodReports() {
       }
       fetchReports();
     } catch (err) {
+      logError("blood-report upload failed", err, { userId });
       setError(err.message || "Failed to upload report");
     } finally {
       setUploading(false);
@@ -203,7 +231,7 @@ export default function BloodReports() {
             <input
               ref={inputRef}
               type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,image/*"
               onChange={handleFileChange}
               className="hidden"
             />

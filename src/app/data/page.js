@@ -7,6 +7,8 @@ import ProgressBar from "@/components/ProgressBar";
 import DropdownFilter from "@/components/DropdownFilter";
 import SearchBar from "@/components/SearchBar";
 import { transformPanel, computeSummary } from "@/utils/biomarkerAdapter";
+import { prepareUpload } from "@/utils/prepareUpload";
+import { logRemote, logError } from "@/utils/remoteLogger";
 import { userAPI, biomarkerAPI } from "@/services/api";
 
 function ElapsedTimer({ since }) {
@@ -365,10 +367,25 @@ export default function DataDashboard() {
       setTwinError("");
       setUploadSuccess(false);
 
+      const { file: uploadFile, meta } = await prepareUpload(file);
+      logRemote("info", "data-page report upload starting", meta);
+
+      // Safety net: if compression couldn't shrink the file (rare decode
+      // fallback), don't let an oversized body hit the backend's 20MB limit.
+      if (uploadFile.size > 20 * 1024 * 1024) {
+        logRemote("warn", "data-page upload aborted: too large after prepare", {
+          size: uploadFile.size,
+        });
+        setTwinError("This file is too large to upload. Please use a smaller image or a PDF under 20MB.");
+        setTwinUploading(false);
+        return;
+      }
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", uploadFile);
 
       await userAPI.uploadBloodReport(userId, formData);
+      logRemote("info", "data-page report upload succeeded", { userId });
       setTwinUploading(false);
       setUploadSuccess(true);
       await fetchReports();
@@ -378,6 +395,7 @@ export default function DataDashboard() {
       // Auto-dismiss the success message after 5 seconds
       setTimeout(() => setUploadSuccess(false), 5000);
     } catch (error) {
+      logError("data-page report upload failed", error, { userId });
       const serverMsg = error?.response?.data?.message;
       setTwinError(serverMsg || error?.message || "Failed to upload report");
       setTwinUploading(false);
@@ -713,7 +731,7 @@ export default function DataDashboard() {
                   <input
                     ref={uploadRef}
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,image/*"
                     onChange={handleUploadFile}
                     className="hidden"
                   />
@@ -869,7 +887,7 @@ export default function DataDashboard() {
                   <input
                     ref={uploadRef}
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,image/*"
                     onChange={handleUploadFile}
                     className="hidden"
                   />
