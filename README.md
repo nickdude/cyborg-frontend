@@ -1,24 +1,50 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+Cyborg Frontend — a [Next.js](https://nextjs.org/) 14 (App Router) app for the
+Cyborg health platform: marketing landing page, auth, dashboard, blood-report
+visualization (3D body model), marketplace, and concierge.
 
 ## Getting Started
 
-First, run the development server:
+> **Requires the backend.** This app talks to the Cyborg backend API. Start the
+> backend first (default `http://localhost:5001`) — see the `cyborg-backend`
+> repo — otherwise login, dashboard, and reports will not load.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. **Install dependencies**
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+   ```bash
+   npm install
+   ```
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+2. **Configure environment**
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Then edit `.env.local`:
+   - `NEXT_PUBLIC_API_URL` — backend base URL (match the backend's port, default `5001`).
+   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` — your Google OAuth client ID (optional; blank disables Google login).
+
+3. **Run the dev server**
+
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000).
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the dev server (port 3000) |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | ESLint |
+
+## Tech stack
+
+Next.js 14 · React 18 · Tailwind CSS v3 · react-three-fiber + drei (3D body) ·
+motion + lenis (animations) · axios · zustand.
 
 ## Learn More
 
