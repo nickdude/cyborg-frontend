@@ -12,6 +12,42 @@ import DataTopNav from "@/components/data/DataTopNav";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory, categoryStatus, STATUS_COLORS } from "@/components/data/organStatus";
 
+// Normalize any stored value ("Male"/"Female"/"female"/…) to the model key.
+const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");
+
+// Male/Female segmented control that drives which digital-twin body is shown.
+function SexToggle({ value, onChange, className = "" }) {
+  const options = [
+    { id: "male", label: "Male" },
+    { id: "female", label: "Female" },
+  ];
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Digital twin body"
+      className={`inline-flex items-center gap-1 rounded-full border border-borderColor bg-white p-1 shadow-[0_1px_2px_0_rgba(0,0,0,0.04)] ${className}`}
+    >
+      {options.map((o) => {
+        const active = value === o.id;
+        return (
+          <button
+            key={o.id}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(o.id)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+              active ? "bg-black text-white shadow-sm" : "text-secondary hover:text-blue"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function ElapsedTimer({ since }) {
   const [elapsed, setElapsed] = useState("");
   useEffect(() => {
@@ -138,6 +174,35 @@ export default function DataDashboard() {
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || userName;
 
   const [activeTab, setActiveTab] = useState("data");
+
+  // Which digital-twin body to show. Explicit user choice (localStorage) wins;
+  // otherwise default from the profile's biologicalSex.
+  const [sex, setSex] = useState("male");
+  useEffect(() => {
+    let stored = null;
+    try {
+      stored = typeof window !== "undefined" ? localStorage.getItem("twinSex") : null;
+    } catch {}
+    if (stored === "male" || stored === "female") {
+      setSex(stored);
+    } else if (user?.biologicalSex) {
+      setSex(normalizeSex(user.biologicalSex));
+    }
+  }, [user?.biologicalSex]);
+
+  const handleSexChange = useCallback(
+    (next) => {
+      if (next !== "male" && next !== "female") return;
+      setSex(next);
+      try {
+        localStorage.setItem("twinSex", next);
+      } catch {}
+      const biologicalSex = next === "female" ? "Female" : "Male";
+      if (user) updateUser({ ...user, biologicalSex });
+      if (userId) userAPI.updateProfile(userId, { biologicalSex }).catch(() => {});
+    },
+    [user, userId, updateUser],
+  );
 
   const [searchQuery, setSearchQuery] = useState("");
   const [rangeFilter, setRangeFilter] = useState("all");
@@ -541,10 +606,14 @@ export default function DataDashboard() {
 
               {/* Center: 3D digital-twin body, organ coloured by the selected category status */}
               <div className="hidden lg:sticky lg:top-4 lg:block">
+                <div className="mb-3 flex justify-center">
+                  <SexToggle value={sex} onChange={handleSexChange} />
+                </div>
                 <div className="relative h-[680px] w-full overflow-hidden rounded-2xl">
                   <BodyModelClient
                     highlight={organHighlight}
                     status={organStatusValue}
+                    sex={sex}
                     className="h-full w-full"
                   />
                 </div>
@@ -727,8 +796,11 @@ export default function DataDashboard() {
                 </button>
 
                 <div className="rounded-2xl bg-white p-4">
+                  <div className="mb-3 flex justify-center">
+                    <SexToggle value={sex} onChange={handleSexChange} />
+                  </div>
                   <div className="relative h-[480px] w-full overflow-hidden rounded-xl bg-[#f7f7fa]">
-                    <BodyModelClient highlight={null} status="good" className="h-full w-full" />
+                    <BodyModelClient highlight={null} status="good" sex={sex} className="h-full w-full" />
                   </div>
                 </div>
 

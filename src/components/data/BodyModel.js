@@ -10,6 +10,15 @@ import { STATUS_COLORS, DEFAULT_STATUS } from "./organStatus";
 const ENTRIES = Object.entries(PLACEMENTS);
 const FILES = ENTRIES.map(([, p]) => p.file);
 
+// Digital-twin body model per biological sex (same naming superpower uses:
+// `/{sex}OptimisedV8.glb`). Both are skinned bodies, so the identical organ
+// overlay / shader / status-colour system works on either.
+const MODEL_BY_SEX = {
+  male: "/maleOptimisedV8.glb",
+  female: "/femaleOptimisedV8.glb",
+};
+const modelUrlForSex = (sex) => MODEL_BY_SEX[sex] || MODEL_BY_SEX.male;
+
 // Raw sRGB (display-space) components — the overlay is mixed into the already-sRGB
 // framebuffer, so the colour must NOT be linearized by three.
 function hexToSRGBVec(hex) {
@@ -22,8 +31,8 @@ const STATUS_VEC = {
   bad: hexToSRGBVec(STATUS_COLORS.bad),
 };
 
-function BodyAndOrgans({ highlight, status = DEFAULT_STATUS }) {
-  const { scene } = useGLTF("/maleOptimisedV8.glb");
+function BodyAndOrgans({ highlight, status = DEFAULT_STATUS, sex = "male" }) {
+  const { scene } = useGLTF(modelUrlForSex(sex));
   const { camera } = useThree();
 
   const textures = useTexture(FILES);
@@ -152,7 +161,7 @@ function BodyAndOrgans({ highlight, status = DEFAULT_STATUS }) {
   );
 }
 
-export function BodyModel({ className, highlight, status }) {
+export function BodyModel({ className, highlight, status, sex = "male" }) {
   return (
     <div className={className}>
       <Canvas
@@ -170,7 +179,8 @@ export function BodyModel({ className, highlight, status }) {
         <directionalLight position={[3, 5, 6]} intensity={2.0} />
         <directionalLight position={[-4, 1, -2]} intensity={0.45} />
         <Suspense fallback={null}>
-          <BodyAndOrgans highlight={highlight} status={status} />
+          {/* key on sex forces a clean remount so the new body/bbox/camera reset cleanly */}
+          <BodyAndOrgans key={sex} highlight={highlight} status={status} sex={sex} />
         </Suspense>
       </Canvas>
     </div>
@@ -178,4 +188,5 @@ export function BodyModel({ className, highlight, status }) {
 }
 
 useGLTF.preload("/maleOptimisedV8.glb");
+useGLTF.preload("/femaleOptimisedV8.glb");
 export default BodyModel;

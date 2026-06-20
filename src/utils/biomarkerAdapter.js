@@ -40,7 +40,7 @@ export function transformPanel(biomarkerPanel) {
       name: item.displayName,
       value: String(item.numericValue),
       unit: item.unit,
-      category: item.category,
+      category: humanizeCategory(item.category),
       status: mapStatus(item),
       trend: [],
       optimalRange: {
