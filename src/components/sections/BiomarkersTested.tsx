@@ -64,7 +64,7 @@ export function BiomarkersTested() {
           See everything we test
         </h2>
         <p className="mt-3 max-w-[420px] text-[17px] text-black/60">
-          The following 100+ biomarkers are included with your annual Superpower
+          The following 100+ biomarkers are included with your annual Cyborg
           membership.
         </p>
 

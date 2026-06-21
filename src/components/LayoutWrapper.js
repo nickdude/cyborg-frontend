@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import UserActions from "./UserActions";
 import BottomNavbar from "./BottomNavbar";
+import TopNavbar from "./TopNavbar";
 
 const PATIENT_ONLY_PAGES = [
   "/dashboard",
@@ -13,6 +14,8 @@ const PATIENT_ONLY_PAGES = [
   "/protocol",
   "/settings",
   "/orders",
+  "/invite",
+  "/consults",
   "/market-place/prescriptions/semaglutide",
 ];
 
@@ -46,8 +49,15 @@ export default function LayoutWrapper({ children }) {
 
   return (
     <>
-      {showUserActions && <UserActions />}
-      {children}
+      {/* Desktop: superpower-style top nav. Mobile: bottom pill + the fixed
+          top-right user actions (hidden on desktop since the top nav covers them). */}
+      {showBottomNavbar && <TopNavbar />}
+      {showUserActions && (
+        <div className="md:hidden">
+          <UserActions />
+        </div>
+      )}
+      <div className={showBottomNavbar ? "md:pt-16" : ""}>{children}</div>
       {showBottomNavbar && <BottomNavbar />}
     </>
   );

@@ -56,7 +56,7 @@ function BodyTwin({ highlight, status = DEFAULT_STATUS, sex = "male" }) {
       if (!o.isMesh) return;
       o.material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
-        roughness: 0.9,
+        roughness: 0.62,
         metalness: 0,
         map: null,
       });
@@ -154,10 +154,13 @@ export function BodyModel({ className, highlight, status, sex = "male" }) {
           gl.domElement.addEventListener("webglcontextrestored", () => invalidate());
         }}
       >
-        <ambientLight intensity={0.7} />
-        <hemisphereLight intensity={0.6} groundColor="#d8d8d8" color="#ffffff" />
-        <directionalLight position={[3, 5, 6]} intensity={1.3} />
-        <directionalLight position={[-4, 1, -2]} intensity={0.35} />
+        {/* Bright, even "studio" fill so the white body reads white (not grey),
+            matching superpower's look — high ambient, soft low-contrast directionals. */}
+        <ambientLight intensity={1.35} />
+        <hemisphereLight intensity={0.9} groundColor="#f0f0f0" color="#ffffff" />
+        <directionalLight position={[3, 5, 6]} intensity={0.75} />
+        <directionalLight position={[-4, 2, 3]} intensity={0.45} />
+        <directionalLight position={[0, -2, 4]} intensity={0.3} />
         <Suspense fallback={null}>
           {/* key on sex forces a clean remount so the new body/textures/camera reset */}
           <BodyTwin key={sex} highlight={highlight} status={status} sex={sex} />

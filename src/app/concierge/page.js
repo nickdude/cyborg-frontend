@@ -135,7 +135,7 @@ export default function ConciergePage() {
                 {avatarInitial}
               </span>
               <span className="truncate text-[17px] font-semibold text-blue">
-                Concierge
+                Cyborg AI
               </span>
             </button>
           </div>
