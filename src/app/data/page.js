@@ -374,7 +374,7 @@ export default function DataDashboard() {
           return bm;
         });
         setBiomarkers(withTrends);
-        setLastUpdated(data.reportDate);
+        setLastUpdated(data.lastUpdatedAt || data.reportDate);
       } else {
         setBiomarkers([]);
       }
