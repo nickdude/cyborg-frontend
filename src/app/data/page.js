@@ -8,9 +8,9 @@ import DropdownFilter from "@/components/DropdownFilter";
 import SearchBar from "@/components/SearchBar";
 import { transformPanel, computeSummary } from "@/utils/biomarkerAdapter";
 import { userAPI, biomarkerAPI } from "@/services/api";
-import DataTopNav from "@/components/data/DataTopNav";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory, categoryStatus, STATUS_COLORS } from "@/components/data/organStatus";
+import BiomarkerDetailModal from "@/components/data/BiomarkerDetailModal";
 
 // Normalize any stored value ("Male"/"Female"/"female"/…) to the model key.
 const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");
@@ -133,40 +133,128 @@ function GradeRing({ grade, size = 96, stroke = 6 }) {
   );
 }
 
-// Compact history sparkline from a biomarker's trend values.
-function Sparkline({ trend, color }) {
-  if (!trend || trend.length === 0) {
-    return <span className="text-xs text-secondary">—</span>;
-  }
+// Compact "where your value falls" history bar. A light track with a soft
+// tinted band, a dot marker placed by the value's position relative to its
+// range, and thin vertical end-ticks. Colour follows status. If trend history
+// exists, a faint line is overlaid — but the value-vs-range bar is primary.
+function HistoryBar({ bm, color }) {
   const w = 120;
   const h = 32;
-  const pad = 4;
-  const min = Math.min(...trend);
-  const max = Math.max(...trend);
-  const range = max - min || 1;
-  const pts = trend.map((v, i) => {
-    const x = trend.length === 1 ? w / 2 : pad + (i / (trend.length - 1)) * (w - 2 * pad);
-    const y = h - pad - ((v - min) / range) * (h - 2 * pad);
-    return [x, y];
-  });
-  const poly = pts.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
-  const last = pts[pts.length - 1];
+  const pad = 6;
+  const trackY = h / 2;
+  const x0 = pad;
+  const x1 = w - pad;
+  const span = x1 - x0;
+
+  // Build a numeric scale from reference/optimal bounds; fall back to trend.
+  const val = parseFloat(bm.value);
+  const oMin = bm.optimalRange?.min ?? null;
+  const oMax = bm.optimalRange?.max ?? null;
+  const rMin = bm.referenceMin ?? null;
+  const rMax = bm.referenceMax ?? null;
+  const trend = Array.isArray(bm.trend) ? bm.trend.filter((v) => !isNaN(v)) : [];
+
+  const candidates = [val, oMin, oMax, rMin, rMax, ...trend]
+    .map(Number)
+    .filter((v) => !isNaN(v));
+
+  if (candidates.length === 0) {
+    return <span className="text-xs text-secondary">—</span>;
+  }
+
+  let lo = Math.min(...candidates);
+  let hi = Math.max(...candidates);
+  if (hi === lo) {
+    const bump = Math.abs(hi) || 1;
+    lo -= bump;
+    hi += bump;
+  }
+  const pad10 = (hi - lo) * 0.1;
+  lo -= pad10;
+  hi += pad10;
+
+  const toX = (v) => x0 + ((Number(v) - lo) / (hi - lo)) * span;
+
+  // Soft tinted band = optimal range (or reference range when optimal absent).
+  const bandLoVal = oMin != null ? oMin : rMin;
+  const bandHiVal = oMax != null ? oMax : rMax;
+  const bandX1 = bandLoVal != null ? toX(bandLoVal) : x0;
+  const bandX2 = bandHiVal != null ? toX(bandHiVal) : x1;
+
+  const dotX = !isNaN(val) ? Math.max(x0, Math.min(x1, toX(val))) : (bandX1 + bandX2) / 2;
+
+  // Faint trend overlay (relative, normalised onto the track height).
+  let trendPath = null;
+  if (trend.length > 1) {
+    const tMin = Math.min(...trend);
+    const tMax = Math.max(...trend);
+    const tRange = tMax - tMin || 1;
+    trendPath = trend
+      .map((v, i) => {
+        const tx = x0 + (i / (trend.length - 1)) * span;
+        const ty = h - pad - ((v - tMin) / tRange) * (h - 2 * pad);
+        return `${tx.toFixed(1)},${ty.toFixed(1)}`;
+      })
+      .join(" ");
+  }
+
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} className="block">
-      {pts.length > 1 && (
-        <polyline points={poly} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.85" />
+      {/* Light track */}
+      <line x1={x0} y1={trackY} x2={x1} y2={trackY} stroke="#E6E6E8" strokeWidth="3" strokeLinecap="round" />
+      {/* Soft tinted band */}
+      <rect
+        x={Math.min(bandX1, bandX2)}
+        y={trackY - 3}
+        width={Math.max(2, Math.abs(bandX2 - bandX1))}
+        height="6"
+        rx="3"
+        fill={color}
+        fillOpacity="0.22"
+      />
+      {/* Thin vertical end-ticks */}
+      <line x1={x0} y1={trackY - 5} x2={x0} y2={trackY + 5} stroke="#D4D4D8" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1={x1} y1={trackY - 5} x2={x1} y2={trackY + 5} stroke="#D4D4D8" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Faint trend overlay */}
+      {trendPath && (
+        <polyline points={trendPath} fill="none" stroke={color} strokeWidth="1.5" strokeOpacity="0.25" strokeLinejoin="round" strokeLinecap="round" />
       )}
-      <circle cx={last[0]} cy={last[1]} r="3" fill={color} stroke="#fff" strokeWidth="1.5" />
+      {/* Value marker */}
+      <circle cx={dotX} cy={trackY} r="4" fill={color} stroke="#fff" strokeWidth="1.5" />
     </svg>
   );
 }
 
 // One biomarker row: a 4-col table row on desktop, compact stacked row on mobile.
-function BiomarkerRow({ bm }) {
-  const { name, value, unit, status, trend } = bm;
+// superpower-style optimal range label: "≥40", "≤100", or "40–100".
+function formatOptimalRange(bm) {
+  const r = bm.optimalRange || {};
+  const min = r.min ?? bm.referenceMin ?? null;
+  const max = r.max ?? bm.referenceMax ?? null;
+  const minPos = min != null && Number(min) > 0;
+  const maxSet = max != null;
+  if (minPos && maxSet) return `${min}–${max}`;
+  if (maxSet) return `≤${max}`;
+  if (minPos) return `≥${min}`;
+  return "—";
+}
+
+function BiomarkerRow({ bm, onSelect }) {
+  const { name, value, unit, status } = bm;
   const meta = STATUS_META[status] || { color: "#71717B", label: status || "—", text: "text-secondary" };
   return (
-    <div className="grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3.5 transition hover:bg-pageBackground/60 lg:grid-cols-[1.7fr_1fr_1fr_1.3fr] lg:gap-4 lg:px-5 lg:py-4">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect?.(bm)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect?.(bm);
+        }
+      }}
+      className="grid cursor-pointer grid-cols-[1fr_auto] items-center gap-3 px-4 py-3.5 transition hover:bg-pageBackground/60 focus:outline-none focus-visible:bg-pageBackground/60 lg:grid-cols-[1.7fr_1fr_1fr_1fr_1.3fr] lg:gap-4 lg:px-5 lg:py-4"
+    >
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-blue lg:text-[15px]">{name || "N/A"}</p>
         <span className="mt-1 flex items-center gap-1.5 text-xs text-secondary lg:hidden">
@@ -182,8 +270,11 @@ function BiomarkerRow({ bm }) {
       <div className="hidden text-sm tabular-nums text-blue lg:block">
         {value ?? "N/A"} <span className="text-secondary">{unit}</span>
       </div>
+      <div className="hidden text-sm tabular-nums text-secondary lg:block">
+        {formatOptimalRange(bm)}
+      </div>
       <div className="justify-self-end lg:justify-self-start">
-        <Sparkline trend={trend} color={meta.color} />
+        <HistoryBar bm={bm} color={meta.color} />
       </div>
     </div>
   );
@@ -246,6 +337,7 @@ export default function DataDashboard() {
   const [bioLoading, setBioLoading] = useState(false);
   const [bioError, setBioError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [selectedBiomarker, setSelectedBiomarker] = useState(null);
 
   // Upload elapsed timer
   useEffect(() => {
@@ -546,8 +638,6 @@ export default function DataDashboard() {
         }}
       />
       <div className="mx-auto w-full max-w-[1240px] px-4 pt-4 lg:px-8 lg:pt-5">
-        <DataTopNav />
-
         {/* Twin / Records toggle */}
         <div className="flex items-center gap-3 pb-5 pt-3 lg:pt-4">
           <button
@@ -754,15 +844,16 @@ export default function DataDashboard() {
                         </div>
                       ) : (
                         <div>
-                          <div className="hidden grid-cols-[1.7fr_1fr_1fr_1.3fr] gap-4 border-b border-borderColor px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-secondary lg:grid">
+                          <div className="hidden grid-cols-[1.7fr_1fr_1fr_1fr_1.3fr] gap-4 border-b border-borderColor px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-secondary lg:grid">
                             <span>Name</span>
                             <span>Status</span>
                             <span>Value</span>
+                            <span>Optimal Range</span>
                             <span>History</span>
                           </div>
                           <div className="divide-y divide-borderColor">
                             {filteredBiomarkers.map((bm) => (
-                              <BiomarkerRow key={bm.id} bm={bm} />
+                              <BiomarkerRow key={bm.id} bm={bm} onSelect={setSelectedBiomarker} />
                             ))}
                           </div>
                         </div>
@@ -1006,6 +1097,13 @@ export default function DataDashboard() {
           </section>
         )}
       </div>
+
+      {selectedBiomarker && (
+        <BiomarkerDetailModal
+          biomarker={selectedBiomarker}
+          onClose={() => setSelectedBiomarker(null)}
+        />
+      )}
     </div>
   );
 }
