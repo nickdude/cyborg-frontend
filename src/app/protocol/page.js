@@ -108,11 +108,10 @@ export default function Protocol() {
   const [protocolLoading, setProtocolLoading] = useState(false);
   const [protocolError, setProtocolError] = useState("");
 
-  const fetchGoals = useCallback(async () => {
+  const fetchGoals = useCallback(async ({ silent = false } = {}) => {
     try {
-      setGoalsLoading(true);
+      if (!silent) setGoalsLoading(true);
       setGoalsError("");
-      setGoalsStatus(null);
       const response = await goalsAPI.list();
       const data = response?.data || response;
       const meta = data?.meta || {};
@@ -121,11 +120,11 @@ export default function Protocol() {
     } catch (err) {
       if (err?.statusCode === 404 || err?.message?.includes("No report")) {
         setGoalsError("Upload a blood report to see your health goals");
-      } else {
+      } else if (!silent) {
         setGoalsError("Failed to load goals");
       }
     } finally {
-      setGoalsLoading(false);
+      if (!silent) setGoalsLoading(false);
     }
   }, []);
 
@@ -158,6 +157,16 @@ export default function Protocol() {
       fetchProtocol();
     }
   }, [activeTab, fetchProtocol]);
+
+  // While goals are still generating, poll silently so the page flips to the
+  // finished goals the moment they're ready (generation runs in the background
+  // on the server and can take ~1 min). Stops automatically once not generating.
+  useEffect(() => {
+    if (activeTab !== "goals") return;
+    if (goalsStatus !== "generating" && goalsStatus !== "pending") return;
+    const id = setInterval(() => fetchGoals({ silent: true }), 6000);
+    return () => clearInterval(id);
+  }, [activeTab, goalsStatus, fetchGoals]);
 
   const handleGoalClick = (goal) => {
     setSelectedGoal(goal);
