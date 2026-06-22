@@ -4,7 +4,15 @@ import { useState } from "react";
 import { Container } from "@/components/Container";
 import { cn } from "@/lib/utils";
 
-const SLIDE_COUNT = 4;
+// The 4 app-preview mockups, in order. Drop the images into
+// public/assets/app-showcase/ as 1.png … 4.png (Home, Twin, Concierge, Marketplace).
+const SLIDES = [
+  { src: "/assets/app-showcase/1.png", alt: "Cyborg home dashboard" },
+  { src: "/assets/app-showcase/2.png", alt: "Cyborg digital twin" },
+  { src: "/assets/app-showcase/3.png", alt: "Cyborg AI concierge" },
+  { src: "/assets/app-showcase/4.png", alt: "Cyborg marketplace" },
+];
+const SLIDE_COUNT = SLIDES.length;
 
 /** "All in one app." — phone preview with an interactive dot carousel. */
 export function AllInOneApp() {
@@ -21,11 +29,13 @@ export function AllInOneApp() {
             All in one app.
           </h2>
 
-          <div className="mx-auto mt-10 w-[360px] max-w-full overflow-hidden rounded-3xl bg-white">
+          <div className="mx-auto mt-10 w-[360px] max-w-full">
             <img
-              src="/assets/sm/1.webp"
-              alt="Cyborg mobile app preview"
-              className="h-auto w-full"
+              key={index}
+              src={SLIDES[index].src}
+              alt={SLIDES[index].alt}
+              className="h-auto w-full select-none"
+              draggable={false}
             />
           </div>
 
