@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /* ------------------------------------------------------------------ */
 /* Field mapping helpers — map real report fields to table columns     */
@@ -53,19 +54,94 @@ function reportDate(report) {
 
 function RowMenu({ onView, onDelete, deleting, canView }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
 
+  const MENU_W = 168;
+
+  const toggle = (e) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      // Right-align the menu under the button; clamp to viewport.
+      const left = Math.max(8, Math.min(r.right - MENU_W, window.innerWidth - MENU_W - 8));
+      setCoords({ top: r.bottom + 6, left });
+    }
+    setOpen((v) => !v);
+  };
+
+  // Close on outside click, scroll, or resize (the menu is fixed-positioned).
   useEffect(() => {
     if (!open) return;
     const onDoc = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (
+        menuRef.current && !menuRef.current.contains(e.target) &&
+        btnRef.current && !btnRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
     };
+    const onMove = () => setOpen(false);
     document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+    };
   }, [open]);
 
+  // Rendered in a portal so the table card's `overflow-hidden` can't clip it.
+  const menu =
+    open && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={menuRef}
+            style={{ position: "fixed", top: coords.top, left: coords.left, width: MENU_W, zIndex: 1000 }}
+            className="overflow-hidden rounded-xl border border-borderColor bg-white py-1 shadow-[0_12px_34px_-8px_rgba(0,0,0,0.25)]"
+          >
+            {canView && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(false);
+                  onView?.();
+                }}
+                className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-blue transition hover:bg-pageBackground"
+              >
+                <svg className="h-4 w-4 text-secondary" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M2.5 12C4 7.5 7.5 5 12 5s8 2.5 9.5 7c-1.5 4.5-5 7-9.5 7s-8-2.5-9.5-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+                Open report
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={deleting}
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                onDelete?.();
+              }}
+              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 6H21M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6L18.1327 19.0114C18.0579 20.1342 17.125 21 16 21H8C6.87502 21 5.94211 20.1342 5.86734 19.0114L5 6H19Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M10 11V17M14 11V17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              {deleting ? "Deleting…" : "Delete report"}
+            </button>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <div className="relative flex items-center justify-end gap-1" ref={ref}>
+    <div className="flex items-center justify-end gap-1">
       {canView && (
         <button
           type="button"
@@ -84,14 +160,15 @@ function RowMenu({ onView, onDelete, deleting, canView }) {
         </button>
       )}
       <button
+        ref={btnRef}
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
+        onClick={toggle}
         aria-label="More actions"
+        aria-expanded={open}
         title="More actions"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-secondary transition hover:bg-pageBackground hover:text-blue"
+        className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+          open ? "bg-pageBackground text-blue ring-1 ring-borderColor" : "text-secondary hover:bg-pageBackground hover:text-blue"
+        }`}
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <circle cx="12" cy="5" r="1.6" />
@@ -99,44 +176,7 @@ function RowMenu({ onView, onDelete, deleting, canView }) {
           <circle cx="12" cy="19" r="1.6" />
         </svg>
       </button>
-
-      {open && (
-        <div className="absolute right-0 top-9 z-20 w-36 overflow-hidden rounded-xl border border-borderColor bg-white py-1 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.18)]">
-          {canView && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpen(false);
-                onView?.();
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-blue transition hover:bg-pageBackground"
-            >
-              <svg className="h-4 w-4 text-secondary" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M2.5 12C4 7.5 7.5 5 12 5s8 2.5 9.5 7c-1.5 4.5-5 7-9.5 7s-8-2.5-9.5-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
-              </svg>
-              Open
-            </button>
-          )}
-          <button
-            type="button"
-            disabled={deleting}
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              onDelete?.();
-            }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M3 6H21M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6L18.1327 19.0114C18.0579 20.1342 17.125 21 16 21H8C6.87502 21 5.94211 20.1342 5.86734 19.0114L5 6H19Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M10 11V17M14 11V17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            {deleting ? "Deleting…" : "Delete"}
-          </button>
-        </div>
-      )}
+      {menu}
     </div>
   );
 }
@@ -417,16 +457,16 @@ export default function RecordsTable({
 
 function FileIcon({ processing }) {
   return (
-    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-pageBackground text-secondary">
+    <span className="grid h-9 w-9 shrink-0 place-items-center text-orange-500">
       {processing ? (
-        <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <svg className="h-5 w-5 animate-spin text-secondary" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
           <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ) : (
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M7 3H13L19 9V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2" />
-          <path d="M13 3V9H19" stroke="currentColor" strokeWidth="2" />
+        <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 3H13L19 9V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M13 3V9H19" stroke="currentColor" strokeWidth="1.8" />
         </svg>
       )}
     </span>
