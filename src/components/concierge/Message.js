@@ -107,11 +107,13 @@ export default function Message({ message, streaming }) {
       <div className="max-w-[85%] min-w-0">
         <ThinkingBlock
           thinking={message.thinking}
-          streaming={streaming}
+          isThinking={!!message.isThinking && streaming}
+          thinkingStartedAt={message.thinkingStartedAt}
+          thinkingMs={message.thinkingMs}
           hasText={hasText}
         />
 
-        {!hasAnyContent && streaming && (
+        {!hasAnyContent && streaming && !message.isThinking && (
           <div className="flex items-center gap-1.5 py-2 text-secondary">
             <div className="flex gap-1">
               <div

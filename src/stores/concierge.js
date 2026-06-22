@@ -49,6 +49,11 @@ function hydrateMessage(raw) {
     role: "assistant",
     content,
     thinking,
+    // Persisted messages: not actively thinking, and the backend doesn't store
+    // the measured elapsed time, so leave thinkingMs undefined (never fabricate it).
+    isThinking: false,
+    thinkingStartedAt: undefined,
+    thinkingMs: undefined,
     createdAt: raw.createdAt || new Date().toISOString(),
   };
 }
@@ -168,6 +173,11 @@ export const useConciergeStore = create((set, get) => ({
       role: "assistant",
       content: [],
       thinking: undefined,
+      // Thinking timing (elapsed time MUST be real/measured, never hardcoded).
+      // Clock starts the moment we send; stops at the first answer token or stream completion.
+      thinkingStartedAt: Date.now(),
+      thinkingMs: undefined,
+      isThinking: true,
       createdAt: new Date().toISOString(),
     };
 
@@ -208,7 +218,16 @@ export const useConciergeStore = create((set, get) => ({
             } else {
               content.push({ type: "text", text: evt.text || "" });
             }
-            return { ...m, content };
+            // First answer token: stop the thinking clock and freeze the
+            // measured elapsed time (from send to now).
+            const next = { ...m, content };
+            if (m.isThinking) {
+              next.isThinking = false;
+              if (m.thinkingMs === undefined && m.thinkingStartedAt) {
+                next.thinkingMs = Date.now() - m.thinkingStartedAt;
+              }
+            }
+            return next;
           });
           break;
 
@@ -314,20 +333,39 @@ export const useConciergeStore = create((set, get) => ({
             };
           });
           patchAssistant((m) => {
-            if (!m.thinking) return m;
-            return {
-              ...m,
-              thinking: {
+            const next = { ...m };
+            // Stream finished. If no answer token ever arrived (e.g. tool-only
+            // turn or empty answer), freeze the measured elapsed time now.
+            next.isThinking = false;
+            if (m.thinkingMs === undefined && m.thinkingStartedAt) {
+              next.thinkingMs = Date.now() - m.thinkingStartedAt;
+            }
+            // Keep the reasoning-text block's own elapsed in sync for the
+            // existing live-ticker path (only relevant when reasoning text exists).
+            if (m.thinking) {
+              next.thinking = {
                 ...m.thinking,
-                elapsedMs: m.thinking.startedAt
-                  ? Date.now() - m.thinking.startedAt
-                  : undefined,
-              },
-            };
+                elapsedMs:
+                  next.thinkingMs ??
+                  (m.thinking.startedAt
+                    ? Date.now() - m.thinking.startedAt
+                    : undefined),
+              };
+            }
+            return next;
           });
           break;
 
         case "error":
+          // Stop the thinking spinner so it doesn't hang on a failed stream.
+          patchAssistant((m) => {
+            if (!m.isThinking) return m;
+            const next = { ...m, isThinking: false };
+            if (m.thinkingMs === undefined && m.thinkingStartedAt) {
+              next.thinkingMs = Date.now() - m.thinkingStartedAt;
+            }
+            return next;
+          });
           set((s) => ({
             streams: {
               ...s.streams,

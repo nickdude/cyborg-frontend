@@ -12,6 +12,7 @@ import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory, categoryStatus, STATUS_COLORS } from "@/components/data/organStatus";
 import BiomarkerDetailModal from "@/components/data/BiomarkerDetailModal";
 import RecordsTable from "@/components/data/RecordsTable";
+import AskCyborgAI from "@/components/data/AskCyborgAI";
 
 // Normalize any stored value ("Male"/"Female"/"female"/…) to the model key.
 const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");
@@ -1131,6 +1132,8 @@ export default function DataDashboard() {
           onClose={() => setSelectedBiomarker(null)}
         />
       )}
+
+      <AskCyborgAI />
     </div>
   );
 }

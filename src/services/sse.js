@@ -101,7 +101,7 @@ export async function streamMessage(chatId, text, onEvent) {
         const line = raw.replace(/^data:\s?/, "").trim();
         if (!line) continue;
         try {
-          onEvent(JSON.parse(line));
+          onEvent(normalizeEvent(JSON.parse(line)));
         } catch (err) {
           console.warn("[SSE] parse failure", line, err);
         }
@@ -110,4 +110,18 @@ export async function streamMessage(chatId, text, onEvent) {
   } catch (err) {
     onEvent({ type: "error", message: err?.message || "stream read failed" });
   }
+}
+
+// Normalize thinking/reasoning events so the store sees a single shape.
+// The backend emits "thinkingDelta" ({ text, toolIndex }); we also accept a
+// generic "thinking" event ({ delta } or { text }) for forward compatibility.
+function normalizeEvent(evt) {
+  if (evt && evt.type === "thinking") {
+    return {
+      type: "thinkingDelta",
+      text: evt.text ?? evt.delta ?? "",
+      toolIndex: typeof evt.toolIndex === "number" ? evt.toolIndex : undefined,
+    };
+  }
+  return evt;
 }

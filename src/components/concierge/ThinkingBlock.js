@@ -45,78 +45,122 @@ const thinkingMarkdownComponents = {
   ),
 };
 
-export default function ThinkingBlock({ thinking, streaming, hasText }) {
+/**
+ * Collapsible "Thinking… / Thought for {N}s" block shown above an assistant answer.
+ *
+ * Props:
+ *  - thinking:        { segments: [{ toolIndex, text }], startedAt?, elapsedMs? } | undefined
+ *                     Genuine extended-reasoning text (only present if the model produced it).
+ *  - isThinking:      true while the model is generating before the first answer token.
+ *  - thinkingStartedAt: epoch ms when the request was sent (for the live ticker).
+ *  - thinkingMs:      measured elapsed time, frozen at the first answer token / completion.
+ *  - hasText:         whether the assistant answer has started.
+ *
+ * Elapsed time is always real (measured) — never fabricated. Reasoning text is
+ * only rendered when genuinely produced (thinking.segments present).
+ */
+export default function ThinkingBlock({
+  thinking,
+  isThinking,
+  thinkingStartedAt,
+  thinkingMs,
+  hasText,
+}) {
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(Date.now());
 
+  // While actively thinking (no frozen time yet), tick a live clock.
   useEffect(() => {
-    if (!streaming || thinking?.elapsedMs) return;
+    if (!isThinking || thinkingMs !== undefined) return;
     const h = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(h);
-  }, [streaming, thinking?.elapsedMs]);
+  }, [isThinking, thinkingMs]);
 
-  if (!thinking || !thinking.segments?.length) return null;
+  const hasReasoning = !!thinking?.segments?.length;
 
+  // Nothing to show: not thinking, no measured time, and no reasoning text.
+  // (Happens for persisted assistant messages with no reasoning text.)
+  if (!isThinking && thinkingMs === undefined && !hasReasoning) return null;
+
+  // Real measured elapsed (frozen), or a live measurement from the send time.
   const elapsedMs =
-    thinking.elapsedMs ??
-    (thinking.startedAt ? now - thinking.startedAt : 0);
-  const seconds = Math.max(1, Math.round(elapsedMs / 1000));
+    thinkingMs ??
+    (thinkingStartedAt ? now - thinkingStartedAt : undefined);
+  const seconds =
+    elapsedMs !== undefined ? Math.max(1, Math.round(elapsedMs / 1000)) : null;
 
-  const showLiveTicker = streaming && !hasText;
+  // Live "Thinking…" state: streaming, before the first answer token.
+  const showLiveTicker = isThinking && !hasText;
 
   if (showLiveTicker) {
-    const latest = thinking.segments[thinking.segments.length - 1];
+    const latest = hasReasoning
+      ? thinking.segments[thinking.segments.length - 1]
+      : null;
     return (
       <div className="mb-3 rounded-xl bg-gradient-to-r from-primary/5 to-purple-50 border border-primary/10 px-3 py-2.5">
-        <div className="flex items-center gap-1.5 text-primary text-xs font-medium mb-1.5">
+        <div className="flex items-center gap-1.5 text-primary text-xs font-medium">
           <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          <span>Thinking… {seconds}s</span>
+          <span>Thinking{seconds !== null ? `… ${seconds}s` : "…"}</span>
         </div>
-        <div className="text-xs text-secondary italic line-clamp-3 leading-relaxed [&_p]:m-0">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={thinkingMarkdownComponents}
-          >
-            {latest?.text || ""}
-          </ReactMarkdown>
-        </div>
+        {latest?.text ? (
+          <div className="mt-1.5 text-xs text-secondary italic line-clamp-3 leading-relaxed [&_p]:m-0">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={thinkingMarkdownComponents}
+            >
+              {latest.text}
+            </ReactMarkdown>
+          </div>
+        ) : null}
       </div>
     );
   }
+
+  // Collapsed "Thought for {N}s" with a chevron. Expands to the reasoning text
+  // if any was produced; otherwise the label alone (no fabricated reasoning).
+  const label = seconds !== null ? `Thought for ${seconds}s` : "Thinking";
+  const canExpand = hasReasoning;
 
   return (
     <div className="mb-3">
       <button
         type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="inline-flex items-center gap-1.5 text-xs text-secondary hover:text-blue transition-colors"
-      >
-        <ChevronRight
-          className={`w-3 h-3 transition-transform duration-200 ${
-            expanded ? "rotate-90" : ""
-          }`}
-        />
-        <Sparkles className="w-3 h-3" />
-        <span>Thought for {seconds}s</span>
-      </button>
-      <div
-        className={`overflow-hidden transition-all duration-200 ease-out ${
-          expanded ? "max-h-[2000px] opacity-100 mt-2" : "max-h-0 opacity-0"
+        onClick={() => canExpand && setExpanded((v) => !v)}
+        className={`inline-flex items-center gap-1.5 text-xs text-secondary transition-colors ${
+          canExpand ? "hover:text-blue cursor-pointer" : "cursor-default"
         }`}
+        aria-expanded={canExpand ? expanded : undefined}
       >
-        <div className="text-xs text-secondary border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed">
-          {thinking.segments.map((s, i) => (
-            <div key={i}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={thinkingMarkdownComponents}
-              >
-                {s.text || ""}
-              </ReactMarkdown>
-            </div>
-          ))}
+        {canExpand && (
+          <ChevronRight
+            className={`w-3 h-3 transition-transform duration-200 ${
+              expanded ? "rotate-90" : ""
+            }`}
+          />
+        )}
+        <Sparkles className="w-3 h-3" />
+        <span>{label}</span>
+      </button>
+      {canExpand && (
+        <div
+          className={`overflow-hidden transition-all duration-200 ease-out ${
+            expanded ? "max-h-[2000px] opacity-100 mt-2" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="text-xs text-secondary border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed">
+            {thinking.segments.map((s, i) => (
+              <div key={i}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={thinkingMarkdownComponents}
+                >
+                  {s.text || ""}
+                </ReactMarkdown>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
