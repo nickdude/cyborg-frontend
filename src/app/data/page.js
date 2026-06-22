@@ -153,7 +153,7 @@ function buildCategorySummaryPrompt(label, items) {
     ...lines,
     ``,
     `Write a SHORT 2-4 sentence personalized summary of this category's health, naming the specific markers that are high, low, or reassuring. Then add ONE practical lifestyle tip (nutrition, movement, sleep, or stress).`,
-    `Plain conversational text only — no markdown, no headings, no bullet points, no preamble. Do not diagnose or prescribe medication.`,
+    `Plain conversational text only — no markdown, no headings, no bullet points, no emojis, no preamble. Do not diagnose or prescribe medication.`,
   ].join("\n");
 }
 
@@ -668,12 +668,13 @@ export default function DataDashboard() {
     };
   }, [reports, activeTab, userId, fetchReports]);
 
-  // When a report transitions to ready, refresh biomarker data in the background so the
-  // digital twin recolours automatically.
+  // Refresh biomarker data whenever the set of ready reports CHANGES — a new report
+  // becoming ready OR a report being deleted. On delete-to-zero the panel 404s and
+  // biomarkers reset to [], so the twin returns to its default (green) state.
   const prevReadyCount = useRef(0);
   useEffect(() => {
     const readyCount = reports.filter((r) => !r.status || r.status === "ready").length;
-    if (readyCount > prevReadyCount.current) {
+    if (readyCount !== prevReadyCount.current) {
       fetchBiomarkerPanel();
     }
     prevReadyCount.current = readyCount;

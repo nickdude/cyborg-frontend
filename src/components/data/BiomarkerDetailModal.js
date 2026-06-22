@@ -198,7 +198,7 @@ function buildEducationPrompt(bm) {
     "",
     "Keep each section to a few sentences or a short bullet list. Be practical and encouraging.",
     "Do NOT give a diagnosis or prescribe medication. End with a one-line reminder to discuss results with a clinician.",
-    "Respond ONLY with the markdown content — no preamble, no closing pleasantries.",
+    "Respond ONLY with the markdown content — no preamble, no closing pleasantries. Do NOT use any emojis — keep it clean and professional.",
   ]
     .filter(Boolean)
     .join("\n");
