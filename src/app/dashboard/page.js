@@ -22,7 +22,13 @@ export default function Dashboard() {
     const { user, token, loading: authLoading } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const userName = user?.firstName || "there";
+    // Prefer first name, then full name's first word, then the email handle.
+    const userName =
+        user?.firstName ||
+        user?.name?.split(" ")?.[0] ||
+        user?.fullName?.split(" ")?.[0] ||
+        user?.email?.split("@")?.[0] ||
+        "there";
     const userId = user?._id || user?.id;
     const sex = normalizeSex(user?.biologicalSex);
 
