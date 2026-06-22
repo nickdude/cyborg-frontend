@@ -117,7 +117,7 @@ function MarketplaceInner() {
   }, [filteredProducts]);
 
   return (
-    <div className="min-h-screen bg-pageBackground pb-24 font-inter">
+    <div className="min-h-screen overflow-x-hidden bg-pageBackground pb-24 font-inter md:pb-10">
       <div className="mx-auto max-w-[1200px] px-4 pt-6 sm:px-6 lg:px-8 lg:pt-10">
         {/* Header — title + management links */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

@@ -868,8 +868,23 @@ export default function DataDashboard() {
                 </div>
               </div>
 
+              {/* Mobile-only digital twin (above the content panel), recolours with the selected category */}
+              <div className="lg:hidden">
+                <div className="mb-3 flex justify-center">
+                  <SexToggle value={sex} onChange={handleSexChange} />
+                </div>
+                <div className="relative h-[360px] w-full overflow-hidden rounded-2xl bg-white">
+                  <BodyModelClient
+                    highlight={organHighlight}
+                    status={organStatusValue}
+                    sex={sex}
+                    className="h-full w-full"
+                  />
+                </div>
+              </div>
+
               {/* Right: content panel */}
-              <div className="pt-6 lg:pt-0">
+              <div className="min-w-0 pt-6 lg:pt-0">
                 <div className="overflow-hidden rounded-3xl border border-borderColor bg-white">
                   {/* Header — Summary or Category */}
                   {activeCategoryMeta?.wearables ? (
