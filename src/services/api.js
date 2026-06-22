@@ -161,6 +161,8 @@ export const biomarkerAPI = {
   panel: () => API.get("/api/users/blood-reports/biomarker-panel"),
   list: () => API.get("/api/users/blood-reports/biomarkers"),
   trends: () => API.get("/api/users/blood-reports/trends"),
+  // Fast one-shot AI summary for a category card (no tools/thinking).
+  categorySummary: (data) => API.post("/api/users/blood-reports/category-summary", data),
 };
 
 // Meal endpoints (all user-scoped; backend routes under /api/users/:userId/meals)
