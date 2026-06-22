@@ -4,13 +4,12 @@ import { useState } from "react";
 import { Container } from "@/components/Container";
 import { cn } from "@/lib/utils";
 
-// The 4 app-preview mockups, in order. Drop the images into
-// public/assets/app-showcase/ as 1.png … 4.png (Home, Twin, Concierge, Marketplace).
+// The 4 app-preview mockups, in order (public/assets/all-in-one/).
 const SLIDES = [
-  { src: "/assets/app-showcase/1.png", alt: "Cyborg home dashboard" },
-  { src: "/assets/app-showcase/2.png", alt: "Cyborg digital twin" },
-  { src: "/assets/app-showcase/3.png", alt: "Cyborg AI concierge" },
-  { src: "/assets/app-showcase/4.png", alt: "Cyborg marketplace" },
+  { src: "/assets/all-in-one/1.png", alt: "Cyborg home dashboard" },
+  { src: "/assets/all-in-one/2.png", alt: "Cyborg digital twin" },
+  { src: "/assets/all-in-one/3.png", alt: "Cyborg AI concierge" },
+  { src: "/assets/all-in-one/4.png", alt: "Cyborg marketplace" },
 ];
 const SLIDE_COUNT = SLIDES.length;
 
