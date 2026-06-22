@@ -7,10 +7,11 @@ import ProgressBar from "@/components/ProgressBar";
 import DropdownFilter from "@/components/DropdownFilter";
 import SearchBar from "@/components/SearchBar";
 import { transformPanel, computeSummary } from "@/utils/biomarkerAdapter";
-import { userAPI, biomarkerAPI } from "@/services/api";
+import { userAPI, biomarkerAPI, conciergeAPI, streamMessage } from "@/services/api";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory, categoryStatus, STATUS_COLORS } from "@/components/data/organStatus";
 import BiomarkerDetailModal from "@/components/data/BiomarkerDetailModal";
+import RecordsTable from "@/components/data/RecordsTable";
 
 // Normalize any stored value ("Male"/"Female"/"female"/…) to the model key.
 const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");
@@ -70,26 +71,6 @@ const TWIN_CATEGORIES = [
 ];
 const catId = (label) => String(label).toLowerCase().replace(/\s+/g, "-");
 
-function ElapsedTimer({ since }) {
-  const [elapsed, setElapsed] = useState("");
-  useEffect(() => {
-    if (!since) return;
-    const start = new Date(since).getTime();
-    if (isNaN(start)) return;
-    function update() {
-      const diff = Math.max(0, Math.floor((Date.now() - start) / 1000));
-      const m = Math.floor(diff / 60);
-      const s = diff % 60;
-      setElapsed(m > 0 ? `${m}m ${s}s` : `${s}s`);
-    }
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, [since]);
-  if (!elapsed) return null;
-  return <span className="ml-1 tabular-nums">{elapsed}</span>;
-}
-
 const STATUS_META = {
   optimal: { color: "#05BC7E", label: "Optimal", text: "text-biomarkerOptimal" },
   normal: { color: "#D7D82E", label: "Normal", text: "text-biomarkerNormal" },
@@ -107,10 +88,27 @@ function gradeFor(optimal, total) {
 }
 
 // Circular progress ring with the grade letter centered (category header).
+// The coloured arc DRAWS IN from empty -> target over ~0.9s ease-out whenever the
+// ring mounts or its value changes. We start at the full offset ("empty") on the
+// first paint, then flip to the target offset on the next frame so the CSS
+// transition on strokeDashoffset animates the draw-in. A `key` on the parent
+// (the category id) remounts this component so re-selecting a category replays it.
 function GradeRing({ grade, size = 96, stroke = 6 }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const offset = c * (1 - Math.max(0.06, grade.ratio));
+  const target = c * (1 - Math.max(0.06, grade.ratio));
+
+  // Start "empty" (full circumference offset = no arc drawn), then animate to target.
+  const [offset, setOffset] = useState(c);
+  useEffect(() => {
+    // Reset to empty immediately, then on the next frame transition to the target.
+    setOffset(c);
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setOffset(target));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [c, target]);
+
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#EFEFF1" strokeWidth={stroke} />
@@ -125,11 +123,145 @@ function GradeRing({ grade, size = 96, stroke = 6 }) {
         strokeDasharray={c}
         strokeDashoffset={offset}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: "stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1)" }}
       />
       <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize={size * 0.34} fontWeight="600" fill={grade.color}>
         {grade.letter}
       </text>
     </svg>
+  );
+}
+
+// Module-level cache of finished AI summaries, keyed by category label. Persists
+// across re-mounts so re-selecting a category never re-hits the AI — we just replay
+// the cached text with a fast char-by-char typing effect.
+const categorySummaryCache = new Map();
+
+// Build the AI prompt from the category's real biomarkers.
+function buildCategorySummaryPrompt(label, items) {
+  const lines = items.map((b) => {
+    const word =
+      b.status === "optimal" ? "optimal" : b.status === "normal" ? "borderline/normal" : "out of range";
+    const range = formatOptimalRange(b);
+    return `- ${b.name}: ${b.value ?? "N/A"} ${b.unit || ""} (${word}; optimal ${range})`;
+  });
+  return [
+    `You are a friendly health concierge summarizing one health category for a user.`,
+    `Category: "${label}".`,
+    `Here are the user's real biomarkers in this category and how each reads:`,
+    ...lines,
+    ``,
+    `Write a SHORT 2-4 sentence personalized summary of this category's health, naming the specific markers that are high, low, or reassuring. Then add ONE practical lifestyle tip (nutrition, movement, sleep, or stress).`,
+    `Plain conversational text only — no markdown, no headings, no bullet points, no preamble. Do not diagnose or prescribe medication.`,
+  ].join("\n");
+}
+
+// AI-generated, typed-in category summary. Streams from the real AI on first view
+// of a category; subsequent views replay the cached text quickly (~12ms/char).
+function CategorySummary({ label, items }) {
+  const [text, setText] = useState("");
+  const [phase, setPhase] = useState("loading"); // loading | streaming | done | error
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // Cached -> fast char-by-char replay, no AI call.
+    const cached = categorySummaryCache.get(label);
+    if (cached) {
+      setPhase("streaming");
+      setText("");
+      let i = 0;
+      const id = setInterval(() => {
+        if (cancelled) return;
+        i += 1;
+        setText(cached.slice(0, i));
+        if (i >= cached.length) {
+          clearInterval(id);
+          setPhase("done");
+        }
+      }, 12);
+      return () => {
+        cancelled = true;
+        clearInterval(id);
+      };
+    }
+
+    // No biomarkers yet -> nothing to summarize.
+    if (!items.length) {
+      setPhase("done");
+      setText("");
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Uncached -> stream from the real AI (same pipeline as BiomarkerDetailModal).
+    setPhase("loading");
+    setText("");
+    let acc = "";
+    (async () => {
+      try {
+        const res = await conciergeAPI.createChat();
+        const chatId = res?.data?._id || res?.data?.id || res?._id || res?.id;
+        if (!chatId) throw new Error("Could not start an AI session");
+
+        await streamMessage(chatId, buildCategorySummaryPrompt(label, items), (evt) => {
+          if (cancelled) return;
+          if (evt.type === "textDelta" && typeof evt.text === "string") {
+            acc += evt.text;
+            setPhase("streaming");
+            setText(acc);
+          } else if (evt.type === "done") {
+            setPhase("done");
+          } else if (evt.type === "error") {
+            setPhase(acc ? "done" : "error");
+          }
+        });
+        if (!cancelled) {
+          const clean = acc.trim();
+          if (clean) {
+            categorySummaryCache.set(label, clean);
+            setText(clean);
+            setPhase("done");
+          } else {
+            setPhase("error");
+          }
+        }
+      } catch {
+        if (!cancelled && !acc) setPhase("error");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [label, items]);
+
+  if (phase === "loading") {
+    return (
+      <div className="mx-auto mt-5 max-w-md">
+        <div className="space-y-2">
+          <div className="mx-auto h-3 w-11/12 animate-pulse rounded-full bg-borderColor" />
+          <div className="mx-auto h-3 w-10/12 animate-pulse rounded-full bg-borderColor" />
+          <div className="mx-auto h-3 w-8/12 animate-pulse rounded-full bg-borderColor" />
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "error") {
+    return (
+      <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-secondary">
+        We couldn&apos;t generate a summary right now. Your {label} markers are listed below.
+      </p>
+    );
+  }
+
+  return (
+    <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-secondary">
+      {text}
+      {phase === "streaming" && <span className="ml-0.5 animate-pulse text-blue">▍</span>}
+    </p>
   );
 }
 
@@ -478,6 +610,12 @@ export default function DataDashboard() {
     };
   }, [categoryFilter, categories, biomarkers]);
 
+  // Real biomarkers for the selected category — fed to the AI summary prompt.
+  const activeCategoryItems = useMemo(() => {
+    if (!activeCategoryMeta || activeCategoryMeta.wearables) return [];
+    return biomarkers.filter((b) => b.category === activeCategoryMeta.label);
+  }, [activeCategoryMeta, biomarkers]);
+
   // Which organ to light up on the 3D body, and in which status colour.
   const selectedCategoryLabel = activeCategoryMeta?.label || null;
   const organHighlight = useMemo(
@@ -610,21 +748,10 @@ export default function DataDashboard() {
     }
   };
 
-  const filteredReports = useMemo(() => {
-    const normalizedSearch = reportSearch.trim().toLowerCase();
-
-    return reports.filter((report) => {
-      const matchesSearch = !normalizedSearch || report.filename?.toLowerCase().includes(normalizedSearch);
-
-      if (reportFilter === "all") {
-        return matchesSearch;
-      }
-
-      return matchesSearch;
-    });
-  }, [reports, reportSearch, reportFilter]);
-
-  const hasReports = filteredReports.length > 0;
+  // Whether any reports have been uploaded at all. Search/filter within the records
+  // table is handled inside RecordsTable, so the big empty state only shows when the
+  // user genuinely has zero uploaded records (not just zero search matches).
+  const hasReports = reports.length > 0;
 
   return (
     <div
@@ -759,18 +886,19 @@ export default function DataDashboard() {
                     <div className="border-b border-borderColor p-6 text-center lg:p-7">
                       <h2 className="text-left text-xl font-semibold text-blue lg:text-[22px]">{activeCategoryMeta.label}</h2>
                       <div className="mt-5 flex justify-center">
-                        <GradeRing grade={activeCategoryMeta.grade} />
+                        <GradeRing key={activeCategoryMeta.label} grade={activeCategoryMeta.grade} />
                       </div>
-                      <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-secondary">
-                        {activeCategoryMeta.total > 0 ? (
-                          <>
-                            {activeCategoryMeta.optimal} of {activeCategoryMeta.total} markers are optimal in {activeCategoryMeta.label}.
-                            {activeCategoryMeta.outOfRange > 0 && ` ${activeCategoryMeta.outOfRange} need attention.`}
-                          </>
-                        ) : (
-                          <>No {activeCategoryMeta.label} markers yet. Upload a report to see your results here.</>
-                        )}
-                      </p>
+                      {activeCategoryMeta.total > 0 ? (
+                        <CategorySummary
+                          key={activeCategoryMeta.label}
+                          label={activeCategoryMeta.label}
+                          items={activeCategoryItems}
+                        />
+                      ) : (
+                        <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-secondary">
+                          No {activeCategoryMeta.label} markers yet. Upload a report to see your results here.
+                        </p>
+                      )}
                       <button
                         type="button"
                         onClick={() => setActiveTab("twin")}
@@ -970,128 +1098,27 @@ export default function DataDashboard() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-[#d5d9e6] bg-[#f6f7fb] p-5">
-                  <h3 className="text-[36px] font-medium text-[#1b1d24]">Hi {userName},</h3>
-                  <p className="mt-3 text-[20px] leading-[1.45] text-[#666b78]">
-                    We are currently awaiting and analyzing your test results. Once a report is ready it appears on the data page and your digital twin updates automatically. You&apos;ll receive an e-mail once your results are ready.
-                  </p>
-                  <p className="mt-3 text-[20px] leading-[1.45] text-[#666b78]">
-                    Until then feel free to upload your existing health records or connect your wearables
-                  </p>
+                {/* Records table — superpower layout, real report data */}
+                <RecordsTable
+                  reports={reports}
+                  search={reportSearch}
+                  onSearchChange={setReportSearch}
+                  filter={reportFilter}
+                  onFilterChange={setReportFilter}
+                  onUpload={triggerUpload}
+                  uploading={twinUploading}
+                  onView={handleViewReport}
+                  onDelete={handleDeleteReport}
+                  deletingReportId={deletingReportId}
+                />
 
-                  <div className="mt-4 space-y-4">
-                    {filteredReports.map((report) => {
-                      const fileName = report?.filename || report?.fileName || "Uploaded report";
-                      const isDeleting = deletingReportId === report._id;
-                      const isProcessing = report.status === "uploaded" || report.status === "analyzing";
-                      const isFailed = report.status === "failed";
-                      const isReady = !report.status || report.status === "ready";
-                      return (
-                        <div
-                          key={report._id}
-                          role={isReady ? "button" : undefined}
-                          tabIndex={isReady ? 0 : undefined}
-                          onClick={() => isReady && handleViewReport(report._id)}
-                          onKeyDown={(e) => {
-                            if (isReady && (e.key === "Enter" || e.key === " ")) {
-                              e.preventDefault();
-                              handleViewReport(report._id);
-                            }
-                          }}
-                          className={`w-full rounded-2xl border p-4 text-left transition ${
-                            isReady
-                              ? "cursor-pointer border-[#cfd5e4] bg-white hover:border-[#9ea3b1]"
-                              : isProcessing
-                              ? "border-[#e4e6ef] bg-[#fafbfc]"
-                              : "border-red-200 bg-red-50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${
-                              isFailed ? "bg-red-100 text-red-500" : "bg-[#f4f5f9] text-[#636776]"
-                            }`}>
-                              {isProcessing ? (
-                                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
-                                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                                </svg>
-                              ) : (
-                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                  <path d="M7 3H13L19 9V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2"/>
-                                  <path d="M13 3V9H19" stroke="currentColor" strokeWidth="2"/>
-                                </svg>
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate text-[17px] font-medium text-[#1e2027]">{fileName}</div>
-                              <div className="text-xs text-[#787d8b]">
-                                {isProcessing ? (
-                                  <span className="text-[#6d6f7b]">Processing… <ElapsedTimer since={report.uploadedAt || report.createdAt} /></span>
-                                ) : isFailed ? (
-                                  <span className="font-medium text-red-600">Failed</span>
-                                ) : (
-                                  <>
-                                    {report.reportDate
-                                      ? new Date(report.reportDate).toISOString().slice(0, 10)
-                                      : ""}
-                                    {report.testCount ? ` · ${report.testCount} tests` : ""}
-                                    {report.flaggedCount ? ` · ${report.flaggedCount} flagged` : ""}
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteReport(report._id);
-                              }}
-                              disabled={isDeleting}
-                              aria-label={isDeleting ? "Deleting report" : "Delete report"}
-                              title="Delete report"
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50"
-                            >
-                              {isDeleting ? (
-                                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
-                                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                                </svg>
-                              ) : (
-                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                  <path d="M3 6H21M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6L18.1327 19.0114C18.0579 20.1342 17.125 21 16 21H8C6.87502 21 5.94211 20.1342 5.86734 19.0114L5 6H19Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                                  <path d="M10 11V17M14 11V17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                                </svg>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-4 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={triggerUpload}
-                      disabled={twinUploading}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-black px-5 text-sm font-medium text-white disabled:opacity-60"
-                    >
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M5 14V18C5 19.1046 5.89543 20 7 20H17C18.1046 20 19 19.1046 19 18V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      {twinUploading ? "Uploading…" : "Upload another report"}
-                    </button>
-                  </div>
-
-                  <input
-                    ref={uploadRef}
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleUploadFile}
-                    className="hidden"
-                  />
-                </div>
+                <input
+                  ref={uploadRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleUploadFile}
+                  className="hidden"
+                />
               </div>
             )}
           </section>

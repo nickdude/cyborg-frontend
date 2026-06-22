@@ -9,6 +9,7 @@ import { useConciergeStore } from "@/stores/concierge";
 import ChatSidebar from "@/components/concierge/ChatSidebar";
 import MessageList from "@/components/concierge/MessageList";
 import Composer from "@/components/concierge/Composer";
+import { DEFAULT_PROMPTS } from "@/components/concierge/prompts";
 
 export default function ConciergePage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function ConciergePage() {
   const createChat = useConciergeStore((s) => s.createChat);
   const setActive = useConciergeStore((s) => s.setActive);
   const sendMessage = useConciergeStore((s) => s.sendMessage);
+  const deleteChat = useConciergeStore((s) => s.deleteChat);
   const chats = useConciergeStore((s) => s.chats);
   const chatOrder = useConciergeStore((s) => s.chatOrder);
   const chatsLoaded = useConciergeStore((s) => s.chatsLoaded);
@@ -28,6 +30,10 @@ export default function ConciergePage() {
   const streamStatus = useConciergeStore((s) =>
     activeChatId ? s.streams[activeChatId]?.status : null
   );
+  const activeMessageCount = useConciergeStore((s) =>
+    activeChatId ? s.messages[activeChatId]?.length ?? 0 : 0
+  );
+  const showChips = activeMessageCount === 0;
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -94,6 +100,33 @@ export default function ConciergePage() {
     }
   };
 
+  const handleDelete = async (id) => {
+    const wasActive = activeChatId === id;
+    await deleteChat(id);
+
+    if (!wasActive) return;
+
+    // Pick the next most-recent remaining chat, else create a fresh one.
+    const remaining = useConciergeStore
+      .getState()
+      .chatOrder.filter((cid) => cid !== id);
+    if (remaining.length) {
+      const next = remaining[0];
+      setActive(next);
+      loadChat(next);
+      router.replace(`/concierge?id=${next}`);
+    } else {
+      try {
+        const newChatId = await createChat();
+        setActive(newChatId);
+        router.replace(`/concierge?id=${newChatId}`);
+      } catch (err) {
+        console.error("[concierge] failed to create chat after delete", err);
+        router.replace("/concierge");
+      }
+    }
+  };
+
   const handleSend = () => {
     const text = input.trim();
     if (!text || !activeChatId) return;
@@ -121,6 +154,7 @@ export default function ConciergePage() {
         activeChatId={activeChatId}
         onSelect={handleSelect}
         onNew={handleNew}
+        onDelete={handleDelete}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -146,6 +180,25 @@ export default function ConciergePage() {
           firstName={firstName}
           onQuickPrompt={handleQuickPrompt}
         />
+
+        {showChips && (
+          <div className="bg-white px-4 sm:px-6">
+            <div className="mx-auto max-w-3xl">
+              <div className="-mx-4 flex gap-2.5 overflow-x-auto scrollbar-hide px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+                {DEFAULT_PROMPTS.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => handleQuickPrompt(p)}
+                    disabled={!activeChatId || streamStatus === "streaming"}
+                    className="flex-none rounded-2xl border border-borderColor bg-white px-4 py-2.5 text-center text-[13.5px] font-medium leading-snug text-blue transition-colors hover:border-lightGray hover:bg-pageBackground disabled:opacity-50 cursor-pointer"
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <Composer
           value={input}
