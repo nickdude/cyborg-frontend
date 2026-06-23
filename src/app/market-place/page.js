@@ -117,14 +117,14 @@ function MarketplaceInner() {
   }, [filteredProducts]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-pageBackground pb-24 font-inter md:pb-10">
+    <div className="min-h-screen overflow-x-hidden bg-pageBackground pb-24 font-inter lg:pb-10">
       <div className="mx-auto max-w-[1200px] px-4 pt-6 sm:px-6 lg:px-8 lg:pt-10">
         {/* Header — title + management links */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h1 className="text-[32px] font-semibold tracking-[-0.02em] text-blue lg:text-[40px]">
             Marketplace
           </h1>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-secondary">
+          <div className="hidden flex-wrap items-center gap-x-6 gap-y-2 text-sm text-secondary sm:flex">
             <Link href="/market-place?category=supplements" className="transition hover:text-blue">
               Manage Supplements
             </Link>
@@ -139,13 +139,13 @@ function MarketplaceInner() {
 
         {/* Category tabs + search */}
         <div className="mt-6 flex flex-col gap-4 lg:mt-8 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-2">
+          <div className="-mx-4 flex gap-2 overflow-x-auto scrollbar-hide px-4 sm:mx-0 sm:flex-wrap sm:px-0">
             {CATEGORY_TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold transition ${
                   activeTab === tab.id
                     ? "bg-black text-white"
                     : "border border-borderColor bg-white text-secondary hover:border-black/20 hover:text-blue"

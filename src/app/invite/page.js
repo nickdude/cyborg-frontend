@@ -222,7 +222,7 @@ export default function InvitePage() {
 
       {/* Content card */}
       <div className="relative z-10 -mt-12 rounded-t-3xl bg-white">
-        <div className="mx-auto w-full max-w-3xl px-5 pb-28 pt-10 sm:py-12 md:pb-12">
+        <div className="mx-auto w-full max-w-3xl px-5 pb-28 pt-10 sm:pt-12 lg:pb-12">
           {/* Referral block */}
           <h2 className="text-xl font-semibold text-black sm:text-2xl">
             Refer your friends and earn $50

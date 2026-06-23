@@ -6,6 +6,16 @@ module.exports = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    // Default Tailwind breakpoints, but `lg` (the app's mobile↔desktop divider) is
+    // nudged 1024px → 1100px so iPad Pro 12.9" portrait (exactly 1024px wide) stays
+    // in the mobile/tablet layout instead of flipping to the desktop layout.
+    screens: {
+      sm: "640px",
+      md: "768px",
+      lg: "1100px",
+      xl: "1280px",
+      "2xl": "1536px",
+    },
     extend: {
       colors: {
         background: "var(--background)",

@@ -36,8 +36,13 @@ export default function LayoutWrapper({ children }) {
   }
 
   const isOrdersListPage = pathname === "/orders";
+  const isConcierge = pathname === "/concierge" || pathname.startsWith("/concierge/");
 
-  const showBottomNavbar = PATIENT_ONLY_PAGES.includes(pathname) || isOrdersListPage;
+  // Top nav (desktop) + top padding apply to the standard patient pages.
+  const showAppChrome = PATIENT_ONLY_PAGES.includes(pathname) || isOrdersListPage;
+  // The mobile bottom nav ALSO shows on the concierge (a full-screen chat) so users
+  // can navigate away — but the concierge keeps no desktop top nav / top padding.
+  const showBottomNavbar = showAppChrome || isConcierge;
 
   const showUserActions = [
     "/dashboard",
@@ -51,13 +56,13 @@ export default function LayoutWrapper({ children }) {
     <>
       {/* Desktop: superpower-style top nav. Mobile: bottom pill + the fixed
           top-right user actions (hidden on desktop since the top nav covers them). */}
-      {showBottomNavbar && <TopNavbar />}
+      {showAppChrome && <TopNavbar />}
       {showUserActions && (
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <UserActions />
         </div>
       )}
-      <div className={showBottomNavbar ? "md:pt-16" : ""}>{children}</div>
+      <div className={showAppChrome ? "lg:pt-16" : ""}>{children}</div>
       {showBottomNavbar && <BottomNavbar />}
     </>
   );

@@ -158,7 +158,7 @@ function OrdersContent() {
   };
 
   return (
-    <div className="min-h-screen bg-pageBackground pb-24 font-inter md:pb-10">
+    <div className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10">
       <div className="mx-auto w-full max-w-[820px] px-4 py-8 lg:px-8">
         <h1 className="text-3xl font-semibold tracking-tight text-blue">Your tests</h1>
 

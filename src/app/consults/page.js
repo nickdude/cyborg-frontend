@@ -20,7 +20,7 @@ export default function ConsultsPage() {
     user?.firstName || user?.name?.split(" ")?.[0] || "";
 
   return (
-    <div className="min-h-screen bg-pageBackground pb-24 font-inter md:pb-10">
+    <div className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10">
       <div className="mx-auto w-full max-w-[1240px] px-4 pt-6 lg:px-8 lg:pt-10">
         {/* Page title */}
         <h1 className="mb-8 font-inter text-3xl font-semibold text-black lg:mb-10 lg:text-4xl">

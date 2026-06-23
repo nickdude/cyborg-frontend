@@ -210,7 +210,7 @@ export default function ChatSidebar({
             >
               <ChevronLeft className="w-5 h-5 text-secondary" />
             </Link>
-            <span className="text-sm font-semibold text-blue">Chats</span>
+            <span className="text-sm font-semibold text-blue">Messages</span>
           </div>
           <button
             onClick={onClose}

@@ -233,8 +233,8 @@ export default function RecordsTable({
   return (
     <div className="space-y-4 pb-10">
       {/* Toolbar: search, filter, view toggle, upload */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-full sm:w-auto sm:flex-1">
           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-secondary">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
@@ -255,7 +255,7 @@ export default function RecordsTable({
           <button
             type="button"
             onClick={() => setFilterOpen((v) => !v)}
-            className="inline-flex h-10 w-full items-center justify-between gap-2 rounded-full border border-borderColor bg-white px-4 text-sm font-medium text-blue transition hover:bg-pageBackground/60 sm:w-auto"
+            className="inline-flex h-10 w-auto items-center justify-between gap-2 rounded-full border border-borderColor bg-white px-4 text-sm font-medium text-blue transition hover:bg-pageBackground/60"
           >
             {activeFilterLabel}
             <svg className={`h-4 w-4 text-secondary transition-transform ${filterOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" aria-hidden="true">

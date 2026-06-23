@@ -797,6 +797,50 @@ export default function DataDashboard() {
             <div className="py-12 text-center text-red-500">{bioError}</div>
           ) : (
             <section className="lg:grid lg:grid-cols-[210px_minmax(0,1fr)_minmax(0,1.3fr)] lg:items-start lg:gap-6">
+              {/* Mobile category strip (horizontal scroll) — desktop uses the sidebar below */}
+              <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-1 lg:hidden">
+                {categories.map((cat) => {
+                  const isAll = cat.id === "all";
+                  const isWearables = cat.id === "wearables";
+                  const isSpecial = isAll || isWearables;
+                  const active = categoryFilter === cat.id;
+                  const st = !isSpecial ? categoryStatuses[cat.label] : null;
+                  const dotColor = st ? STATUS_COLORS[st] : STATUS_COLORS.good;
+                  const grade = !isSpecial ? categoryGrades[cat.label] : null;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategoryFilter(cat.id)}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition ${
+                        active
+                          ? "border-zinc-300 bg-white text-zinc-900 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]"
+                          : "border-borderColor bg-white/70 text-zinc-500"
+                      }`}
+                    >
+                      {isAll ? (
+                        <svg className="h-3.5 w-3.5 text-zinc-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <path d="M12 4.5l1.8 4 4.4.4-3.3 2.9 1 4.3L12 13.9 8.1 16l1-4.3L5.8 8.9l4.4-.4L12 4.5z" />
+                        </svg>
+                      ) : isWearables ? (
+                        <svg className="h-3.5 w-3.5 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect x="6" y="6" width="12" height="12" rx="3" />
+                          <path d="M9 6V3h6v3M9 18v3h6v-3" />
+                        </svg>
+                      ) : (
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: dotColor }} />
+                      )}
+                      <span className="whitespace-nowrap">{cat.label}</span>
+                      {!isSpecial && (
+                        <span className="text-[11px] font-semibold tabular-nums" style={{ color: grade?.color || "#c4c4cc" }}>
+                          {grade?.letter || "—"}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
               {/* Left: category nav with 3-colour status dots */}
               <aside className="hidden lg:sticky lg:top-4 lg:block">
                 <nav className="flex flex-col gap-0.5">
@@ -973,11 +1017,8 @@ export default function DataDashboard() {
                         <div className="sm:flex-1">
                           <SearchBar placeholder="Search..." value={searchQuery} onChange={setSearchQuery} />
                         </div>
-                        <div className="grid grid-cols-2 gap-3 sm:flex sm:shrink-0 sm:gap-2.5">
+                        <div className="flex shrink-0 gap-3 sm:gap-2.5">
                           <DropdownFilter label="All ranges" options={rangeOptions} value={rangeFilter} onChange={setRangeFilter} />
-                          <div className="lg:hidden">
-                            <DropdownFilter label="Category" options={categories} value={categoryFilter} onChange={setCategoryFilter} />
-                          </div>
                         </div>
                       </div>
 

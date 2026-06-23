@@ -147,7 +147,7 @@ export default function ConciergePage() {
     "U";
 
   return (
-    <div className="h-dvh flex bg-white">
+    <div className="flex h-dvh bg-white pb-[calc(76px+env(safe-area-inset-bottom,0px))] lg:pb-0">
       <ChatSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -159,7 +159,7 @@ export default function ConciergePage() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="bg-white">
-          <div className="flex h-16 w-full items-center gap-3 px-4 sm:px-6">
+          <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-6">
             <button
               onClick={() => setSidebarOpen(true)}
               className="flex min-w-0 items-center gap-2.5 text-left"
@@ -171,6 +171,18 @@ export default function ConciergePage() {
               <span className="truncate text-[17px] font-semibold text-blue">
                 Cyborg AI
               </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Search messages"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-secondary transition hover:bg-pageBackground hover:text-blue"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M20 20L17 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              Search
             </button>
           </div>
         </header>

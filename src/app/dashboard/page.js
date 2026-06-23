@@ -11,7 +11,7 @@ import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { useState, useEffect, useCallback } from "react";
 import { transformPanel, computeSummary, extractScores, humanizeCategory } from "@/utils/biomarkerAdapter";
 import { biomarkerAPI, userAPI } from "@/services/api";
-import { ArrowUpRight, ChevronRight } from "lucide-react";
+import { ArrowUpRight, ChevronRight, X } from "lucide-react";
 
 // Normalize any stored value ("Male"/"Female"/"female"/…) to the 3D model key.
 const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");
@@ -169,13 +169,23 @@ export default function Dashboard() {
         );
     }
 
-    // ── Default: Superpower-style 2-column home ───────────────────────────────
+    // ── Default: Superpower-style home (2-col desktop, stacked mobile) ─────────
     return (
-        <div className="min-h-screen bg-pageBackground font-inter pb-28 lg:pb-12">
+        <div className="min-h-screen bg-pageBackground font-inter pb-24 lg:pb-12">
             <div className="mx-auto w-full max-w-[1180px] px-4 pt-6 lg:px-8 lg:pt-8">
+                {/* Mobile-only welcome header (desktop shows it inside the twin card).
+                    The avatar + bell sit top-right via the floating UserActions. */}
+                <div className="mb-5 pr-20 lg:hidden">
+                    <h1 className="text-[26px] font-semibold leading-[1.15] tracking-tight text-blue">
+                        Welcome back,<br />{userName}
+                    </h1>
+                </div>
+
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                    {/* LEFT: welcome card with 3D digital twin + Ask anything input */}
-                    <WelcomeTwinCard firstName={userName} sex={sex} router={router} />
+                    {/* LEFT: welcome card with 3D digital twin — desktop only */}
+                    <div className="hidden lg:block">
+                        <WelcomeTwinCard firstName={userName} sex={sex} router={router} />
+                    </div>
 
                     {/* RIGHT: stacked data-driven cards */}
                     <div className="flex flex-col gap-4">
@@ -326,8 +336,18 @@ function TestsRecordsCard() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 function AppPromoCard() {
+    const [dismissed, setDismissed] = useState(false);
+    if (dismissed) return null;
     return (
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-400 via-orange-500 to-orange-700 p-5 text-white lg:p-6">
+            <button
+                type="button"
+                onClick={() => setDismissed(true)}
+                aria-label="Dismiss"
+                className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full text-white/80 transition hover:bg-white/15 hover:text-white"
+            >
+                <X className="h-4 w-4" />
+            </button>
             <div className="flex items-center justify-between gap-4">
                 <div className="max-w-[70%]">
                     <h3 className="text-lg font-semibold tracking-tight lg:text-xl">Get the Cyborg app</h3>
