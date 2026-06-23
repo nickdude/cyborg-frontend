@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConciergeStore } from "@/stores/concierge";
@@ -46,8 +46,12 @@ export default function ConciergePage() {
     if (!chatsLoaded) return;
 
     const urlId = searchParams.get("id");
+    const urlQ = searchParams.get("q");
 
     const pickOrCreate = async () => {
+      // A pending ?q= (auto-ask) is handled by its own effect below — bail here
+      // so we don't race it and spawn a duplicate chat.
+      if (urlQ) return;
       if (urlId && chats[urlId]) {
         if (activeChatId !== urlId) setActive(urlId);
         loadChat(urlId);
@@ -81,6 +85,29 @@ export default function ConciergePage() {
     createChat,
     router,
   ]);
+
+  // Auto-ask: when arriving with ?q= (from the dashboard "Ask anything" input, a
+  // biomarker's suggested questions, etc.), open a fresh chat, drop the question
+  // in, and send it — so the user lands on a real answer instead of an empty
+  // chat. The ref + URL-strip make it fire exactly once (no resend on refresh).
+  const autoAskRef = useRef(false);
+  useEffect(() => {
+    if (!chatsLoaded) return;
+    const q = searchParams.get("q");
+    if (!q || autoAskRef.current) return;
+    autoAskRef.current = true;
+    (async () => {
+      try {
+        const id = await createChat();
+        setActive(id);
+        router.replace(`/concierge?id=${id}`);
+        sendMessage(id, q);
+      } catch (err) {
+        console.error("[concierge] auto-ask failed", err);
+        autoAskRef.current = false;
+      }
+    })();
+  }, [chatsLoaded, searchParams, createChat, setActive, router, sendMessage]);
 
   const handleSelect = (id) => {
     setActive(id);
