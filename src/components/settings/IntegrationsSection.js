@@ -8,14 +8,14 @@ import { ArrowRight, Heart, Activity, Watch, Footprints, Moon, Bike, Dumbbell, S
 // state — no fabricated "connected" accounts.
 const WEARABLES = [
   { name: "Apple Health", icon: Heart, status: "Download the mobile app to connect", action: "download" },
-  { name: "Oura", icon: Activity, status: "Not connected", action: "connect" },
+  { name: "Oura", icon: Activity, status: "Not connected", action: "soon" },
   { name: "Whoop", icon: Watch, status: "For now, you can connect Whoop through Apple Health.", action: "soon" },
-  { name: "Withings", icon: Heart, status: "Not connected", action: "connect" },
-  { name: "Ultrahuman", icon: Footprints, status: "Not connected", action: "connect" },
-  { name: "Fitbit", icon: Activity, status: "Not connected", action: "connect" },
-  { name: "Peloton", icon: Bike, status: "Not connected", action: "connect" },
-  { name: "Eight Sleep", icon: Moon, status: "Not connected", action: "connect" },
-  { name: "Garmin", icon: Dumbbell, status: "Not connected", action: "connect" },
+  { name: "Withings", icon: Heart, status: "Not connected", action: "soon" },
+  { name: "Ultrahuman", icon: Footprints, status: "Not connected", action: "soon" },
+  { name: "Fitbit", icon: Activity, status: "Not connected", action: "soon" },
+  { name: "Peloton", icon: Bike, status: "Not connected", action: "soon" },
+  { name: "Eight Sleep", icon: Moon, status: "Not connected", action: "soon" },
+  { name: "Garmin", icon: Dumbbell, status: "Not connected", action: "soon" },
 ];
 
 function ActionButton({ action }) {
