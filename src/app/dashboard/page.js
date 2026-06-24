@@ -368,17 +368,21 @@ function ActionItemsCard() {
     return (
         <div className={`${CARD} p-5 lg:p-6`}>
             <h3 className="text-base font-semibold tracking-tight text-blue">Action Items</h3>
-            <div className="mt-4 flex items-start gap-4 border-t border-borderColor pt-4">
+            <Link
+                href="/settings?tab=integrations"
+                className="group mt-4 flex items-center gap-4 border-t border-borderColor pt-4"
+            >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-pageBackground text-base">
                     ⌚
                 </span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-blue">Connect your wearables</p>
                     <p className="mt-1 text-sm leading-relaxed text-secondary">
-                        Download our app to connect &amp; get personalized insights from your wearable data.
+                        Connect Apple Health, Oura, Fitbit &amp; more to get personalized insights from your wearable data.
                     </p>
                 </div>
-            </div>
+                <ChevronRight className="h-5 w-5 shrink-0 text-secondary transition group-hover:translate-x-0.5 group-hover:text-blue" />
+            </Link>
         </div>
     );
 }
