@@ -6,13 +6,16 @@ import StatsGrid from "@/components/StatsGrid";
 import ProgressBar from "@/components/ProgressBar";
 import DropdownFilter from "@/components/DropdownFilter";
 import SearchBar from "@/components/SearchBar";
-import { transformPanel, computeSummary } from "@/utils/biomarkerAdapter";
+import Link from "next/link";
+import { transformPanel, computeSummary, extractScores } from "@/utils/biomarkerAdapter";
 import { userAPI, biomarkerAPI, conciergeAPI, streamMessage } from "@/services/api";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory, categoryStatus, STATUS_COLORS } from "@/components/data/organStatus";
 import BiomarkerDetailModal from "@/components/data/BiomarkerDetailModal";
+import BiologicalAgeModal from "@/components/data/BiologicalAgeModal";
 import RecordsTable from "@/components/data/RecordsTable";
 import AskCyborgAI from "@/components/data/AskCyborgAI";
+import CategoryFilter from "@/components/data/CategoryFilter";
 
 // Normalize any stored value ("Male"/"Female"/"female"/…) to the model key.
 const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");
@@ -422,6 +425,13 @@ export default function DataDashboard() {
 
   const [activeTab, setActiveTab] = useState("data");
 
+  // Open the Records tab when arriving via /data?tab=records (e.g. from the
+  // protocol page's "Upload a blood report" button).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("tab") === "records") setActiveTab("twin");
+  }, []);
+
   // Which digital-twin body to show. Explicit user choice (localStorage) wins;
   // otherwise default from the profile's biologicalSex.
   const [sex, setSex] = useState("male");
@@ -454,6 +464,16 @@ export default function DataDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [rangeFilter, setRangeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  // Multi-select category filter (Summary view) — a Set of category labels.
+  const [selectedCats, setSelectedCats] = useState(() => new Set());
+  const toggleCat = useCallback((cat) => {
+    setSelectedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }, []);
 
   const [reportFilter, setReportFilter] = useState("all");
   const [reportSearch, setReportSearch] = useState("");
@@ -471,7 +491,9 @@ export default function DataDashboard() {
   const [bioLoading, setBioLoading] = useState(false);
   const [bioError, setBioError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [scores, setScores] = useState(null);
   const [selectedBiomarker, setSelectedBiomarker] = useState(null);
+  const [showBioModal, setShowBioModal] = useState(false);
 
   // Upload elapsed timer
   useEffect(() => {
@@ -509,8 +531,10 @@ export default function DataDashboard() {
         });
         setBiomarkers(withTrends);
         setLastUpdated(data.lastUpdatedAt || data.reportDate);
+        setScores(extractScores(data.scores));
       } else {
         setBiomarkers([]);
+        setScores(null);
       }
     } catch (error) {
       const msg = error?.message || "";
@@ -555,14 +579,17 @@ export default function DataDashboard() {
       const matchesRange = rangeFilter === "all" || biomarker.status === rangeFilter;
       const matchesCategory =
         categoryFilter === "all" || biomarker.category.toLowerCase().replace(/\s+/g, "-") === categoryFilter;
+      const matchesSelected = selectedCats.size === 0 || selectedCats.has(biomarker.category);
 
-      return matchesSearch && matchesRange && matchesCategory;
+      return matchesSearch && matchesRange && matchesCategory && matchesSelected;
     });
-  }, [biomarkers, searchQuery, rangeFilter, categoryFilter]);
+  }, [biomarkers, searchQuery, rangeFilter, categoryFilter, selectedCats]);
 
   const stats = useMemo(() => {
-    return computeSummary(biomarkers);
-  }, [biomarkers]);
+    const base =
+      selectedCats.size === 0 ? biomarkers : biomarkers.filter((b) => selectedCats.has(b.category));
+    return computeSummary(base);
+  }, [biomarkers, selectedCats]);
 
   // Per-category derived grade (from real optimal/total) for the nav icons.
   const categoryGrades = useMemo(() => {
@@ -755,6 +782,21 @@ export default function DataDashboard() {
   // table is handled inside RecordsTable, so the big empty state only shows when the
   // user genuinely has zero uploaded records (not just zero search matches).
   const hasReports = reports.length > 0;
+
+  // Real backend-computed scores (Cyborg Score + PhenoAge biological age).
+  const scoreVal = scores?.cyborgScore?.final ?? scores?.cyborgScore ?? null;
+  const bioAgeVal = (() => {
+    const v = scores?.bioAge && typeof scores.bioAge === "object" ? scores.bioAge.phenoAge : scores?.bioAge;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  })();
+  const chronoAge = useMemo(() => {
+    const dob = user?.dateOfBirth || user?.birthDate || user?.dob;
+    if (!dob) return null;
+    const d = new Date(dob);
+    if (isNaN(d.getTime())) return null;
+    return Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000));
+  }, [user]);
 
   return (
     <div
@@ -985,6 +1027,58 @@ export default function DataDashboard() {
                           : `${fullName.split(" ")[0]}, your twin is ready — upload a report to bring it to life.`}
                       </p>
 
+                      {biomarkers.length > 0 && (scoreVal != null || bioAgeVal != null) && (
+                        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {scoreVal != null && (
+                            <Link
+                              href="/dashboard?view=insights"
+                              className="group flex flex-col rounded-2xl border border-borderColor bg-white p-5 transition hover:border-blue/20"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-secondary">Cyborg score</span>
+                                <svg className="h-4 w-4 text-secondary transition group-hover:text-blue" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </div>
+                              <p className="mt-2 text-[28px] font-semibold leading-none text-blue">
+                                {Math.round(scoreVal)}
+                                <span className="text-base font-normal text-secondary"> / 100</span>
+                              </p>
+                              <span className="mt-2 text-xs text-secondary">
+                                {scoreVal >= 80 ? "Generally healthy" : scoreVal >= 60 ? "Good — room to improve" : "Needs attention"}
+                              </span>
+                            </Link>
+                          )}
+                          {bioAgeVal != null && (
+                            <button
+                              type="button"
+                              onClick={() => setShowBioModal(true)}
+                              className="group flex w-full flex-col rounded-2xl border border-borderColor bg-white p-5 text-left transition hover:border-blue/20"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-secondary">Biological age</span>
+                                <svg className="h-4 w-4 text-secondary transition group-hover:text-blue" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </div>
+                              <p className="mt-2 text-[28px] font-semibold leading-none text-blue">
+                                {Number(bioAgeVal).toFixed(1)}
+                                {chronoAge != null && (
+                                  <span className="text-base font-normal text-secondary"> / {chronoAge}</span>
+                                )}
+                              </p>
+                              <span className="mt-2 text-xs text-secondary">
+                                {chronoAge != null
+                                  ? chronoAge - bioAgeVal >= 0
+                                    ? `${(chronoAge - bioAgeVal).toFixed(1)} years younger than your actual age`
+                                    : `${Math.abs(chronoAge - bioAgeVal).toFixed(1)} years older than your actual age`
+                                  : "PhenoAge estimate"}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       {biomarkers.length > 0 ? (
                         <div className="mt-5 rounded-2xl border border-borderColor bg-pageBackground/50 p-5">
                           <p className="mb-4 text-sm font-semibold text-secondary">Biomarkers</p>
@@ -1019,6 +1113,14 @@ export default function DataDashboard() {
                         </div>
                         <div className="flex shrink-0 gap-3 sm:gap-2.5">
                           <DropdownFilter label="All ranges" options={rangeOptions} value={rangeFilter} onChange={setRangeFilter} />
+                          {categoryFilter === "all" && (
+                            <CategoryFilter
+                              categories={TWIN_CATEGORIES}
+                              selected={selectedCats}
+                              onToggle={toggleCat}
+                              onClear={() => setSelectedCats(new Set())}
+                            />
+                          )}
                         </div>
                       </div>
 
@@ -1188,6 +1290,15 @@ export default function DataDashboard() {
         <BiomarkerDetailModal
           biomarker={selectedBiomarker}
           onClose={() => setSelectedBiomarker(null)}
+        />
+      )}
+
+      {showBioModal && (
+        <BiologicalAgeModal
+          bioAge={bioAgeVal}
+          chronoAge={chronoAge}
+          biomarkers={biomarkers}
+          onClose={() => setShowBioModal(false)}
         />
       )}
 

@@ -32,7 +32,7 @@ function configureTexture(t) {
   return t;
 }
 
-function BodyTwin({ highlight, status = DEFAULT_STATUS, sex = "male" }) {
+function BodyTwin({ highlight, status = DEFAULT_STATUS, sex = "male", spin = true, frame }) {
   const { scene } = useGLTF(modelUrlForSex(sex));
   const { camera, gl } = useThree();
 
@@ -118,14 +118,19 @@ function BodyTwin({ highlight, status = DEFAULT_STATUS, sex = "male" }) {
 
   // Frame the body and gently orbit the camera (the body itself stays put).
   useLayoutEffect(() => {
-    const dist = data.size.y * 2.5;
-    if (data.lookAlongX) camera.position.set(dist, 0, 0);
-    else camera.position.set(0, 0, dist);
-    camera.lookAt(0, 0, 0);
+    // "bust" framing zooms the camera onto the upper body (head + shoulders +
+    // chest) so it fills the view, like superpower's health-winners card.
+    const isBust = frame === "bust";
+    const targetY = isBust ? data.size.y * 0.28 : 0;
+    const dist = (isBust ? 0.95 : 2.5) * data.size.y;
+    if (data.lookAlongX) camera.position.set(dist, targetY, 0);
+    else camera.position.set(0, targetY, dist);
+    camera.lookAt(0, targetY, 0);
     camera.updateProjectionMatrix();
-  }, [data, camera]);
+  }, [data, camera, frame]);
 
   useFrame(({ clock }) => {
+    if (!spin) return; // static front-facing view (no orbit)
     const az = Math.sin(clock.elapsedTime * 0.45) * 0.3;
     const dist = data.size.y * 2.5;
     if (data.lookAlongX) camera.position.set(dist * Math.cos(az), 0, dist * Math.sin(az));
@@ -140,7 +145,7 @@ function BodyTwin({ highlight, status = DEFAULT_STATUS, sex = "male" }) {
   );
 }
 
-export function BodyModel({ className, highlight, status, sex = "male" }) {
+export function BodyModel({ className, highlight, status, sex = "male", spin = true, frame }) {
   return (
     <div className={className}>
       <Canvas
@@ -163,7 +168,7 @@ export function BodyModel({ className, highlight, status, sex = "male" }) {
         <directionalLight position={[0, -2, 4]} intensity={0.3} />
         <Suspense fallback={null}>
           {/* key on sex forces a clean remount so the new body/textures/camera reset */}
-          <BodyTwin key={sex} highlight={highlight} status={status} sex={sex} />
+          <BodyTwin key={sex} highlight={highlight} status={status} sex={sex} spin={spin} frame={frame} />
         </Suspense>
       </Canvas>
     </div>

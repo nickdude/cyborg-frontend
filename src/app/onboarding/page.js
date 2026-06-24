@@ -318,6 +318,26 @@ const SECTIONS = [
   },
 ];
 
+// Date of birth isn't part of the seeded questionnaire, but scoring (biological
+// age) needs it — so we inject it into section 1, right after biological sex.
+const DOB_QUESTION = {
+  code: "1.3a",
+  title: "What is your date of birth?",
+  subtitle: "We use this to calculate your biological age and personalize your results.",
+  type: "date",
+};
+
+function withDob(sections) {
+  if (!Array.isArray(sections) || sections.length === 0) return sections;
+  const already = sections.some((s) => (s.questions || []).some((q) => q.code === "1.3a" || q.type === "date"));
+  if (already) return sections;
+  const copy = sections.map((s) => ({ ...s, questions: [...(s.questions || [])] }));
+  const sec = copy[0];
+  const sexIdx = (sec.questions || []).findIndex((q) => q.code === "1.3");
+  sec.questions.splice(sexIdx >= 0 ? sexIdx + 1 : 1, 0, DOB_QUESTION);
+  return copy;
+}
+
 export default function Onboarding() {
   const router = useRouter();
   const { user, updateUser, token } = useAuth();
@@ -336,11 +356,11 @@ export default function Onboarding() {
         setLoadingQuestionnaire(true);
         const response = await questionnaireAPI.get();
         if (response?.data?.questionary) {
-          setSections(response.data.questionary);
+          setSections(withDob(response.data.questionary));
         }
       } catch (err) {
         console.error("Error fetching questionnaire:", err);
-        setSections(SECTIONS);
+        setSections(withDob(SECTIONS));
       } finally {
         setLoadingQuestionnaire(false);
       }
@@ -357,8 +377,8 @@ export default function Onboarding() {
   const sectionProgress = section ? Math.round(((stepIndex + 1) / sectionTotal) * 100) : 0;
 
   const isRequired = useMemo(() => {
-    // mark some steps required: key data like 1.3 biological sex
-    return ["1.3"].includes(step?.code);
+    // mark some steps required: key data like 1.3 biological sex + 1.3a birth date
+    return ["1.3", "1.3a"].includes(step?.code);
   }, [step?.code]);
 
   const updateAnswer = (code, value) => {
@@ -457,6 +477,16 @@ export default function Onboarding() {
             className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             rows={4}
             placeholder={step.placeholder || "Tell us here..."}
+          />
+        );
+      case "date":
+        return (
+          <input
+            type="date"
+            value={answers[step.code] || ""}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => updateAnswer(step.code, e.target.value)}
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
           />
         );
       case "single":

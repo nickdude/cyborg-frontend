@@ -90,6 +90,7 @@ export default function ProfilePage() {
     firstName: "",
     lastName: "",
     biologicalSex: "",
+    dateOfBirth: "",
     addressLine1: "",
     addressLine2: "",
     city: "",
@@ -101,6 +102,7 @@ export default function ProfilePage() {
     firstName: "",
     lastName: "",
     biologicalSex: "",
+    dateOfBirth: "",
     addressLine1: "",
     addressLine2: "",
     city: "",
@@ -112,6 +114,8 @@ export default function ProfilePage() {
     firstName: profile.firstName || "",
     lastName: profile.lastName || "",
     biologicalSex: profile.biologicalSex || "",
+    // <input type="date"> needs a YYYY-MM-DD string; the API returns an ISO date.
+    dateOfBirth: profile.dateOfBirth ? String(profile.dateOfBirth).slice(0, 10) : "",
     addressLine1: profile.addressLine1 || "",
     addressLine2: profile.addressLine2 || "",
     city: profile.city || "",
@@ -136,6 +140,11 @@ export default function ProfilePage() {
     if (!formData.firstName.trim()) errors.firstName = "First name is required";
     if (!formData.lastName.trim()) errors.lastName = "Last name is required";
     if (!formData.biologicalSex) errors.biologicalSex = "Biological sex is required";
+    if (!formData.dateOfBirth) {
+      errors.dateOfBirth = "Date of birth is required";
+    } else if (new Date(formData.dateOfBirth) > new Date()) {
+      errors.dateOfBirth = "Date of birth can't be in the future";
+    }
     if (!formData.addressLine1.trim()) errors.addressLine1 = "Address line 1 is required";
     if (!formData.city) errors.city = "City is required";
     if (!formData.state) errors.state = "State is required";
@@ -294,16 +303,28 @@ export default function ProfilePage() {
               />
             </div>
 
-            <Select
-              label="Biological Sex"
-              name="biologicalSex"
-              value={formData.biologicalSex}
-              onChange={handleChange}
-              options={SEXES}
-              placeholder={existingProfile.biologicalSex || "Select sex"}
-              error={fieldErrors.biologicalSex}
-              required
-            />
+            <div className="grid grid-cols-1 gap-x-5 lg:grid-cols-2">
+              <Select
+                label="Biological Sex"
+                name="biologicalSex"
+                value={formData.biologicalSex}
+                onChange={handleChange}
+                options={SEXES}
+                placeholder={existingProfile.biologicalSex || "Select sex"}
+                error={fieldErrors.biologicalSex}
+                required
+              />
+
+              <Input
+                label="Birth Date"
+                name="dateOfBirth"
+                type="date"
+                value={formData.dateOfBirth}
+                onChange={handleChange}
+                error={fieldErrors.dateOfBirth}
+                required
+              />
+            </div>
 
             <Input
               label="Address Line 1"

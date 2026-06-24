@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { productAPI } from "@/services/api";
+import { supplementImage } from "@/utils/supplementImage";
 
 const HOW_IT_WORKS = [
   {
@@ -12,14 +13,14 @@ const HOW_IT_WORKS = [
       "Invite your friends to join Cyborg using your unique referral link.",
   },
   {
-    title: "Give $50 to your friends",
+    title: "Give $299 to your friends",
     description:
-      "When your friends join Cyborg, they get $50 to spend in the Cyborg Supplement Marketplace.",
+      "When your friends join Cyborg, they get $299 to spend in the Cyborg Supplement Marketplace.",
   },
   {
-    title: "Earn $50 in credit",
+    title: "Earn $299 in credit",
     description:
-      "You'll also receive $50 for every friend who signs up with your link.",
+      "You'll also receive $299 for every friend who signs up with your link.",
   },
   {
     title: "Redeem your credits",
@@ -31,7 +32,7 @@ const FAQS = [
   {
     question: "When do I get my reward?",
     answer:
-      "Your $50 credit is applied to your account as soon as your friend signs up with your referral link and completes their first order.",
+      "Your $299 credit is applied to your account as soon as your friend signs up with your referral link and completes their first order.",
   },
   {
     question: "How do I use the credit?",
@@ -135,11 +136,6 @@ export default function InvitePage() {
     };
   }, []);
 
-  const productNames = useMemo(
-    () => products.map((p) => p.name || p.title).filter(Boolean),
-    [products],
-  );
-  const heroNames = productNames.slice(0, 4);
   const rewardItems = products.slice(0, 4);
 
   const userId = user?.id || user?._id || "";
@@ -180,7 +176,7 @@ export default function InvitePage() {
     if (!email || !referralLink) return;
     const subject = encodeURIComponent("Join me on Cyborg");
     const body = encodeURIComponent(
-      `Hey! I'm using Cyborg and thought you'd love it too. Sign up with my link and we'll each get $50 to spend in the Cyborg Supplement Marketplace:\n\n${referralLink}`
+      `Hey! I'm using Cyborg and thought you'd love it too. Sign up with my link and we'll each get $299 to spend in the Cyborg Supplement Marketplace:\n\n${referralLink}`
     );
     if (typeof window !== "undefined") {
       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
@@ -202,19 +198,28 @@ export default function InvitePage() {
             Earn rewards on supplements
           </p>
 
-          {heroNames.length > 0 && (
+          {rewardItems.length > 0 && (
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {heroNames.map((name) => (
-                <div
-                  key={name}
-                  className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm ring-1 ring-white/15"
-                >
-                  <p className="text-sm font-medium">{name}</p>
-                  <div className="mt-6 flex h-20 items-center justify-center rounded-xl bg-white/10">
-                    <div className="h-14 w-7 rounded-md bg-white/30" aria-hidden="true" />
+              {rewardItems.map((product, i) => {
+                const name = product.name || product.title || "Product";
+                const img = product.image || supplementImage(name);
+                return (
+                  <div
+                    key={product._id || product.id || name + i}
+                    className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm ring-1 ring-white/15"
+                  >
+                    <p className="text-sm font-medium">{name}</p>
+                    <div className="mt-6 flex h-20 items-center justify-center overflow-hidden rounded-xl bg-white">
+                      {img ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={img} alt={name} className="h-full w-full object-contain p-2" />
+                      ) : (
+                        <div className="h-14 w-7 rounded-md bg-white/30" aria-hidden="true" />
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -225,11 +230,11 @@ export default function InvitePage() {
         <div className="mx-auto w-full max-w-3xl px-5 pb-28 pt-10 sm:pt-12 lg:pb-12">
           {/* Referral block */}
           <h2 className="text-xl font-semibold text-black sm:text-2xl">
-            Refer your friends and earn $50
+            Refer your friends and earn $299
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-secondary">
             Share your unique referral link with friends and family. When they
-            sign up, you&apos;ll each receive $50 to spend in the Cyborg
+            sign up, you&apos;ll each receive $299 to spend in the Cyborg
             Supplement Marketplace.
           </p>
 
@@ -329,11 +334,16 @@ export default function InvitePage() {
                       key={product._id || product.id || pname}
                       className={`flex items-center gap-4 px-4 py-4 ${i !== 0 ? "border-t border-borderColor" : ""}`}
                     >
-                      <div className="h-10 w-10 shrink-0 rounded-lg bg-pageBackground" aria-hidden="true" />
+                      {product.image || supplementImage(pname) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={product.image || supplementImage(pname)} alt={pname} className="h-10 w-10 shrink-0 rounded-lg border border-borderColor bg-white object-contain p-0.5" />
+                      ) : (
+                        <div className="h-10 w-10 shrink-0 rounded-lg bg-pageBackground" aria-hidden="true" />
+                      )}
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-black">{pname}</p>
                         <p className="mt-0.5 text-xs text-secondary">
-                          {product.brand ? `${product.brand} · ` : ""}Redeem your $50 credit toward this
+                          {product.brand ? `${product.brand} · ` : ""}Redeem your $299 credit toward this
                         </p>
                       </div>
                     </div>

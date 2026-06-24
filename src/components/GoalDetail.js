@@ -70,7 +70,7 @@ export default function GoalDetail({ goal, onBack }) {
   }));
 
   return (
-    <div className="min-h-screen bg-pageBackground pb-24">
+    <div className="min-h-screen overflow-x-hidden bg-pageBackground pb-24">
       <div className="flex items-center gap-4 pt-6 px-4 pb-6 border-b border-borderColor">
         <button onClick={onBack} className="text-2xl text-black hover:text-secondary transition-colors">&#8249;</button>
         <h1 className="text-lg font-semibold font-inter text-black">Goals</h1>

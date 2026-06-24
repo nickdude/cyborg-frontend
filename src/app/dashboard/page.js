@@ -122,9 +122,9 @@ export default function Dashboard() {
                         },
                         {
                             image: "/assets/refer-friend.png",
-                            textLines: ["Refer your friends and", "earn $50"],
-                            subtext: "Get $50 each",
-                            action: { type: "button", label: "Earn $50" },
+                            textLines: ["Refer your friends and", "earn $299"],
+                            subtext: "Get $299 each",
+                            action: { type: "button", label: "Earn $299" },
                         },
                     ],
                 },
@@ -397,7 +397,7 @@ function LiveBetterCard() {
         {
             image: "/assets/refer-friend.png",
             eyebrow: "Give the gift of health.",
-            lines: ["Refer your friends and earn $50"],
+            lines: ["Refer your friends and earn $299"],
         },
     ];
 
