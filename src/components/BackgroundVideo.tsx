@@ -15,7 +15,7 @@ export function BackgroundVideo() {
         preload="auto"
         aria-hidden="true"
       >
-        <source src="/scroll.mp4" type="video/mp4" />
+        <source src="/videos/landing-hero.mp4" type="video/mp4" />
       </video>
       {/* subtle darken so hero text stays legible over any frame */}
       <div className="absolute inset-0 bg-black/20" />

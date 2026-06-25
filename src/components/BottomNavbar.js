@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Home, BarChart3, ClipboardList, Store, MoreHorizontal } from "lucide-react";
+import { Home, BarChart3, ClipboardList, Store, MoreHorizontal, Plus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import MealUploadSheet from "@/components/MealUploadSheet";
+import MealDetailsSheet from "@/components/MealDetailsSheet";
 
 // Superpower-style mobile nav: a light icon bar + a separate floating "Cyborg AI"
 // orb (the concierge). Mobile only — desktop uses TopNavbar.
@@ -30,6 +32,11 @@ export default function BottomNavbar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef(null);
 
+  // Food-log flow: "+" opens the camera/gallery picker → details sheet → AI
+  // analyze → /meals/new review → commit.
+  const [mealSheet, setMealSheet] = useState(null); // null | "upload" | "details"
+  const [mealFiles, setMealFiles] = useState([]);
+
   useEffect(() => {
     const onClick = (e) => {
       if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false);
@@ -52,6 +59,7 @@ export default function BottomNavbar() {
   };
 
   return (
+    <>
     <div
       className="fixed inset-x-0 bottom-0 z-[60] flex items-center gap-2.5 px-4 lg:hidden"
       style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom, 0px))" }}
@@ -61,7 +69,36 @@ export default function BottomNavbar() {
         className="flex flex-1 items-center justify-around rounded-full bg-white/95 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5 backdrop-blur"
         aria-label="Primary"
       >
-        {NAV_ITEMS.map(({ label, href, Icon }) => {
+        {NAV_ITEMS.slice(0, 2).map(({ label, href, Icon }) => {
+          const active = isActive(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-label={label}
+              aria-current={active ? "page" : undefined}
+              className={`grid h-10 w-10 place-items-center rounded-full transition ${
+                active
+                  ? "bg-pageBackground text-blue ring-1 ring-borderColor"
+                  : "text-secondary hover:text-blue"
+              }`}
+            >
+              <Icon className="h-[21px] w-[21px]" strokeWidth={active ? 2.2 : 1.8} />
+            </Link>
+          );
+        })}
+
+        {/* + — log a meal from a photo (camera or gallery → AI estimate) */}
+        <button
+          type="button"
+          onClick={() => setMealSheet("upload")}
+          aria-label="Log a meal"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-black text-white shadow-md transition hover:bg-black/85 active:scale-95"
+        >
+          <Plus className="h-5 w-5" strokeWidth={2.4} />
+        </button>
+
+        {NAV_ITEMS.slice(2).map(({ label, href, Icon }) => {
           const active = isActive(href);
           return (
             <Link
@@ -145,5 +182,20 @@ export default function BottomNavbar() {
         />
       </Link>
     </div>
+
+      <MealUploadSheet
+        open={mealSheet === "upload"}
+        onClose={() => setMealSheet(null)}
+        onFilesPicked={(files) => {
+          setMealFiles(files);
+          setMealSheet("details");
+        }}
+      />
+      <MealDetailsSheet
+        open={mealSheet === "details"}
+        initialFiles={mealFiles}
+        onClose={() => setMealSheet(null)}
+      />
+    </>
   );
 }

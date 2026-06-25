@@ -194,12 +194,26 @@ export default function ProtocolIntro({ userName = "there", sex = "male", bioAge
     );
   } else if (step === 0) {
     screen = (
-      <div className="flex h-full flex-col items-center justify-end bg-gradient-to-b from-[#1a1206] via-[#0c0a08] to-black px-6 pb-[12vh] text-center">
-        <h1 className="text-[34px] font-semibold tracking-tight text-white">Welcome {userName}</h1>
-        <p className="mt-3 max-w-[440px] text-[15px] leading-relaxed text-white/65">
-          Cyborg has analyzed your lab results and identified core insights. Let&apos;s build a precise protocol to address these, tailored to you.
-        </p>
-        <DarkContinue onClick={next} />
+      <div className="relative flex h-full flex-col items-center justify-end overflow-hidden bg-black px-6 pb-[12vh] text-center">
+        {/* Full-bleed looping background video. */}
+        <video
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          src="/assets/protocol-welcome.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-hidden="true"
+        />
+        {/* Scrim — darkens the video toward the bottom so the copy stays legible. */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-black/35 to-black/85" />
+        <div className="relative flex flex-col items-center">
+          <h1 className="text-[34px] font-semibold tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">Welcome {userName}</h1>
+          <p className="mt-3 max-w-[440px] text-[15px] leading-relaxed text-white/80 drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)]">
+            Cyborg has analyzed your lab results and identified core insights. Let&apos;s build a precise protocol to address these, tailored to you.
+          </p>
+          <DarkContinue onClick={next} />
+        </div>
       </div>
     );
   } else if (step === 1) {

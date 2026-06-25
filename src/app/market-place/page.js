@@ -131,6 +131,9 @@ function MarketplaceInner() {
             <Link href="/market-place?category=prescriptions" className="transition hover:text-blue">
               Manage Prescriptions
             </Link>
+            <Link href="/cart" className="font-medium text-blue transition hover:text-black">
+              Cart
+            </Link>
             <Link href="/orders" className="font-medium text-blue transition hover:text-black">
               View Orders
             </Link>

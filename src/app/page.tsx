@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { BackgroundVideo } from "@/components/BackgroundVideo";
+import { LandingPreloader } from "@/components/LandingPreloader";
 import { Reveal } from "@/components/Reveal";
 import { Hero } from "@/components/sections/Hero";
 import { TiltTablet } from "@/components/sections/TiltTablet";
@@ -41,14 +42,16 @@ export default function Home() {
   }, [token, loading, router]);
 
   return (
-    <SmoothScroll>
-      <BackgroundVideo />
-      <main className="relative z-10">
+    <>
+      <LandingPreloader />
+      <SmoothScroll>
+        <BackgroundVideo />
+      <main className="relative z-10 overflow-x-clip">
         {/* Hero is transparent so the fixed scroll.mp4 shows through */}
         <Hero />
 
         {/* Everything below sits on an opaque backdrop so reveals don't bleed the video */}
-        <div className="relative bg-black">
+        <div className="relative overflow-x-clip bg-black">
           <TiltTablet />
 
           <Reveal><Products /></Reveal>
@@ -84,6 +87,7 @@ export default function Home() {
           <SiteFooter />
         </div>
       </main>
-    </SmoothScroll>
+      </SmoothScroll>
+    </>
   );
 }

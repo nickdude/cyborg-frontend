@@ -29,6 +29,18 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Background videos are large and content-stable, so cache them hard:
+        // the first (slow) visit is the only download — every later visit serves
+        // the video instantly from the browser cache.
+        source: "/videos/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
     ];
   },
 };
