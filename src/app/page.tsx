@@ -14,6 +14,11 @@ import { AllInOneApp } from "@/components/sections/AllInOneApp";
 import { Nudges } from "@/components/sections/Nudges";
 import { LabsByCyborg } from "@/components/sections/LabsByCyborg";
 import { ChecklistStorySection } from "@/components/sections/ChecklistStorySection";
+import {
+  VisualStorySection,
+  VISUALISE_PART_ONE,
+  VISUALISE_PART_TWO,
+} from "@/components/sections/VisualStorySection";
 import MedicalProfessionalsSection from "@/components/home/MedicalProfessionalsSection";
 import MembershipPlanSection from "@/components/home/MembershipPlanSection";
 import TagOverlaySection from "@/components/home/TagOverlaySection";
@@ -52,15 +57,11 @@ export default function Home() {
           <Reveal><Nudges /></Reveal>
           <Reveal><LabsByCyborg /></Reveal>
           <ChecklistStorySection />
-          {/* <Reveal><HowItWorks /></Reveal> */}
-
-          {/* <MarketplaceScatter /> */}
-          {/* <WholeYouGrid /> */}
-
-          {/* <Reveal><MembershipIncluded /></Reveal> */}
 
               <Reveal><MedicalProfessionalsSection /></Reveal>
               <Reveal><MembershipPlanSection /></Reveal>
+              <Reveal><VisualStorySection cards={VISUALISE_PART_ONE} /></Reveal>
+              <Reveal><VisualStorySection cards={VISUALISE_PART_TWO} /></Reveal>
               <Reveal><TagOverlaySection image="/assets/testinomial/test1.png" /></Reveal>
               <Reveal><VsDifferenceSection /></Reveal>
               <Reveal><CyborgLabsSection /></Reveal>
