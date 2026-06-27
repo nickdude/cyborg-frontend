@@ -63,7 +63,7 @@ export default function Sources({ content }) {
   if (!Array.isArray(content)) return null;
   const all = [];
   for (const block of content) {
-    if (block?.type !== "tool") continue;
+    if (block?.type !== "tool" && block?.type !== "step") continue;
     if (!PERPLEXITY_TOOLS.has(block.name)) continue;
     if (block.status !== "done") continue;
     all.push(...extractCitationsFromResult(block.result));

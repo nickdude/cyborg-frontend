@@ -5,6 +5,7 @@ import { useTypewriter } from "@/hooks/useTypewriter";
 import ThinkingBlock from "./ThinkingBlock";
 import ToolChip from "./ToolChip";
 import Sources from "./Sources";
+import NarrationRow from "./NarrationRow";
 
 function MarkdownBody({ text }) {
   return (
@@ -99,6 +100,20 @@ export default function Message({ message, streaming }) {
   const hasAnyContent =
     (message.content?.length || 0) > 0 || message.thinking;
 
+  // Real thinking is keyed by segment; attach each step's segment reasoning inline.
+  const thinkingBySegment = Object.fromEntries(
+    (message.thinking?.segments || []).map((s) => [s.toolIndex, s.text])
+  );
+  // Segments already shown inline on a step must NOT also appear in the top ThinkingBlock.
+  const claimedSegments = new Set(
+    (message.content || [])
+      .filter((b) => b.type === "step" && typeof b.segmentIndex === "number")
+      .map((b) => b.segmentIndex)
+  );
+  const orphanThinking = message.thinking
+    ? { ...message.thinking, segments: (message.thinking.segments || []).filter((s) => !claimedSegments.has(s.toolIndex)) }
+    : message.thinking;
+
   return (
     <div className="flex justify-start gap-2.5 animate-[fadeIn_0.2s_ease-out]">
       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center shrink-0 mt-1">
@@ -106,7 +121,7 @@ export default function Message({ message, streaming }) {
       </div>
       <div className="max-w-[85%] min-w-0">
         <ThinkingBlock
-          thinking={message.thinking}
+          thinking={orphanThinking}
           streaming={streaming}
           hasText={hasText}
         />
@@ -144,6 +159,15 @@ export default function Message({ message, streaming }) {
                 <TypewriterMarkdown key={i} text={block.text} />
               ) : (
                 <MarkdownBody key={i} text={block.text} />
+              );
+            }
+            if (block.type === "step") {
+              return (
+                <NarrationRow
+                  key={block.id || i}
+                  block={block}
+                  thinkingText={thinkingBySegment[block.segmentIndex]}
+                />
               );
             }
             if (block.type === "tool") {
