@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { ChevronRight, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const thinkingMarkdownComponents = {
+export const thinkingMarkdownComponents = {
   p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
   strong: ({ children }) => (
     <strong className="font-semibold text-gray-500 not-italic">{children}</strong>
@@ -45,9 +45,10 @@ const thinkingMarkdownComponents = {
   ),
 };
 
-export default function ThinkingBlock({ thinking, streaming, hasText }) {
+export default function ThinkingBlock({ thinking, displaySegments, streaming, hasText }) {
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const panelId = useId();
 
   useEffect(() => {
     if (!streaming || thinking?.elapsedMs) return;
@@ -57,19 +58,21 @@ export default function ThinkingBlock({ thinking, streaming, hasText }) {
 
   if (!thinking || !thinking.segments?.length) return null;
 
+  const body = displaySegments ?? thinking.segments;
+  const totalSteps = thinking.segments.length;
   const elapsedMs =
     thinking.elapsedMs ??
     (thinking.startedAt ? now - thinking.startedAt : 0);
   const seconds = Math.max(1, Math.round(elapsedMs / 1000));
-
-  const showLiveTicker = streaming && !hasText;
+  const hasBody = body.length > 0;
+  const showLiveTicker = streaming && !hasText && hasBody;
 
   if (showLiveTicker) {
-    const latest = thinking.segments[thinking.segments.length - 1];
+    const latest = body[body.length - 1];
     return (
       <div className="mb-3 rounded-xl bg-gradient-to-r from-primary/5 to-purple-50 border border-primary/10 px-3 py-2.5">
         <div className="flex items-center gap-1.5 text-primary text-xs font-medium mb-1.5">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+          <Sparkles aria-hidden="true" className="w-3.5 h-3.5 animate-pulse motion-reduce:animate-none" />
           <span>Thinking… {seconds}s</span>
         </div>
         <div className="text-xs text-gray-500 italic line-clamp-3 leading-relaxed [&_p]:m-0">
@@ -88,24 +91,30 @@ export default function ThinkingBlock({ thinking, streaming, hasText }) {
     <div className="mb-3">
       <button
         type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+        onClick={() => hasBody && setExpanded((v) => !v)}
+        aria-expanded={hasBody ? expanded : undefined}
+        aria-controls={hasBody ? panelId : undefined}
+        className={`inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-600 transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${hasBody ? "cursor-pointer" : "cursor-default"}`}
       >
-        <ChevronRight
-          className={`w-3 h-3 transition-transform duration-200 ${
-            expanded ? "rotate-90" : ""
-          }`}
-        />
-        <Sparkles className="w-3 h-3" />
-        <span>Thought for {seconds}s</span>
+        {hasBody && (
+          <ChevronRight
+            aria-hidden="true"
+            className={`w-3 h-3 transition-transform duration-200 ${
+              expanded ? "rotate-90" : ""
+            }`}
+          />
+        )}
+        <Sparkles aria-hidden="true" className="w-3 h-3" />
+        <span>
+          Thought for {seconds}s{!hasBody && totalSteps > 1 ? ` · reasoned across ${totalSteps} steps` : ""}
+        </span>
       </button>
-      <div
-        className={`overflow-hidden transition-all duration-200 ease-out ${
-          expanded ? "max-h-[2000px] opacity-100 mt-2" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="text-xs text-gray-400 border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed">
-          {thinking.segments.map((s, i) => (
+      {expanded && hasBody && (
+        <div
+          id={panelId}
+          className="mt-2 text-xs text-gray-400 border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed"
+        >
+          {body.map((s, i) => (
             <div key={i}>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -116,7 +125,7 @@ export default function ThinkingBlock({ thinking, streaming, hasText }) {
             </div>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
