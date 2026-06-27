@@ -1375,6 +1375,7 @@ export default function ActionPlanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
+  const [status, setStatus] = useState(null);
 
   const fetchPlan = useCallback(async () => {
     try {
@@ -1387,6 +1388,7 @@ export default function ActionPlanPage() {
 
       if (response.data) {
         const data = response.data;
+        setStatus(data.status);
         if (data.status === "ready" || data.status === "approved") {
           setPlan(data);
           setError("");
@@ -1421,6 +1423,29 @@ export default function ActionPlanPage() {
       fetchPlan();
     }
   }, [token, authLoading, planId, fetchPlan, router]);
+
+  // Auto-refresh polling: re-poll every 10s while the plan is still being generated.
+  // Stops as soon as a terminal/displayable status is reached (ready/approved/failed)
+  // or the plan is awaiting doctor review (a doctor action, not a timing one).
+  useEffect(() => {
+    const isGenerating = status === "pending" || status === "generating";
+    if (!isGenerating) return;
+    let active = true;
+    let inFlight = false;
+    const id = setInterval(async () => {
+      if (inFlight || !active) return;
+      inFlight = true;
+      try {
+        await fetchPlan();
+      } finally {
+        inFlight = false;
+      }
+    }, 10000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [status, fetchPlan]);
 
   const handleDownloadPDF = async () => {
     const id = planId || plan?._id;

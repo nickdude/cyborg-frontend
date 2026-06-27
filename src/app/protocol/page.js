@@ -124,24 +124,28 @@ export default function Protocol() {
   const [protocolLoading, setProtocolLoading] = useState(false);
   const [protocolError, setProtocolError] = useState("");
 
-  const fetchGoals = useCallback(async () => {
+  const fetchGoals = useCallback(async ({ silent = false } = {}) => {
     try {
-      setGoalsLoading(true);
-      setGoalsError("");
-      setGoalsStatus(null);
+      if (!silent) {
+        setGoalsLoading(true);
+        setGoalsError("");
+        setGoalsStatus(null);
+      }
       const response = await goalsAPI.list();
       const data = response?.data || response;
       const meta = data?.meta || {};
       setGoals(data?.goals || []);
       setGoalsStatus(meta.status || null);
     } catch (err) {
-      if (err?.statusCode === 404 || err?.message?.includes("No report")) {
-        setGoalsError("Upload a blood report to see your health goals");
-      } else {
-        setGoalsError("Failed to load goals");
+      if (!silent) {
+        if (err?.statusCode === 404 || err?.message?.includes("No report")) {
+          setGoalsError("Upload a blood report to see your health goals");
+        } else {
+          setGoalsError("Failed to load goals");
+        }
       }
     } finally {
-      setGoalsLoading(false);
+      if (!silent) setGoalsLoading(false);
     }
   }, []);
 
@@ -168,6 +172,29 @@ export default function Protocol() {
       fetchGoals();
     }
   }, [activeTab, fetchGoals]);
+
+  // Auto-refresh polling: re-fetch goals every 10s while generation is in progress.
+  // Stops once a terminal/displayable status is reached (ready/approved/failed) or the
+  // plan is awaiting doctor review (a doctor action, not a timing one).
+  useEffect(() => {
+    const isGenerating = goalsStatus === "pending" || goalsStatus === "generating";
+    if (!isGenerating || activeTab !== "goals") return;
+    let active = true;
+    let inFlight = false;
+    const id = setInterval(async () => {
+      if (inFlight || !active) return;
+      inFlight = true;
+      try {
+        await fetchGoals({ silent: true });
+      } finally {
+        inFlight = false;
+      }
+    }, 10000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [goalsStatus, activeTab, fetchGoals]);
 
   useEffect(() => {
     if (activeTab === "protocol") {
