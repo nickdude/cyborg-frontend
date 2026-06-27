@@ -13,6 +13,7 @@ import { Products } from "@/components/sections/Products";
 import { AllInOneApp } from "@/components/sections/AllInOneApp";
 import { Nudges } from "@/components/sections/Nudges";
 import { LabsByCyborg } from "@/components/sections/LabsByCyborg";
+import { ChecklistStorySection } from "@/components/sections/ChecklistStorySection";
 import { HowItWorks } from "@/components/sections/HowItWorks";
 import { MarketplaceScatter } from "@/components/sections/MarketplaceScatter";
 import { WholeYouGrid } from "@/components/sections/WholeYouGrid";
@@ -57,12 +58,13 @@ export default function Home() {
           <Reveal><AllInOneApp /></Reveal>
           <Reveal><Nudges /></Reveal>
           <Reveal><LabsByCyborg /></Reveal>
-          <Reveal><HowItWorks /></Reveal>
+          <ChecklistStorySection />
+          {/* <Reveal><HowItWorks /></Reveal> */}
 
-          <MarketplaceScatter />
-          <WholeYouGrid />
+          {/* <MarketplaceScatter /> */}
+          {/* <WholeYouGrid /> */}
 
-          <Reveal><MembershipIncluded /></Reveal>
+          {/* <Reveal><MembershipIncluded /></Reveal> */}
           <Reveal><MedicalProfessionals /></Reveal>
 
           <BackedByBest />
