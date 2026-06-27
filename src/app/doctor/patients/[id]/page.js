@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import Cookie from "js-cookie";
 import Chatbot from "@/components/Chatbot";
 import { doctorAPI } from "@/services/api";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import {
   ChevronRight,
   X,
   Clock,
   CheckCircle,
   AlertCircle,
+  Pill,
 } from "lucide-react";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
@@ -44,48 +46,53 @@ export default function PatientDetail() {
     }
   }, [authLoading, token, user, router]);
 
+  const fetchPatientData = useCallback(async ({ silent = false } = {}) => {
+    try {
+      if (!silent) setLoading(true);
+      const cookieToken = Cookie.get("authToken");
+      if (!cookieToken) {
+        router.push("/login");
+        return;
+      }
+
+      const res = await fetch(`${apiUrl}/api/doctor/patients/${patientId}`, {
+        headers: { Authorization: `Bearer ${cookieToken}` },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch patient data");
+
+      const json = await res.json();
+      const data = json.data || json;
+      setPatient(data.patient || null);
+      setLatestReport(data.latestReport || null);
+      setGoals(data.goals || []);
+
+      try {
+        const planRes = await doctorAPI.getPatientActionPlan(patientId);
+        const planData = planRes?.data || planRes;
+        setPlanStatus(planData.status || null);
+        setPlanGoalCount((planData.goals || []).length);
+      } catch {
+        setPlanStatus(null);
+      }
+    } catch (err) {
+      console.error("Error fetching patient:", err);
+      if (!silent) setError(err.message);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [patientId, router]);
+
   useEffect(() => {
     if (authLoading || !token || user?.userType !== "doctor") return;
-
-    const fetchPatientData = async () => {
-      try {
-        setLoading(true);
-        const cookieToken = Cookie.get("authToken");
-        if (!cookieToken) {
-          router.push("/login");
-          return;
-        }
-
-        const res = await fetch(`${apiUrl}/api/doctor/patients/${patientId}`, {
-          headers: { Authorization: `Bearer ${cookieToken}` },
-        });
-
-        if (!res.ok) throw new Error("Failed to fetch patient data");
-
-        const json = await res.json();
-        const data = json.data || json;
-        setPatient(data.patient || null);
-        setLatestReport(data.latestReport || null);
-        setGoals(data.goals || []);
-
-        try {
-          const planRes = await doctorAPI.getPatientActionPlan(patientId);
-          const planData = planRes?.data || planRes;
-          setPlanStatus(planData.status || null);
-          setPlanGoalCount((planData.goals || []).length);
-        } catch {
-          setPlanStatus(null);
-        }
-      } catch (err) {
-        console.error("Error fetching patient:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (patientId) fetchPatientData();
-  }, [patientId, authLoading, token, user, router]);
+  }, [patientId, authLoading, token, user, fetchPatientData]);
+
+  // Live refresh — patient uploads / plan status changes show without reloading.
+  useAutoRefresh(
+    useCallback(() => fetchPatientData({ silent: true }), [fetchPatientData]),
+    { interval: 15000, enabled: !authLoading && !!token && user?.userType === "doctor" }
+  );
 
   // Derive biomarker stats from latestReport
   const biomarkerPanel = latestReport?.biomarkerPanel || [];
@@ -128,11 +135,24 @@ export default function PatientDetail() {
     (g) => g.priority === "high" || g.priority === "High"
   );
 
-  // Derive protocol and action plan items from goals
-  const protocolItems = goals.flatMap((g) => g.protocolItems || []);
+  // Derive protocol items from goals — deduped by product, using real fields
+  const protocolItems = (() => {
+    const seen = new Set();
+    const out = [];
+    for (const g of goals) {
+      for (const pi of g.protocolItems || []) {
+        const key = (pi.productName || "").toLowerCase().trim();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        out.push(pi);
+      }
+    }
+    return out;
+  })();
   const actionPlanItems = goals.map((g) => ({
     name: g.title,
     category: g.category || g.priority,
+    achieved: g.status === "achieved",
   }));
 
   const patientName = patient
@@ -368,25 +388,27 @@ export default function PatientDetail() {
                 </button>
               </div>
 
-              {/* High priority goal card */}
-              <div className="relative mb-4 h-[132px] overflow-hidden rounded-2xl border border-borderColor shadow-sm">
-                <img
-                  src="/assets/doctor/goals-card-bg-figma.png"
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="relative z-10 p-3">
-                  <span className="inline-block text-[12px] font-semibold bg-white/15 text-white px-3 py-1 rounded-[25px] mb-1">
-                    High priority
-                  </span>
-                  <h3 className="text-[14px] font-semibold text-white leading-[20px] tracking-[-0.15px] mb-1">
-                    {highPriorityGoal?.title || highPriorityGoal?.name || "Protect your heart and arteries"}
-                  </h3>
-                  <p className="text-[12px] font-normal text-white leading-[16px] line-clamp-2">
-                    {highPriorityGoal?.description || highPriorityGoal?.summary || "Your blood work shows a genetically high LP(a) with LDL/ApoB leaving extra cholesterol particles in circulation."}
-                  </p>
+              {/* High priority goal card — only when a real high-priority goal exists */}
+              {highPriorityGoal && (
+                <div className="relative mb-4 h-[132px] overflow-hidden rounded-2xl border border-borderColor shadow-sm">
+                  <img
+                    src="/assets/doctor/goals-card-bg-figma.png"
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="relative z-10 p-3">
+                    <span className="inline-block text-[12px] font-semibold bg-white/15 text-white px-3 py-1 rounded-[25px] mb-1">
+                      High priority
+                    </span>
+                    <h3 className="text-[14px] font-semibold text-white leading-[20px] tracking-[-0.15px] mb-1">
+                      {highPriorityGoal.title || highPriorityGoal.name}
+                    </h3>
+                    <p className="text-[12px] font-normal text-white leading-[16px] line-clamp-2">
+                      {highPriorityGoal.description || highPriorityGoal.whatThisMeans || ""}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Stats row */}
               <div className="flex items-center gap-3 mb-4">
@@ -419,25 +441,25 @@ export default function PatientDetail() {
                       key={idx}
                       className="flex items-center gap-3 rounded-xl border border-borderColor bg-white p-3 shadow-sm"
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-medium text-black leading-[20px]">
-                          {item.name}
-                        </p>
-                        <p className="text-[13px] font-medium text-[#71717b] leading-[18px]">
-                          {item.price}
-                        </p>
+                      <div className="flex h-[40px] w-[40px] flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                        <Pill className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="h-[44px] w-[44px] rounded flex-shrink-0 overflow-hidden">
-                        <img
-                          src="/assets/doctor/protocol-item.png"
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-[14px] font-medium text-black leading-[20px]">
+                          {item.productName || "Protocol item"}
+                        </p>
+                        {(item.dosing ||
+                          (item.triggerBiomarkers && item.triggerBiomarkers.length > 0)) && (
+                          <p className="truncate text-[13px] font-medium text-[#71717b] leading-[18px]">
+                            {item.dosing ||
+                              `Targets ${item.triggerBiomarkers.slice(0, 2).join(", ")}`}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="text-[13px] text-[#71717b] py-2">No data yet</p>
+                  <p className="text-[13px] text-[#71717b] py-2">No protocol items yet</p>
                 )}
               </div>
             </div>
@@ -516,12 +538,12 @@ export default function PatientDetail() {
                     >
                       <div className="flex items-center justify-center flex-shrink-0 w-6 h-6">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="10" stroke={idx === 0 ? "#00d4a1" : "#d1d5db"} strokeWidth="2" fill="none" />
-                          {idx === 0 && <path d="M8 12l3 3 5-5" stroke="#00d4a1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />}
+                          <circle cx="12" cy="12" r="10" stroke={item.achieved ? "#00d4a1" : "#d1d5db"} strokeWidth="2" fill="none" />
+                          {item.achieved && <path d="M8 12l3 3 5-5" stroke="#00d4a1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />}
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-[14px] font-medium leading-[20px] tracking-[-0.15px] ${idx === 0 ? "line-through text-[#99a1af]" : "text-black"}`}>
+                        <p className={`text-[14px] font-medium leading-[20px] tracking-[-0.15px] ${item.achieved ? "line-through text-[#99a1af]" : "text-black"}`}>
                           {item.name}
                         </p>
                         <p className="text-[12px] font-normal text-[#6a7282] leading-[16px]">

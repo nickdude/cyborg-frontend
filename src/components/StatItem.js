@@ -7,11 +7,14 @@ const DOT = {
 
 export default function StatItem({ label, value, color = "text-gray-900" }) {
   return (
-    <div className="rounded-xl border border-borderColor bg-pageBackground/40 px-3 py-3 text-left lg:px-4 lg:py-3.5">
+    <div className="flex min-h-[82px] flex-col items-center justify-center rounded-2xl border border-borderColor bg-white px-2 py-3 text-center">
       <p className={`text-2xl font-bold tabular-nums lg:text-[28px] ${color}`}>{value ?? "N/A"}</p>
-      <div className="mt-1.5 flex items-center gap-1.5">
-        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: DOT[color] || "#71717B" }} />
-        <p className="text-[11px] font-medium text-gray-500 lg:text-xs">{label}</p>
+      <div className="mt-1.5 flex items-center justify-center gap-1.5">
+        <span
+          className="h-1.5 w-1.5 flex-shrink-0 rounded-full"
+          style={{ backgroundColor: DOT[color] || "#71717B" }}
+        />
+        <p className="text-[11px] font-medium leading-tight text-gray-500">{label}</p>
       </div>
     </div>
   );

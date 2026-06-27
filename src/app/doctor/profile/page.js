@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Cookie from "js-cookie";
 import { useAuth } from "@/contexts/AuthContext";
 import HeaderActions from "@/components/HeaderActions";
+import DoctorBottomNav from "@/components/DoctorBottomNav";
 import { CheckCircle, Loader2, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -186,7 +187,7 @@ export default function DoctorProfilePage() {
         </div>
       </header>
 
-      <main className="max-w-[1200px] mx-auto px-4 md:px-8 py-6 md:py-10">
+      <main className="max-w-[1200px] mx-auto px-4 md:px-8 pt-6 md:pt-10 pb-28 min-[1367px]:pb-10">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
             <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Profile</p>
@@ -440,6 +441,8 @@ export default function DoctorProfilePage() {
           )}
         </div>
       </main>
+
+      <DoctorBottomNav />
     </div>
   );
 }

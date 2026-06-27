@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { goalsAPI, actionPlanAPI } from "@/services/api";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import GoalDetail from "@/components/GoalDetail";
 import ProtocolIntro from "@/components/protocol/ProtocolIntro";
 import ActionPlan from "@/components/protocol/ActionPlan";
@@ -246,9 +247,9 @@ export default function Protocol() {
   const monitoredIssues = plan?.monitoredIssues || [];
   const protocolData = plan?.protocol || null;
 
-  const fetchPlan = useCallback(async () => {
+  const fetchPlan = useCallback(async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await actionPlanAPI.getLatest();
       const data = res?.data || res;
       setPlan(data || null);
@@ -259,7 +260,7 @@ export default function Protocol() {
         setNoActionPlan(true);
       }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -285,11 +286,21 @@ export default function Protocol() {
       status === "generating" || status === "pending" || goalsStatus === "generating" || goalsStatus === "pending";
     if (!generating) return;
     const id = setInterval(() => {
-      fetchPlan();
+      fetchPlan({ silent: true });
       fetchGoals({ silent: true });
     }, 6000);
     return () => clearInterval(id);
   }, [status, goalsStatus, fetchPlan, fetchGoals]);
+
+  // Always-on live refresh (silent) so doctor-side changes — e.g. an approved
+  // plan or newly published goals — appear without a manual reload.
+  useAutoRefresh(
+    useCallback(() => {
+      fetchPlan({ silent: true });
+      fetchGoals({ silent: true });
+    }, [fetchPlan, fetchGoals]),
+    { interval: 15000 }
+  );
 
   // Auto-show the onboarding flow once per NEW ready plan (tracked in localStorage).
   // Gate on a FULLY generated plan — otherwise the reveal screens render a stub

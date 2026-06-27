@@ -339,16 +339,19 @@ export default function HeaderActions() {
                 <UserCircle className="h-4 w-4 text-gray-600" />
                 <span className="text-sm text-gray-700">My Profile</span>
               </button>
-              <button
-                onClick={() => {
-                  setUserMenuOpen(false);
-                  router.push("/settings");
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-all"
-              >
-                <Settings className="h-4 w-4 text-gray-600" />
-                <span className="text-sm text-gray-700">Settings</span>
-              </button>
+              {/* Settings is patient-only; a doctor's settings live on their Profile */}
+              {user?.userType !== "doctor" && (
+                <button
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    router.push("/settings");
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-all"
+                >
+                  <Settings className="h-4 w-4 text-gray-600" />
+                  <span className="text-sm text-gray-700">Settings</span>
+                </button>
+              )}
             </div>
             <div className="border-t border-borderColor py-2">
               <button

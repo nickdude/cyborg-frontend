@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import InsightsDashboard from "@/components/home/InsightsDashboard";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { transformPanel, computeSummary, extractScores, humanizeCategory } from "@/utils/biomarkerAdapter";
 import { biomarkerAPI, userAPI, actionPlanAPI } from "@/services/api";
 import { ArrowUpRight, ChevronRight, X, Lock, ClipboardList, Check, Droplet, FileText, Stethoscope, FlaskConical, RefreshCw } from "lucide-react";
@@ -105,6 +106,16 @@ export default function Dashboard() {
         }, 8000);
         return () => clearInterval(id);
     }, [plan?.status, processingCount, fetchReports]);
+
+    // Always-on live refresh (silent) so an approved plan or freshly processed
+    // report appears on the home without a manual reload.
+    useAutoRefresh(
+        useCallback(() => {
+            fetchReports({ silent: true });
+            actionPlanAPI.getLatest().then((res) => setPlan(res?.data || res || null)).catch(() => {});
+        }, [fetchReports]),
+        { interval: 15000 }
+    );
 
     // ── Insights branch (only when a report is genuinely ready) ───────────────
     const forcedView = searchParams.get("view");
