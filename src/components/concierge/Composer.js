@@ -36,6 +36,7 @@ export default function Composer({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKey}
             placeholder={placeholder || "Message Cyborg…"}
+            aria-label="Message"
             className="w-full resize-none outline-none text-base sm:text-sm bg-transparent placeholder:text-gray-400"
           />
         </div>

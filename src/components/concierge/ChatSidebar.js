@@ -36,6 +36,24 @@ export default function ChatSidebar({
   const chats = useConciergeStore((s) => s.chats);
   const [query, setQuery] = useState("");
 
+  // Track the lg breakpoint. The drawer is an off-canvas overlay on small
+  // screens (translated off-screen when closed) but static/visible on desktop
+  // (lg:static lg:translate-x-0). We only want to hide it from the tab order /
+  // AT when it is closed AND on a small screen.
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+
+  // When closed on a small screen the panel is translated off-screen but its
+  // controls remain focusable — pull them out of the tab order and hide from AT.
+  const offscreen = !open && !isDesktop;
+
   // Escape-to-close while the drawer is open (mobile)
   useEffect(() => {
     if (!open) return;
@@ -74,6 +92,8 @@ export default function ChatSidebar({
         />
       )}
       <aside
+        aria-hidden={offscreen || undefined}
+        inert={offscreen ? "" : undefined}
         className={`fixed z-50 top-0 left-0 h-full w-72 bg-white/95 backdrop-blur-xl border-r border-gray-100 flex flex-col transform transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:static lg:translate-x-0`}
@@ -114,6 +134,7 @@ export default function ChatSidebar({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
+              aria-label="Search chats"
               className="flex-1 outline-none text-base sm:text-sm bg-transparent placeholder:text-gray-400"
             />
           </div>

@@ -319,8 +319,10 @@ export default function Chatbot({ patientId, patientName }) {
         <button
           type="button"
           onClick={() => setHistoryOpen((v) => !v)}
-          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           aria-label="Chat history"
+          aria-expanded={historyOpen}
+          aria-controls="doctor-chat-history"
         >
           {historyOpen ? (
             <PanelLeftClose className="w-4 h-4 text-gray-600" />
@@ -343,7 +345,7 @@ export default function Chatbot({ patientId, patientName }) {
           type="button"
           onClick={handleNewChat}
           disabled={streaming}
-          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30"
+          className="p-1.5 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           aria-label="New chat"
         >
           <Plus className="w-4 h-4 text-gray-600" />
@@ -355,7 +357,10 @@ export default function Chatbot({ patientId, patientName }) {
 
       {/* Chat history sidebar */}
       {historyOpen && (
-        <div className="absolute inset-0 top-[52px] z-20 bg-white flex flex-col">
+        <div
+          id="doctor-chat-history"
+          className="absolute inset-0 top-[52px] z-20 bg-white flex flex-col"
+        >
           <div className="px-4 py-3 border-b border-borderColor">
             <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-0.5">
               <button
@@ -396,11 +401,18 @@ export default function Chatbot({ patientId, patientName }) {
             ) : (
               <div className="py-1">
                 {chatList.map((chat) => (
-                  <button
+                  <div
                     key={chat._id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => switchChat(chat._id)}
-                    className={`w-full text-left px-3 py-2.5 hover:bg-gray-50 transition-colors flex items-start gap-2 group ${
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        switchChat(chat._id);
+                      }
+                    }}
+                    className={`w-full text-left px-3 py-2.5 hover:bg-gray-50 transition-colors flex items-start gap-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 ${
                       chat._id === chatId ? "bg-primary/5" : ""
                     }`}
                   >
@@ -422,12 +434,12 @@ export default function Chatbot({ patientId, patientName }) {
                     <button
                       type="button"
                       onClick={(e) => handleDeleteChat(chat._id, e)}
-                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded transition-all"
+                      className="p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100 hover:bg-red-50 rounded transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
                       aria-label="Delete chat"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-red-400" />
                     </button>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -449,7 +461,7 @@ export default function Chatbot({ patientId, patientName }) {
       <div className="relative flex-1 min-h-0">
         <div
           ref={containerRef}
-          className="h-full overflow-y-auto bg-gray-50 px-4 py-6 space-y-4 sm:px-6"
+          className="h-full overflow-y-auto overflow-x-hidden bg-gray-50 px-4 py-6 space-y-4 sm:px-6"
         >
           {isEmpty ? (
             /* Empty state with quick prompts */
@@ -505,7 +517,7 @@ export default function Chatbot({ patientId, patientName }) {
         {!isPinned && streaming && (
           <button
             onClick={jumpToBottom}
-            className="absolute bottom-4 right-4 bg-primary text-white rounded-full w-9 h-9 shadow-lg shadow-primary/25 hover:bg-primary/90 active:scale-95 transition-all duration-150 flex items-center justify-center"
+            className="absolute bottom-4 right-4 bg-primary text-white rounded-full w-9 h-9 min-h-[44px] min-w-[44px] shadow-lg shadow-primary/25 hover:bg-primary/90 active:scale-95 transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
             aria-label="Jump to latest"
           >
             <ArrowDown className="w-4 h-4" />
