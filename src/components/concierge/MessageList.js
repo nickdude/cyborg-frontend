@@ -36,7 +36,7 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
     <div className="relative flex-1 min-h-0">
       <div
         ref={containerRef}
-        className="h-full overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-6 space-y-4"
+        className="h-full overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-6"
       >
         {isEmpty ? (
           <div className="max-w-md mx-auto text-center mt-20">
@@ -62,7 +62,7 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto w-full">
+          <div className="max-w-3xl mx-auto w-full space-y-4">
             {messages.map((m) => {
               const isLastAssistant =
                 m.role === "assistant" &&
