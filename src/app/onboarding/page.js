@@ -336,9 +336,18 @@ export default function Onboarding() {
       try {
         setLoadingQuestionnaire(true);
         const response = await questionnaireAPI.get();
-        if (response?.data?.questionary) {
-          setSections(response.data.questionary);
-        }
+        const raw = response?.data?.questionary;
+        // Only use the API data if it matches the expected shape: an array of
+        // sections whose `questions` items have a `code`. A legacy seed stored
+        // an incompatible shape ({ version, sections:[{ id, label, ... }] }),
+        // which made `step` undefined and rendered the page blank. Fall back to
+        // the bundled SECTIONS in that case so onboarding always works.
+        const valid =
+          Array.isArray(raw) &&
+          raw.length > 0 &&
+          Array.isArray(raw[0]?.questions) &&
+          typeof raw[0].questions?.[0]?.code === "string";
+        setSections(valid ? raw : SECTIONS);
       } catch (err) {
         console.error("Error fetching questionnaire:", err);
         setSections(SECTIONS);

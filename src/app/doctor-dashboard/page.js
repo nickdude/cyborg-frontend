@@ -175,13 +175,25 @@ function PatientCard({ patient, index = 0, onClick }) {
 
 // ─── Calendar Strip ───
 function CalendarStrip() {
-  const today = new Date();
-  const days = [];
-  for (let i = 0; i < 14; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    days.push(d);
-  }
+  // `today` is computed on the client only. Deriving it during SSR uses the
+  // server's timezone/clock, which can differ from the browser's (e.g. server
+  // 27th vs client 28th) and causes a React hydration mismatch. Starting null
+  // makes the server render and first client render identical (placeholders).
+  const [today, setToday] = useState(null);
+  useEffect(() => {
+    setToday(new Date());
+  }, []);
+
+  const days = useMemo(() => {
+    if (!today) return [];
+    const arr = [];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      arr.push(d);
+    }
+    return arr;
+  }, [today]);
 
   return (
     <div className="flex min-h-[320px] flex-col rounded-2xl border border-borderColor bg-white p-5 shadow-sm">
@@ -191,8 +203,8 @@ function CalendarStrip() {
       </div>
       <div className="flex-1" />
       <div className="grid grid-cols-7 gap-x-2 gap-y-3">
-        {days.map((d, i) => {
-          const isToday = i === 0;
+        {(today ? days : Array.from({ length: 14 })).map((d, i) => {
+          const isToday = today && i === 0;
           return (
             <button
               key={i}
@@ -200,9 +212,9 @@ function CalendarStrip() {
                 isToday
                   ? "bg-black text-white"
                   : "border border-borderColor bg-gray-50 text-gray-600 hover:bg-gray-100"
-              }`}
+              }${!today ? " animate-pulse" : ""}`}
             >
-              {d.getDate()}
+              {today ? d.getDate() : ""}
             </button>
           );
         })}
