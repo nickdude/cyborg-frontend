@@ -573,7 +573,7 @@ export default function PatientDetail() {
       {/* Mobile Chatbot FAB */}
       <button
         onClick={() => setMobileChatOpen(true)}
-        className="lg:hidden fixed bottom-5 right-5 h-14 w-14 rounded-full bg-[#541d7a] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] hover:bg-[#441566] transition-colors flex items-center justify-center z-40"
+        className="lg:hidden fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 h-14 w-14 rounded-full bg-[#541d7a] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] hover:bg-[#441566] transition-colors flex items-center justify-center z-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#541d7a]/50 focus-visible:ring-offset-2"
       >
         <img src="/assets/doctor/cyborg-logo.png" alt="Chat" className="w-6 h-6 object-cover" />
       </button>

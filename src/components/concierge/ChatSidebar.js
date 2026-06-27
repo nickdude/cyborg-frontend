@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useConciergeStore } from "@/stores/concierge";
@@ -36,6 +36,16 @@ export default function ChatSidebar({
   const chats = useConciergeStore((s) => s.chats);
   const [query, setQuery] = useState("");
 
+  // Escape-to-close while the drawer is open (mobile)
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
   const buckets = useMemo(() => {
     const filtered = chatOrder.filter((id) => {
       const c = chats[id];
@@ -60,6 +70,7 @@ export default function ChatSidebar({
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-200"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
       <aside
@@ -80,7 +91,7 @@ export default function ChatSidebar({
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             aria-label="Close sidebar"
           >
             <X className="w-4 h-4 text-gray-500" />
@@ -103,7 +114,7 @@ export default function ChatSidebar({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
-              className="flex-1 outline-none text-sm bg-transparent placeholder:text-gray-400"
+              className="flex-1 outline-none text-base sm:text-sm bg-transparent placeholder:text-gray-400"
             />
           </div>
         </div>
@@ -114,14 +125,14 @@ export default function ChatSidebar({
             if (!rows || !rows.length) return null;
             return (
               <div key={label} className="mt-3">
-                <div className="px-4 text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-1">
+                <div className="px-4 text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
                   {label}
                 </div>
                 {rows.map((c) => (
                   <button
                     key={c._id}
                     onClick={() => onSelect(c._id)}
-                    className={`w-full text-left px-4 py-2 text-[13px] transition-colors truncate rounded-lg mx-1 cursor-pointer ${
+                    className={`w-full text-left px-4 py-2 min-h-[44px] text-[13px] transition-colors truncate rounded-lg mx-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                       activeChatId === c._id
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-gray-700 hover:bg-gray-50"
@@ -136,7 +147,7 @@ export default function ChatSidebar({
             );
           })}
           {!Object.keys(buckets).length && (
-            <div className="px-4 py-8 text-center text-sm text-gray-400">
+            <div className="px-4 py-8 text-center text-sm text-gray-500">
               No chats yet
             </div>
           )}

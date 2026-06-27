@@ -119,10 +119,10 @@ export default function ConciergePage() {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex items-center gap-2 px-3 py-3 border-b border-gray-100 bg-white">
+        <header className="flex items-center gap-2 px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] border-b border-gray-100 bg-white">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             aria-label="Open sidebar"
           >
             <Menu className="w-5 h-5 text-gray-600" />

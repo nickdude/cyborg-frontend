@@ -88,7 +88,7 @@ export default function Message({ message, streaming }) {
     const text = message.content?.[0]?.text || "";
     return (
       <div className="flex justify-end animate-[fadeIn_0.2s_ease-out]">
-        <div className="max-w-[80%] bg-primary text-white rounded-[20px] rounded-br-md px-4 py-3 text-sm whitespace-pre-wrap break-words shadow-sm">
+        <div className="max-w-[88%] sm:max-w-[80%] bg-primary text-white rounded-[20px] rounded-br-md px-4 py-3 text-sm whitespace-pre-wrap break-words shadow-sm">
           {text}
         </div>
       </div>
@@ -153,7 +153,7 @@ export default function Message({ message, streaming }) {
       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center shrink-0 mt-1">
         <span className="text-[10px] font-bold text-white">C</span>
       </div>
-      <div className="max-w-[85%] min-w-0">
+      <div className="max-w-full min-w-0">
         <ThinkingBlock
           thinking={message.thinking}
           displaySegments={orphanThinking?.segments}

@@ -313,7 +313,7 @@ export default function Chatbot({ patientId, patientName }) {
   // Render
   // -----------------------------------------------------------------------
   return (
-    <div className="h-full flex flex-col bg-white relative border border-borderColor/80 rounded-l-3xl overflow-hidden shadow-sm">
+    <div className="h-full flex flex-col bg-white relative lg:border lg:border-borderColor/80 lg:rounded-l-3xl overflow-hidden lg:shadow-sm">
       {/* Header */}
       <header className="flex items-center gap-2 px-4 py-3 border-b border-borderColor bg-white shrink-0">
         <button
@@ -390,7 +390,7 @@ export default function Chatbot({ patientId, patientName }) {
                 <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
               </div>
             ) : chatList.length === 0 ? (
-              <div className="text-center py-8 text-sm text-gray-400">
+              <div className="text-center py-8 text-sm text-gray-500">
                 No chats yet
               </div>
             ) : (
@@ -409,7 +409,7 @@ export default function Chatbot({ patientId, patientName }) {
                       <p className="text-sm font-medium text-gray-800 truncate">
                         {chat.title || chat.patientName || "Untitled chat"}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         {chat.patientName && showAllPatients
                           ? `${chat.patientName} · `
                           : ""}
@@ -514,7 +514,7 @@ export default function Chatbot({ patientId, patientName }) {
       </div>
 
       {/* Composer */}
-      <div className="border-t border-borderColor bg-white px-4 py-3">
+      <div className="border-t border-borderColor bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="flex items-end gap-2">
           <div className="flex-1 rounded-2xl border border-borderColor bg-gray-50/50 px-4 py-2.5 transition-all duration-200 focus-within:border-primary/30 focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/10">
             <textarea
@@ -529,14 +529,14 @@ export default function Chatbot({ patientId, patientName }) {
                   : "Ask about biomarkers, risks…"
               }
               disabled={streaming}
-              className="w-full resize-none outline-none text-sm bg-transparent placeholder:text-gray-400 disabled:text-gray-400"
+              className="w-full resize-none outline-none text-base sm:text-sm bg-transparent placeholder:text-gray-400 disabled:text-gray-400"
             />
           </div>
           <button
             type="button"
             onClick={() => handleSend()}
             disabled={streaming || !input.trim()}
-            className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-30 hover:bg-primary/90 active:scale-95 transition-all duration-150 shrink-0 shadow-sm"
+            className="w-9 h-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-30 hover:bg-primary/90 active:scale-95 transition-all duration-150 shrink-0 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
             aria-label="Send"
           >
             <ArrowUp className="w-4 h-4" />

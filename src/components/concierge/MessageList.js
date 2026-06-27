@@ -36,7 +36,7 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
     <div className="relative flex-1 min-h-0">
       <div
         ref={containerRef}
-        className="h-full overflow-y-auto px-4 sm:px-6 py-6 space-y-4"
+        className="h-full overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-6 space-y-4"
       >
         {isEmpty ? (
           <div className="max-w-md mx-auto text-center mt-20">
@@ -62,7 +62,7 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
             </div>
           </div>
         ) : (
-          <>
+          <div className="max-w-3xl mx-auto w-full">
             {messages.map((m) => {
               const isLastAssistant =
                 m.role === "assistant" &&
@@ -75,14 +75,14 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
                 />
               );
             })}
-          </>
+          </div>
         )}
       </div>
 
-      {!isPinned && streaming && (
+      {!isPinned && (
         <button
           onClick={jumpToBottom}
-          className="absolute bottom-4 right-4 bg-primary text-white rounded-full w-9 h-9 shadow-lg shadow-primary/25 hover:bg-primary/90 active:scale-95 transition-all duration-150 flex items-center justify-center"
+          className="absolute bottom-4 right-4 bg-primary text-white rounded-full w-9 h-9 min-h-[44px] min-w-[44px] shadow-lg shadow-primary/25 hover:bg-primary/90 active:scale-95 transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
           aria-label="Jump to latest"
         >
           <ArrowDown className="w-4 h-4" />
