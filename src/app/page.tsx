@@ -45,12 +45,12 @@ export default function Home() {
       <LandingPreloader />
       <SmoothScroll>
         <BackgroundVideo />
-      <main className="relative z-10 overflow-x-clip">
+      <main className="relative z-10">
         {/* Hero is transparent so the fixed scroll.mp4 shows through */}
         <Hero />
 
         {/* Everything below sits on an opaque backdrop so reveals don't bleed the video */}
-        <div className="relative overflow-x-clip bg-black">
+        <div className="relative bg-black">
 
           <Reveal><Products /></Reveal>
           <Reveal><AllInOneApp /></Reveal>

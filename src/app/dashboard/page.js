@@ -11,7 +11,7 @@ import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { transformPanel, computeSummary, extractScores, humanizeCategory } from "@/utils/biomarkerAdapter";
 import { biomarkerAPI, userAPI, actionPlanAPI } from "@/services/api";
-import { ArrowUpRight, ChevronRight, X, Lock, Fingerprint, Upload, ClipboardList } from "lucide-react";
+import { ArrowUpRight, ChevronRight, X, Lock, ClipboardList, Check, Droplet, FileText, Stethoscope, FlaskConical, RefreshCw } from "lucide-react";
 
 // Normalize any stored value ("Male"/"Female"/"female"/…) to the 3D model key.
 const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");
@@ -220,22 +220,41 @@ export default function Dashboard() {
     })();
     const initials = (userName || "U").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
-    // ── Real timeline events (the user's actual blood reports) ────────────────
-    const reportEvents = [...reports]
-        .sort((a, b) => new Date(b.reportDate || b.createdAt || 0) - new Date(a.reportDate || a.createdAt || 0))
-        .slice(0, 5)
-        .map((r) => ({
-            id: r._id,
-            date: r.reportDate || r.createdAt || r.uploadedAt,
-            title: r.filename || r.fileName || "Blood Panel",
-            ready: !r.status || r.status === "ready",
-        }));
+    // ── Member health journey (drives the home Timeline) ─────────────────────
+    // Statuses come from REAL state; the sequence mirrors the product logic:
+    // intake → blood panel → action plan → clinician review → follow-up → re-test.
+    const addDaysISO = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x.toISOString(); };
+    const sortedReports = [...reports].sort((a, b) => new Date(a.reportDate || a.createdAt || 0) - new Date(b.reportDate || b.createdAt || 0));
+    const firstReportDate = sortedReports[0]?.reportDate || sortedReports[0]?.createdAt || null;
+    const lastReportDate = sortedReports.at(-1)?.reportDate || sortedReports.at(-1)?.createdAt || null;
+    const planDate = plan?.generatedAt || plan?.createdAt || null;
 
-    // ── Real onboarding next-steps (only what's genuinely still incomplete) ───
-    const onboardingSteps = [];
-    if (!user?.dateOfBirth) onboardingSteps.push({ key: "dob", Icon: Fingerprint, title: "Add your date of birth", desc: "Unlock your biological age", href: "/profile" });
-    if (reports.length === 0) onboardingSteps.push({ key: "report", Icon: Upload, title: "Upload a blood report", desc: "Get your Cyborg Score and a personalized protocol", href: "/data?tab=records" });
-    if (!user?.onboardingCompleted) onboardingSteps.push({ key: "intake", Icon: ClipboardList, title: "Complete your health intake", desc: "Answer a few questions to personalize your plan", href: "/onboarding" });
+    const journey = [
+        { key: "intake", tone: "purple", Icon: ClipboardList, title: "Health intake",
+          date: user?.createdAt || null, href: "/onboarding",
+          status: user?.onboardingCompleted ? "complete" : "active",
+          note: user?.onboardingCompleted ? "Complete" : "Answer a few questions" },
+        { key: "blood", tone: "red", Icon: Droplet, title: "Blood Panel",
+          date: firstReportDate, href: "/data?tab=records",
+          status: hasAnyReport ? "complete" : "active",
+          note: hasAnyReport ? "Complete" : "Upload your first panel" },
+        { key: "plan", tone: "purple", Icon: FileText, title: "Your Action Plan",
+          date: planDate, href: "/protocol",
+          status: planReady ? "active" : "locked",
+          note: planReady ? "Tap to open" : "Unlocks after your labs" },
+        { key: "review", tone: "blue", Icon: Stethoscope, title: "1-1 Advisory call",
+          date: planReady && planDate ? addDaysISO(planDate, 7) : null, href: "/consults",
+          status: planReady ? "upcoming" : "locked",
+          note: "Review your results with a clinician" },
+        { key: "custom", tone: "orange", Icon: FlaskConical, title: "Custom Panel",
+          date: lastReportDate ? addDaysISO(lastReportDate, 45) : null, href: "/market-place?category=tests",
+          status: hasAnyReport ? "upcoming" : "locked",
+          note: "Targeted follow-up test" },
+        { key: "retest", tone: "green", Icon: RefreshCw, title: "90-day re-test",
+          date: lastReportDate ? addDaysISO(lastReportDate, 90) : null, href: "/data",
+          status: "locked", note: "Track your progress" },
+    ];
+    const journeyDone = journey.filter((m) => m.status === "complete").length;
 
     // ── Digital Twin: the clean 3D-body home (no purple header, exactly the
     //    original dashboard) ─────────────────────────────────────────────────
@@ -292,11 +311,9 @@ export default function Dashboard() {
                 <HomeTabs active={homeTab} onChange={setHomeTab} />
 
                 <TimelineContent
-                    loading={reportsLoading}
-                    processingReport={processingReport}
-                    readyReport={readyReport}
-                    events={reportEvents}
-                    onboardingSteps={onboardingSteps}
+                    processing={!!processingReport}
+                    journey={journey}
+                    journeyDone={journeyDone}
                 />
             </div>
         </div>
@@ -457,132 +474,148 @@ function HomeTabs({ active, onChange }) {
 
 /* ═══════════════════════ Timeline content ═══════════════════════ */
 
-function TimelineContent({ loading, processingReport, readyReport, events, onboardingSteps }) {
+function TimelineContent({ processing, journey, journeyDone }) {
     return (
-        <div className="mt-4 flex flex-col gap-4">
-            <UpcomingCard processing={!!processingReport} />
-            <BloodStatusCard loading={loading} processingReport={processingReport} readyReport={readyReport} />
-            <TimelineEventsCard events={events} />
-            <FinishOnboardingCard steps={onboardingSteps} />
-            <LiveBetterCard />
+        <div className="mt-4 flex flex-col gap-5">
+            <UpcomingCard processing={processing} journey={journey} />
+            <JourneySection journey={journey} done={journeyDone} />
         </div>
     );
 }
 
-function UpcomingCard({ processing }) {
+function UpcomingCard({ processing, journey }) {
     const today = new Date();
     const days = Array.from({ length: 14 }, (_, i) => {
         const d = new Date(today);
         d.setDate(today.getDate() + i);
         return d;
     });
+    // Mark days in the window that carry an upcoming milestone.
+    const marks = new Set();
+    (journey || []).forEach((m) => {
+        if (!m.date) return;
+        const md = new Date(m.date);
+        days.forEach((d, i) => { if (d.toDateString() === md.toDateString()) marks.add(i); });
+    });
 
     return (
-        <div className="rounded-3xl bg-[#1b1b1d] p-5 text-white">
-            <h3 className="text-lg font-semibold">Upcoming</h3>
-            <p className="mt-0.5 text-sm text-white/45">
-                {processing ? "Results processing — check back soon" : "in the next 2 weeks"}
-            </p>
-            <div className="mt-6 grid grid-cols-7 gap-y-3">
-                {days.map((d, i) => (
-                    <div key={i} className="flex justify-center">
-                        <span
-                            className={`grid h-9 w-9 place-items-center rounded-full text-sm font-medium ${
-                                i === 0 ? "bg-white text-black" : "bg-white/10 text-white/80"
-                            }`}
-                        >
-                            {d.getDate()}
-                        </span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function BloodStatusCard({ loading, processingReport, readyReport }) {
-    const stages = ["Scheduled", "Processing", "Results Ready"];
-    let stage = 0;
-    let title = "Your blood draw is being scheduled";
-    let body = "Your results will be uploaded to your dashboard once complete";
-    if (!loading && readyReport) {
-        stage = 2;
-        title = "Your results are ready";
-        body = "View your full biomarker breakdown and personalized insights.";
-    } else if (!loading && processingReport) {
-        stage = 1;
-        title = "Your results are processing";
-        body = "We're analyzing your sample — we'll notify you the moment it's done.";
-    }
-    const pct = ((stage + 1) / stages.length) * 100;
-
-    return (
-        <Link href="/data" className={`group block ${CARD} p-5 transition hover:border-blue/20`}>
-            <h3 className="text-base font-semibold tracking-tight text-blue">{title}</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-secondary">{body}</p>
-            <div className="mt-5 flex items-center justify-between text-xs font-medium text-secondary">
-                {stages.map((s, i) => (
-                    <span key={s} className={i <= stage ? "text-blue" : ""}>{s}</span>
-                ))}
-            </div>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-pageBackground">
-                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
-            </div>
-        </Link>
-    );
-}
-
-function TimelineEventsCard({ events }) {
-    if (!events?.length) return null;
-    return (
-        <div className={`${CARD} overflow-hidden`}>
-            <div className="divide-y divide-borderColor">
-                {events.map((e) => {
-                    const d = evDate(e.date);
-                    return (
-                        <Link key={e.id} href="/data" className="group flex items-center gap-3 px-4 py-4 transition hover:bg-pageBackground/60">
-                            <div className="flex w-10 shrink-0 flex-col items-center">
-                                <span className="text-[15px] font-semibold leading-none text-blue">{d.day}</span>
-                                <span className="mt-0.5 text-[11px] uppercase tracking-wide text-secondary">{d.mon}</span>
-                            </div>
-                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-orange-50">
-                                <Image src="/assets/black-icons/vial.svg" alt="" width={16} height={16} className="opacity-80" />
+        <div className="overflow-hidden rounded-3xl bg-[#1b1b1d] text-white">
+            <div className="h-1.5 w-full bg-gradient-to-r from-violet-500 to-fuchsia-500" />
+            <div className="p-5">
+                <h3 className="text-lg font-semibold">Upcoming</h3>
+                <p className="mt-0.5 text-sm text-white/45">
+                    {processing ? "Results processing — check back soon" : "in the next 2 weeks"}
+                </p>
+                <div className="mt-6 grid grid-cols-7 gap-y-3">
+                    {days.map((d, i) => (
+                        <div key={i} className="flex flex-col items-center gap-1">
+                            <span
+                                className={`grid h-9 w-9 place-items-center rounded-full text-sm font-medium ${
+                                    i === 0 ? "bg-white text-black" : "bg-white/10 text-white/80"
+                                }`}
+                            >
+                                {d.getDate()}
                             </span>
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-medium text-blue">{e.title}</p>
-                                <p className="mt-0.5 text-xs text-secondary">{e.ready ? "Results ready" : "Processing"}</p>
-                            </div>
-                            <ChevronRight className="h-5 w-5 shrink-0 text-secondary transition group-hover:translate-x-0.5 group-hover:text-blue" />
-                        </Link>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
-
-function FinishOnboardingCard({ steps }) {
-    if (!steps?.length) return null;
-    return (
-        <div>
-            <h3 className="mb-3 px-1 text-base font-semibold tracking-tight text-blue">
-                Finish onboarding to get most out of Cyborg
-            </h3>
-            <div className={`${CARD} overflow-hidden`}>
-                <div className="divide-y divide-borderColor">
-                    {steps.map(({ key, Icon, title, desc, href }) => (
-                        <Link key={key} href={href} className="group flex items-center gap-3 px-4 py-4 transition hover:bg-pageBackground/60">
-                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#ece7f6] text-primary">
-                                <Icon className="h-[18px] w-[18px]" />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-blue">{title}</p>
-                                <p className="mt-0.5 text-xs leading-relaxed text-secondary">{desc}</p>
-                            </div>
-                            <ChevronRight className="h-5 w-5 shrink-0 text-secondary transition group-hover:translate-x-0.5 group-hover:text-blue" />
-                        </Link>
+                            <span className={`h-1 w-1 rounded-full ${marks.has(i) ? "bg-fuchsia-400" : "bg-transparent"}`} />
+                        </div>
                     ))}
                 </div>
+            </div>
+        </div>
+    );
+}
+
+const MILESTONE_TONE = {
+    purple: "bg-[#ece7f6] text-primary",
+    red: "bg-red-50 text-red-500",
+    blue: "bg-blue/10 text-blue",
+    orange: "bg-orange-50 text-orange-500",
+    green: "bg-emerald-50 text-emerald-600",
+};
+
+function MilestoneCard({ m }) {
+    const d = evDate(m.date);
+    const Icon = m.Icon;
+    const clickable = m.status === "complete" || m.status === "active";
+    const sub = m.status === "upcoming" && m.date ? `Upcoming · ${d.mon} ${d.day}` : m.note;
+
+    const inner = (
+        <>
+            <div className="flex w-9 shrink-0 flex-col items-center">
+                {m.date ? (
+                    <>
+                        <span className="text-[15px] font-semibold leading-none text-blue">{d.day}</span>
+                        <span className="mt-0.5 text-[11px] uppercase tracking-wide text-secondary">{d.mon}</span>
+                    </>
+                ) : (
+                    <span className="text-[11px] uppercase tracking-wide text-secondary/60">—</span>
+                )}
+            </div>
+            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${MILESTONE_TONE[m.tone] || MILESTONE_TONE.purple}`}>
+                <Icon className="h-[18px] w-[18px]" />
+            </span>
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-blue">{m.title}</p>
+                <p className="mt-0.5 text-xs text-secondary">{sub}</p>
+            </div>
+            {m.status === "complete" ? (
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-500 text-white">
+                    <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                </span>
+            ) : m.status === "active" ? (
+                <ChevronRight className="h-5 w-5 shrink-0 text-secondary" />
+            ) : (
+                <Lock className="h-4 w-4 shrink-0 text-secondary/50" />
+            )}
+        </>
+    );
+
+    const cls = `flex items-center gap-3 rounded-2xl border border-borderColor bg-white px-4 py-3.5 ${
+        m.status === "locked" ? "opacity-60" : ""
+    } ${clickable ? "transition hover:shadow-md" : ""}`;
+
+    return clickable ? <Link href={m.href} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>;
+}
+
+function JourneySection({ journey, done }) {
+    const [filter, setFilter] = useState("all"); // all | upcoming | completed
+    const total = journey.length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    const shown = journey.filter((m) =>
+        filter === "completed" ? m.status === "complete" : filter === "upcoming" ? m.status !== "complete" : true
+    );
+
+    return (
+        <div>
+            <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-secondary">Your journey</h3>
+                <span className="text-xs font-medium text-secondary">{done} of {total} milestones complete</span>
+            </div>
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-borderColor">
+                <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
+            </div>
+
+            <div className="mt-4 flex gap-2">
+                {[["all", "All"], ["upcoming", "Upcoming"], ["completed", "Completed"]].map(([k, l]) => (
+                    <button
+                        key={k}
+                        type="button"
+                        onClick={() => setFilter(k)}
+                        className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                            filter === k ? "bg-black text-white" : "border border-borderColor bg-white text-secondary hover:text-blue"
+                        }`}
+                    >
+                        {l}
+                    </button>
+                ))}
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3">
+                {shown.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-secondary">Nothing here yet.</p>
+                ) : (
+                    shown.map((m) => <MilestoneCard key={m.key} m={m} />)
+                )}
             </div>
         </div>
     );

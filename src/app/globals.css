@@ -2,14 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Prevent accidental horizontal scroll on any page (the landing's marketing
-   sections occasionally have elements wider than the mobile viewport). */
-html,
-body {
-  overflow-x: hidden;
-  max-width: 100%;
-}
-
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
