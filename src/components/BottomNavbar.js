@@ -25,7 +25,28 @@ const MORE_ITEMS = [
   { label: "Invite friend", href: "/invite" },
 ];
 
-export default function BottomNavbar() {
+/**
+ * BottomNavbar.
+ *
+ * @param {object}   props
+ * @param {boolean}  [props.embedded=false] — when true, the bar renders absolutely
+ *   inside its positioned parent (e.g. the landing-page phone mockup) at all
+ *   breakpoints, with slightly smaller controls. Default (false) keeps the
+ *   original global app behaviour: a fixed, mobile-only bar — unchanged.
+ * @param {boolean}  [props.demoMode=false] — when true, items act as a screen
+ *   selector for the landing-page phone demo instead of routing: each control
+ *   calls `onTabChange(index)` and highlights `activeTab`. The "More" menu, the
+ *   Cyborg AI orb and the meal sheets are suppressed so nothing navigates away.
+ *   Implies the embedded layout. Default (false) → normal routing behaviour.
+ * @param {number}   [props.activeTab=0] — active screen index (demoMode only).
+ * @param {(index:number)=>void} [props.onTabChange] — screen setter (demoMode only).
+ */
+export default function BottomNavbar({
+  embedded = false,
+  demoMode = false,
+  activeTab = 0,
+  onTabChange,
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
@@ -58,66 +79,102 @@ export default function BottomNavbar() {
     router.push("/login");
   };
 
+  // demoMode also uses the compact, in-phone layout.
+  const inPhone = embedded || demoMode;
+
+  // In demoMode an item selects a phone-demo screen instead of routing.
+  const renderNavItem = ({ label, href, Icon }, demoIndex) => {
+    const active = demoMode ? activeTab === demoIndex : isActive(href);
+    const className = `${S.item} ${
+      active
+        ? "bg-pageBackground text-blue ring-1 ring-borderColor"
+        : "text-secondary hover:text-blue"
+    }`;
+    const icon = <Icon className={S.icon} strokeWidth={active ? 2.2 : 1.8} />;
+
+    if (demoMode) {
+      return (
+        <button
+          key={href}
+          type="button"
+          onClick={() => onTabChange?.(demoIndex)}
+          aria-label={label}
+          aria-pressed={active}
+          className={className}
+        >
+          {icon}
+        </button>
+      );
+    }
+    return (
+      <Link
+        key={href}
+        href={href}
+        aria-label={label}
+        aria-current={active ? "page" : undefined}
+        className={className}
+      >
+        {icon}
+      </Link>
+    );
+  };
+
+  // Size/position tokens — in-phone (embedded/demo) vs default (global app chrome).
+  const S = inPhone
+    ? {
+        wrap: "absolute inset-x-0 bottom-0 z-20 flex items-center gap-1.5 px-2.5 pb-2.5",
+        bar: "flex flex-1 items-center justify-around rounded-full bg-white/95 p-1 shadow-[0_8px_24px_rgba(0,0,0,0.18)] ring-1 ring-black/5 backdrop-blur",
+        item: "grid h-8 w-8 place-items-center rounded-full transition",
+        icon: "h-[16px] w-[16px]",
+        plus: "grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black text-white shadow-md transition hover:bg-black/85 active:scale-95",
+        plusIcon: "h-4 w-4",
+        orb: "grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white shadow-[0_8px_24px_rgba(0,0,0,0.2)] ring-1 transition",
+        orbDotActive: "h-7 w-7 shadow-[0_0_16px_rgba(249,115,22,0.65)]",
+        orbDot: "h-5 w-5 opacity-90",
+      }
+    : {
+        wrap: "fixed inset-x-0 bottom-0 z-[60] flex items-center gap-2.5 px-4 lg:hidden",
+        bar: "flex flex-1 items-center justify-around rounded-full bg-white/95 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5 backdrop-blur",
+        item: "grid h-10 w-10 place-items-center rounded-full transition",
+        icon: "h-[21px] w-[21px]",
+        plus: "grid h-11 w-11 shrink-0 place-items-center rounded-full bg-black text-white shadow-md transition hover:bg-black/85 active:scale-95",
+        plusIcon: "h-5 w-5",
+        orb: "grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-white shadow-[0_10px_30px_rgba(0,0,0,0.15)] ring-1 transition",
+        orbDotActive: "h-9 w-9 shadow-[0_0_16px_rgba(249,115,22,0.65)]",
+        orbDot: "h-6 w-6 opacity-90",
+      };
+
   return (
     <>
     <div
-      className="fixed inset-x-0 bottom-0 z-[60] flex items-center gap-2.5 px-4 lg:hidden"
-      style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom, 0px))" }}
+      className={S.wrap}
+      style={inPhone ? undefined : { paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom, 0px))" }}
     >
       {/* Icon bar */}
-      <nav
-        className="flex flex-1 items-center justify-around rounded-full bg-white/95 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.12)] ring-1 ring-black/5 backdrop-blur"
-        aria-label="Primary"
-      >
-        {NAV_ITEMS.slice(0, 2).map(({ label, href, Icon }) => {
-          const active = isActive(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-label={label}
-              aria-current={active ? "page" : undefined}
-              className={`grid h-10 w-10 place-items-center rounded-full transition ${
-                active
-                  ? "bg-pageBackground text-blue ring-1 ring-borderColor"
-                  : "text-secondary hover:text-blue"
-              }`}
-            >
-              <Icon className="h-[21px] w-[21px]" strokeWidth={active ? 2.2 : 1.8} />
-            </Link>
-          );
-        })}
+      <nav className={S.bar} aria-label="Primary">
+        {/* Home → screen 0, Twin → screen 1 (demoMode) */}
+        {NAV_ITEMS.slice(0, 2).map((item, i) => renderNavItem(item, i))}
 
-        {/* + — log a meal from a photo (camera or gallery → AI estimate) */}
+        {/* + — demoMode: select screen 2; otherwise log a meal from a photo */}
         <button
           type="button"
-          onClick={() => setMealSheet("upload")}
-          aria-label="Log a meal"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-black text-white shadow-md transition hover:bg-black/85 active:scale-95"
+          onClick={demoMode ? () => onTabChange?.(2) : () => setMealSheet("upload")}
+          aria-label={demoMode ? "Demo screen 3" : "Log a meal"}
+          aria-pressed={demoMode ? activeTab === 2 : undefined}
+          className={`${S.plus} ${
+            demoMode && activeTab === 2
+              ? "ring-2 ring-cyborg-purple ring-offset-2 ring-offset-white"
+              : ""
+          }`}
         >
-          <Plus className="h-5 w-5" strokeWidth={2.4} />
+          <Plus className={S.plusIcon} strokeWidth={2.4} />
         </button>
 
-        {NAV_ITEMS.slice(2).map(({ label, href, Icon }) => {
-          const active = isActive(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-label={label}
-              aria-current={active ? "page" : undefined}
-              className={`grid h-10 w-10 place-items-center rounded-full transition ${
-                active
-                  ? "bg-pageBackground text-blue ring-1 ring-borderColor"
-                  : "text-secondary hover:text-blue"
-              }`}
-            >
-              <Icon className="h-[21px] w-[21px]" strokeWidth={active ? 2.2 : 1.8} />
-            </Link>
-          );
-        })}
+        {/* Protocol → screen 3, Marketplace → screen 4 (demoMode) */}
+        {NAV_ITEMS.slice(2).map((item, i) => renderNavItem(item, i + 3))}
 
-        {/* More (•••) */}
+        {/* More (•••) — hidden in demoMode so nothing routes away */}
+        {!demoMode && (
         <div className="relative grid place-items-center" ref={moreRef}>
           <button
             type="button"
@@ -125,13 +182,13 @@ export default function BottomNavbar() {
             aria-label="More"
             aria-haspopup="menu"
             aria-expanded={moreOpen}
-            className={`grid h-10 w-10 place-items-center rounded-full transition ${
+            className={`${S.item} ${
               moreOpen
                 ? "bg-pageBackground text-blue ring-1 ring-borderColor"
                 : "text-secondary hover:text-blue"
             }`}
           >
-            <MoreHorizontal className="h-[21px] w-[21px]" strokeWidth={1.8} />
+            <MoreHorizontal className={S.icon} strokeWidth={1.8} />
           </button>
 
           {moreOpen && (
@@ -162,40 +219,43 @@ export default function BottomNavbar() {
             </div>
           )}
         </div>
+        )}
       </nav>
 
-      {/* Floating Cyborg AI orb (the concierge) */}
+      {/* Floating Cyborg AI orb (the concierge) — hidden in demoMode */}
+      {!demoMode && (
       <Link
         href="/concierge"
         aria-label="Cyborg AI"
         aria-current={conciergeActive ? "page" : undefined}
-        className={`grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full bg-white shadow-[0_10px_30px_rgba(0,0,0,0.15)] ring-1 transition ${
-          conciergeActive ? "ring-orange-200" : "ring-black/5"
-        }`}
+        className={`${S.orb} ${conciergeActive ? "ring-orange-200" : "ring-black/5"}`}
       >
         <span
           className={`block rounded-full bg-gradient-to-br from-orange-400 to-orange-600 transition-all ${
-            conciergeActive
-              ? "h-9 w-9 shadow-[0_0_16px_rgba(249,115,22,0.65)]"
-              : "h-6 w-6 opacity-90"
+            conciergeActive ? S.orbDotActive : S.orbDot
           }`}
         />
       </Link>
+      )}
     </div>
 
-      <MealUploadSheet
-        open={mealSheet === "upload"}
-        onClose={() => setMealSheet(null)}
-        onFilesPicked={(files) => {
-          setMealFiles(files);
-          setMealSheet("details");
-        }}
-      />
-      <MealDetailsSheet
-        open={mealSheet === "details"}
-        initialFiles={mealFiles}
-        onClose={() => setMealSheet(null)}
-      />
+      {!demoMode && (
+        <>
+          <MealUploadSheet
+            open={mealSheet === "upload"}
+            onClose={() => setMealSheet(null)}
+            onFilesPicked={(files) => {
+              setMealFiles(files);
+              setMealSheet("details");
+            }}
+          />
+          <MealDetailsSheet
+            open={mealSheet === "details"}
+            initialFiles={mealFiles}
+            onClose={() => setMealSheet(null)}
+          />
+        </>
+      )}
     </>
   );
 }

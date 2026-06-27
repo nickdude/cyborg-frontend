@@ -74,6 +74,53 @@ export function Nudges() {
         <div className="flex flex-col items-center gap-12 md:flex-row">
           {/* Left column */}
           <div className="w-full md:w-[40%]">
+            {/* Nudge preview — photo with heading + notification overlays */}
+            <div className="relative mb-8 w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.35)]">
+              <img
+                src="/assets/nudge/nudge_image.png"
+                alt=""
+                width={320}
+                height={380}
+                className="block h-auto w-full select-none"
+                draggable={false}
+              />
+
+              {/* top scrim for legibility */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 h-2/3 bg-gradient-to-b from-black/45 via-black/15 to-transparent"
+              />
+
+              {/* heading — fades from solid white to translucent */}
+              <h3 className="absolute inset-x-0 top-0 bg-gradient-to-b from-white via-white/75 to-white/25 bg-clip-text px-5 pt-5 text-[22px] font-semibold leading-[1.16] tracking-[-0.02em] text-transparent">
+                Real-time nudges that turn your wearable and CGM into your next move
+              </h3>
+
+              {/* notification card */}
+              <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-black/55 p-3 ring-1 ring-white/10 backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500">
+                    <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
+                      <path
+                        d="M6 12.5l3.5 3.5L18 7.5"
+                        stroke="white"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  <span className="text-[13px] font-semibold text-white">Peak performance</span>
+                  <span className="text-[13px] text-white/55">· 10:32 AM</span>
+                </div>
+                <div className="my-2 h-px bg-white/15" />
+                <p className="text-[11.5px] leading-snug text-white/75">
+                  You have unlocked your best Sleep Index (93) to date. Good time to
+                  reflect on what led to this.
+                </p>
+              </div>
+            </div>
+
             <h2 className="max-w-[440px] text-4xl font-semibold leading-[1.06] tracking-[-0.03em] text-black md:text-[52px]">
               The only nudges you will ever need
             </h2>

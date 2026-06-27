@@ -52,7 +52,6 @@ export default function Home() {
 
         {/* Everything below sits on an opaque backdrop so reveals don't bleed the video */}
         <div className="relative overflow-x-clip bg-black">
-          <TiltTablet />
 
           <Reveal><Products /></Reveal>
           <Reveal><AllInOneApp /></Reveal>

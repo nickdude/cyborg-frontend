@@ -1,74 +1,140 @@
+"use client";
+
 import Link from "next/link";
+import { motion, type Variants } from "motion/react";
+import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/Container";
 
 interface Product {
   name: string;
   image: string;
+  /** price formatted for India, e.g. "₹2,499" */
   price: string;
+  href: string;
 }
 
 const products: Product[] = [
-  { name: "Amino 9", image: "/assets/product-1.png", price: "$49.99" },
-  { name: "Mito Heart", image: "/assets/product-2.png", price: "$49.99" },
-  { name: "Ozempic", image: "/assets/product-3.png", price: "$49.99" },
-  { name: "Mounjaro", image: "/assets/product-4.png", price: "$49.99" },
+  { name: "Amino 9", image: "/assets/product-1.png", price: "₹2,499", href: "/login" },
+  { name: "Mito Heart", image: "/assets/product-2.png", price: "₹2,999", href: "/login" },
+  { name: "Ozempic", image: "/assets/product-3.png", price: "₹14,999", href: "/login" },
+  { name: "Mounjaro", image: "/assets/product-4.png", price: "₹16,999", href: "/login" },
 ];
+
+const easeOut = [0.22, 1, 0.36, 1] as const;
+
+const gridContainer: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
+
+const gridItem: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: easeOut } },
+};
+
+function ProductCard({ product }: { product: Product }) {
+  return (
+    <motion.article
+      variants={gridItem}
+      className="group relative flex h-full flex-col rounded-2xl border border-white/15 bg-[#9878AF] bg-[radial-gradient(120%_90%_at_50%_-10%,rgba(255,255,255,0.18),transparent_60%)] p-4 shadow-xl shadow-black/25 backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-white/35 hover:shadow-2xl hover:shadow-black/40 sm:p-7"
+    >
+      {/* Best Seller badge */}
+      <span className="self-start rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-cyborg-ink shadow-sm sm:px-3 sm:py-1.5 sm:text-sm">
+        Best Seller
+      </span>
+
+      {/* Product title */}
+      <h3 className="mt-3 text-lg font-semibold leading-snug tracking-[-0.01em] text-white sm:mt-5 sm:text-2xl">
+        {product.name}
+      </h3>
+
+      {/* Product image */}
+      <div className="my-4 flex flex-1 items-center justify-center sm:my-6">
+        <img
+          src={product.image}
+          alt={product.name}
+          loading="lazy"
+          className="h-[120px] w-auto max-w-full object-contain drop-shadow-xl transition-transform duration-300 ease-out group-hover:scale-[1.04] sm:h-[240px]"
+        />
+      </div>
+
+      {/* CTA */}
+      <Link
+        href={product.href}
+        className="inline-flex w-full items-center justify-center rounded-lg bg-cyborg-purple px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#4a1c74] hover:shadow-xl hover:shadow-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-cyborg-purple sm:rounded-xl sm:px-5 sm:py-3 sm:text-base"
+      >
+        Join Today
+      </Link>
+
+      {/* Price */}
+      <p className="mt-3 text-center text-xs text-white/75 sm:mt-4 sm:text-base">
+        Starting at{" "}
+        <span className="text-sm font-semibold text-white sm:text-lg">{product.price}</span>
+      </p>
+    </motion.article>
+  );
+}
 
 export function Products() {
   return (
-    <section className="w-full bg-cyborg-purple py-20 md:py-24">
-      <Container>
-        {/* Header */}
-        <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row">
-          <h2 className="max-w-[520px] text-3xl font-bold leading-[1.04] tracking-[-0.03em] text-white md:text-[48px]">
+    <section className="relative w-full overflow-hidden bg-cyborg-purple py-16 md:py-20 lg:py-24">
+      {/* ---- ambient background depth ---- */}
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        {/* radial lighting from the top */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(161,79,241,0.45),transparent_70%)]" />
+        {/* warm accent blob */}
+        <div className="absolute -right-32 top-1/3 h-96 w-96 rounded-full bg-orange-500/10 blur-[120px]" />
+        {/* cool accent blob */}
+        <div className="absolute -left-32 bottom-0 h-96 w-96 rounded-full bg-fuchsia-500/15 blur-[120px]" />
+        {/* subtle grid, masked to fade at the edges */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]" />
+      </div>
+
+      <Container className="relative">
+        {/* ---- header ---- */}
+        <div className="flex max-w-3xl flex-col">
+          {/* <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/80 backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-violet-300 to-fuchsia-300" />
+            Our Products
+          </span> */}
+
+          <h2 className="mt-6 text-4xl font-bold leading-[1.08] tracking-[-0.03em] text-white sm:text-5xl md:text-[56px]">
             Whole body health starts with the right signal.
           </h2>
-          <p className="max-w-[420px] text-[18px] leading-relaxed text-white/90">
-            Formulations that provide fast-acting and sustained support using
-            scientifically and clinically studied ingredients.
+
+          <p className="mt-5 max-w-[620px] text-lg leading-relaxed text-white/80">
+            Clinician-guided GLP-1 programs that target appetite, metabolism, and
+            body composition — backed by peer-reviewed science and personalized to
+            your biology.
           </p>
         </div>
 
-        {/* Product cards */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* ---- product grid ---- */}
+        <motion.div
+          variants={gridContainer}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "0px 0px -12% 0px" }}
+          className="mt-14 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4"
+        >
           {products.map((product) => (
-            <div
-              key={product.name}
-              className="flex flex-col rounded-2xl bg-white/10 p-5"
-            >
-              <span className="self-center rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white">
-                Best Seller
-              </span>
-              <h3 className="mt-3 text-xl font-semibold text-white">
-                {product.name}
-              </h3>
-              <img
-                src={product.image}
-                alt={product.name}
-                className="mx-auto my-6 h-[240px] w-auto object-contain"
-              />
-              <Link
-                href="/login"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-white px-6 py-3.5 text-base font-semibold text-[#101010]"
-              >
-                Join Today
-              </Link>
-              <p className="mt-3 text-center text-sm text-white/90">
-                Starting at {product.price}
-              </p>
-            </div>
+            <ProductCard key={product.name} product={product} />
           ))}
-        </div>
+        </motion.div>
 
-        {/* Bottom CTA */}
-        <div className="mt-8 flex justify-end">
+        {/* ---- bottom CTA ---- */}
+        {/* <div className="mt-12 flex justify-center">
           <Link
             href="/market-place"
-            className="inline-flex items-center justify-center rounded-full bg-white/10 px-6 py-3 text-lg font-semibold text-white"
+            className="group inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/10 px-7 py-3.5 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 ease-out hover:border-white/30 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-cyborg-purple"
           >
-            Shop All →
+            Shop All Products
+            <ArrowRight
+              className="h-4 w-4 transition-transform duration-300 ease-out group-hover:translate-x-1"
+              aria-hidden
+            />
           </Link>
-        </div>
+        </div> */}
       </Container>
     </section>
   );
