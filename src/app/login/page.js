@@ -386,7 +386,7 @@ export default function Login() {
 
         <div className="flex items-center gap-4 my-6">
           <div className="flex-1 border-t border-lightGray"></div>
-          <span className="text-gray text-xs">or</span>
+          <span className="text-brandGray text-xs">or</span>
           <div className="flex-1 border-t border-lightGray"></div>
         </div>
 

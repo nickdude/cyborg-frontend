@@ -15,7 +15,7 @@ export default function SocialButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`px-4 py-3 border-[1px] border-tertiary rounded-xl font-semibold text-blue hover:bg-gray-50 transition flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed ${
+      className={`px-4 py-3 border-[1px] border-tertiary rounded-xl font-semibold text-ink hover:bg-gray-50 transition flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed ${
         fullWidth ? "w-full" : ""
       } ${className}`}
       {...props}
