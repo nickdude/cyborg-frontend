@@ -3,7 +3,6 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useTypewriter } from "@/hooks/useTypewriter";
 import ThinkingBlock from "./ThinkingBlock";
-import ToolChip from "./ToolChip";
 import Sources from "./Sources";
 import NarrationRow from "./NarrationRow";
 
@@ -169,9 +168,6 @@ export default function Message({ message, streaming }) {
                   thinkingText={thinkingBySegment[block.segmentIndex]}
                 />
               );
-            }
-            if (block.type === "tool") {
-              return <ToolChip key={block.id || i} block={block} />;
             }
             return null;
           })}
