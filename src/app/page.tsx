@@ -14,22 +14,15 @@ import { AllInOneApp } from "@/components/sections/AllInOneApp";
 import { Nudges } from "@/components/sections/Nudges";
 import { LabsByCyborg } from "@/components/sections/LabsByCyborg";
 import { ChecklistStorySection } from "@/components/sections/ChecklistStorySection";
-import { HowItWorks } from "@/components/sections/HowItWorks";
-import { MarketplaceScatter } from "@/components/sections/MarketplaceScatter";
-import { WholeYouGrid } from "@/components/sections/WholeYouGrid";
-import { MembershipIncluded } from "@/components/sections/MembershipIncluded";
-import { MedicalProfessionals } from "@/components/sections/MedicalProfessionals";
-import { BackedByBest } from "@/components/sections/BackedByBest";
-import { AdvancedPlan } from "@/components/sections/AdvancedPlan";
-import { MetabolicQuote } from "@/components/sections/MetabolicQuote";
-import { VS01Difference } from "@/components/sections/VS01Difference";
-import { Testimonial } from "@/components/sections/Testimonial";
-import { LifeTimeline } from "@/components/sections/LifeTimeline";
-import { ChangeYourHealth } from "@/components/sections/ChangeYourHealth";
-import { FooterCTA, SiteFooter } from "@/components/sections/SiteFooter";
-import { CyborgLabsBanner } from "@/components/sections/CyborgLabsBanner";
-import { BiomarkersTested } from "@/components/sections/BiomarkersTested";
-import { FAQ } from "@/components/sections/FAQ";
+import MedicalProfessionalsSection from "@/components/home/MedicalProfessionalsSection";
+import MembershipPlanSection from "@/components/home/MembershipPlanSection";
+import TagOverlaySection from "@/components/home/TagOverlaySection";
+import VsDifferenceSection from "@/components/home/VsDifferenceSection";
+import CyborgLabsSection from "@/components/home/CyborgLabsSection";
+import ChangeHealthSection from "@/components/home/ChangeHealthSection";
+import FaqAccordion from "@/components/home/FaqAccordion";
+import TestCoverageTabs from "@/components/home/TestCoverageTabs";
+import Footer from "@/components/home/Footer";
 
 export default function Home() {
   const { token, loading } = useAuth();
@@ -65,27 +58,16 @@ export default function Home() {
           {/* <WholeYouGrid /> */}
 
           {/* <Reveal><MembershipIncluded /></Reveal> */}
-          <Reveal><MedicalProfessionals /></Reveal>
 
-          <BackedByBest />
-
-          <Reveal><AdvancedPlan /></Reveal>
-          <Reveal><MetabolicQuote /></Reveal>
-          <Reveal><VS01Difference /></Reveal>
-
-          <Testimonial />
-
-          <LifeTimeline />
-
-          <Reveal><ChangeYourHealth /></Reveal>
-
-          <FooterCTA />
-
-          <Reveal><CyborgLabsBanner /></Reveal>
-          <Reveal><BiomarkersTested /></Reveal>
-          <Reveal><FAQ /></Reveal>
-
-          <SiteFooter />
+              <Reveal><MedicalProfessionalsSection /></Reveal>
+              <Reveal><MembershipPlanSection /></Reveal>
+              <Reveal><TagOverlaySection image="/assets/testinomial/test1.png" /></Reveal>
+              <Reveal><VsDifferenceSection /></Reveal>
+              <Reveal><CyborgLabsSection /></Reveal>
+              <Reveal><ChangeHealthSection /></Reveal>
+              <Reveal><FaqAccordion /></Reveal>
+              <Reveal><TestCoverageTabs /></Reveal>
+              <Footer />
         </div>
       </main>
       </SmoothScroll>
