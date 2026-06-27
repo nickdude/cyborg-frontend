@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useTypewriter } from "@/hooks/useTypewriter";
@@ -83,7 +84,7 @@ function TypewriterMarkdown({ text }) {
   return <MarkdownBody text={displayed} />;
 }
 
-export default function Message({ message, streaming }) {
+function Message({ message, streaming }) {
   if (message.role === "user") {
     const text = message.content?.[0]?.text || "";
     return (
@@ -124,6 +125,12 @@ export default function Message({ message, streaming }) {
 
   // build render groups: runs of consecutive steps share one rail
   const rendered = [];
+  // Parallel tools in one model turn SHARE one segmentIndex, so
+  // thinkingBySegment[segmentIndex] returns the SAME reasoning for every parallel
+  // step. Attach the real-thinking text only to the FIRST step with a given
+  // segmentIndex; later steps with the same segmentIndex get thinkingText=undefined
+  // so the reasoning isn't duplicated under each parallel tool.
+  const shownSegs = new Set();
   for (let k = 0; k < content.length; ) {
     const block = content[k];
     if (block.type === "step") {
@@ -132,9 +139,14 @@ export default function Message({ message, streaming }) {
       while (k < content.length && content[k].type === "step") { steps.push(content[k]); k++; }
       rendered.push(
         <div key={`rail-${startKey}`} className="my-2 ml-1 border-l-2 border-primary/15 pl-3">
-          {steps.map((s, j) => (
-            <NarrationRow key={s.id || j} block={s} thinkingText={thinkingBySegment[s.segmentIndex]} />
-          ))}
+          {steps.map((s, j) => {
+            const tt =
+              typeof s.segmentIndex === "number" && !shownSegs.has(s.segmentIndex)
+                ? thinkingBySegment[s.segmentIndex]
+                : undefined;
+            if (tt !== undefined) shownSegs.add(s.segmentIndex);
+            return <NarrationRow key={s.id || j} block={s} thinkingText={tt} />;
+          })}
         </div>
       );
     } else if (block.type === "text") {
@@ -183,8 +195,17 @@ export default function Message({ message, streaming }) {
         <div className="text-sm text-gray-800 leading-relaxed break-words">{rendered}</div>
 
         <Sources content={message.content} />
-        <span className="sr-only" role="status" aria-live="polite">{latestNarration}</span>
+        {/* Only the actively-streaming message carries a live region, so a screen
+            reader doesn't re-announce historical/static assistant messages. */}
+        {streaming && (
+          <span className="sr-only" role="status" aria-live="polite">{latestNarration}</span>
+        )}
       </div>
     </div>
   );
 }
+
+// Memoized: each streamed token gives the streaming message a NEW object ref (so
+// it still re-renders), while stable past messages keep their ref and skip
+// re-render. Default shallow compare over (message, streaming) is correct here.
+export default memo(Message);

@@ -63,6 +63,9 @@ export default function ThinkingBlock({ thinking, displaySegments, streaming, ha
   const elapsedMs =
     thinking.elapsedMs ??
     (thinking.startedAt ? now - thinking.startedAt : 0);
+  // Hydrated history carries neither elapsedMs nor startedAt, so any computed
+  // duration would be a fake "1s". Only show a seconds count when it's real.
+  const elapsedKnown = thinking.elapsedMs != null || thinking.startedAt != null;
   const seconds = Math.max(1, Math.round(elapsedMs / 1000));
   const hasBody = body.length > 0;
   const showLiveTicker = streaming && !hasText && hasBody;
@@ -106,7 +109,8 @@ export default function ThinkingBlock({ thinking, displaySegments, streaming, ha
         )}
         <Sparkles aria-hidden="true" className="w-3 h-3" />
         <span>
-          Thought for {seconds}s{!hasBody && totalSteps > 1 ? ` · reasoned across ${totalSteps} steps` : ""}
+          {elapsedKnown ? `Thought for ${seconds}s` : "Thought"}
+          {!hasBody && totalSteps > 1 ? ` · reasoned across ${totalSteps} steps` : ""}
         </span>
       </button>
       {expanded && hasBody && (

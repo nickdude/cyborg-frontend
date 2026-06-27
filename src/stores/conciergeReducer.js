@@ -125,6 +125,11 @@ export function hydrateMessage(raw) {
       createdAt: raw.createdAt || new Date().toISOString(),
     };
   }
+  // Persistence-shape limitation: the backend persists an assistant turn as ONE
+  // final `content` string + a `toolUses` array, so the live interleaving of
+  // text-between-tool-batches can't be perfectly reconstructed on reload. We
+  // hydrate to a SENSIBLE, stable order instead: all step blocks first, then the
+  // final text. (Fixing the ordering would require a backend persistence change.)
   const content = [];
   const text = raw.content || "";
   const toolUses = Array.isArray(raw.toolUses) ? raw.toolUses : [];

@@ -184,19 +184,26 @@ export const useConciergeStore = create((set, get) => ({
           };
         });
         patchAssistant((m) => {
-          if (!m.thinking) return m;
-          return {
-            ...m,
-            thinking: {
-              ...m.thinking,
-              elapsedMs: m.thinking.startedAt
-                ? Date.now() - m.thinking.startedAt
-                : undefined,
-            },
-          };
+          // A turn that reached `done` has finished all its tools; a dropped
+          // toolEnd frame must not leave a permanent spinner — resolve any step
+          // still running/pending to "done".
+          const content = m.content.map((b) =>
+            b.type === "step" && (b.status === "running" || b.status === "pending")
+              ? { ...b, status: "done" }
+              : b
+          );
+          const thinking = m.thinking
+            ? {
+                ...m.thinking,
+                elapsedMs: m.thinking.startedAt
+                  ? Date.now() - m.thinking.startedAt
+                  : undefined,
+              }
+            : m.thinking;
+          return { ...m, content, thinking };
         });
       },
-      onError: (evt) =>
+      onError: (evt) => {
         set((s) => ({
           streams: {
             ...s.streams,
@@ -205,7 +212,28 @@ export const useConciergeStore = create((set, get) => ({
               error: evt.message || "stream error",
             },
           },
-        })),
+        }));
+        // Don't leave a blank bubble with tool steps spinning forever: flip any
+        // in-flight step to "error", and if nothing visible was produced, surface
+        // an inline interrupted notice so the user sees something.
+        patchAssistant((m) => {
+          const content = m.content.map((b) =>
+            b.type === "step" && (b.status === "running" || b.status === "pending")
+              ? { ...b, status: "error" }
+              : b
+          );
+          const hasVisibleText = content.some(
+            (b) => b.type === "text" && b.text && b.text.trim()
+          );
+          if (!hasVisibleText) {
+            content.push({
+              type: "text",
+              text: "\n\n_The response was interrupted. Please try again._",
+            });
+          }
+          return { ...m, content };
+        });
+      },
     });
 
     streamMessage(chatId, text, onEvent).catch((err) => {
