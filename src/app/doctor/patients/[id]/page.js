@@ -7,6 +7,7 @@ import Cookie from "js-cookie";
 import Chatbot from "@/components/Chatbot";
 import { doctorAPI } from "@/services/api";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { orderRecommendedProducts } from "@/utils/products";
 import {
   ChevronRight,
   X,
@@ -32,6 +33,7 @@ export default function PatientDetail() {
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [planStatus, setPlanStatus] = useState(null);
   const [planGoalCount, setPlanGoalCount] = useState(0);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   // Escape-to-close the full-screen mobile chat modal
   useEffect(() => {
@@ -82,6 +84,7 @@ export default function PatientDetail() {
         const planData = planRes?.data || planRes;
         setPlanStatus(planData.status || null);
         setPlanGoalCount((planData.goals || []).length);
+        setRecommendedProducts(planData.nextSteps?.recommendedProducts || []);
       } catch {
         setPlanStatus(null);
       }
@@ -145,20 +148,11 @@ export default function PatientDetail() {
     (g) => g.priority === "high" || g.priority === "High"
   );
 
-  // Derive protocol items from goals — deduped by product, using real fields
-  const protocolItems = (() => {
-    const seen = new Set();
-    const out = [];
-    for (const g of goals) {
-      for (const pi of g.protocolItems || []) {
-        const key = (pi.productName || "").toLowerCase().trim();
-        if (!key || seen.has(key)) continue;
-        seen.add(key);
-        out.push(pi);
-      }
-    }
-    return out;
-  })();
+  // Protocol items = the plan's recommended products, deduped with AMINO 9 first
+  // (shared helper, so this card matches the goals page). Card shows the top few;
+  // the count reflects the full deduped list.
+  const protocolItems = orderRecommendedProducts(recommendedProducts);
+  const topProtocolItems = protocolItems.slice(0, 5);
   const actionPlanItems = goals.map((g) => ({
     name: g.title,
     category: g.category || g.priority,
@@ -446,8 +440,8 @@ export default function PatientDetail() {
                 Top Protocol Items
               </p>
               <div className="space-y-2">
-                {protocolItems.length > 0 ? (
-                  protocolItems.map((item, idx) => (
+                {topProtocolItems.length > 0 ? (
+                  topProtocolItems.map((item, idx) => (
                     <div
                       key={idx}
                       className="flex items-center gap-3 rounded-xl border border-borderColor bg-white p-3 shadow-sm"
@@ -457,13 +451,11 @@ export default function PatientDetail() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="truncate text-[14px] font-medium text-black leading-[20px]">
-                          {item.productName || "Protocol item"}
+                          {item.productName || item.name || "Protocol item"}
                         </p>
-                        {(item.dosing ||
-                          (item.triggerBiomarkers && item.triggerBiomarkers.length > 0)) && (
+                        {(item.dose || item.dosing) && (
                           <p className="truncate text-[13px] font-medium text-[#71717b] leading-[18px]">
-                            {item.dosing ||
-                              `Targets ${item.triggerBiomarkers.slice(0, 2).join(", ")}`}
+                            {item.dose || item.dosing}
                           </p>
                         )}
                       </div>

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { doctorAPI } from "@/services/api";
+import { orderRecommendedProducts } from "@/utils/products";
 import {
   Plus,
   Pencil,
@@ -1049,7 +1050,7 @@ export default function GoalsProtocolPage() {
             ) : (
               <div className="space-y-3">
                 {/* Recommended products from action plan */}
-                {recommendedProducts.map((item, idx) => (
+                {orderRecommendedProducts(recommendedProducts).map((item, idx) => (
                   <div key={`rp-${idx}`} className="bg-white rounded-lg p-4 border border-[#e8e8e8]">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
