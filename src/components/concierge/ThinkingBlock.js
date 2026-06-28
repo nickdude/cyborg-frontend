@@ -1,13 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { ChevronRight, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const thinkingMarkdownComponents = {
+export const thinkingMarkdownComponents = {
   p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
   strong: ({ children }) => (
-    <strong className="font-semibold text-secondary not-italic">{children}</strong>
+    <strong className="font-semibold text-gray-500 not-italic">{children}</strong>
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
   ul: ({ children }) => (
@@ -19,11 +19,11 @@ const thinkingMarkdownComponents = {
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   code: ({ inline, children }) =>
     inline ? (
-      <code className="bg-pageBackground px-1 py-0.5 rounded text-[11px] font-mono not-italic">
+      <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px] font-mono not-italic">
         {children}
       </code>
     ) : (
-      <pre className="bg-pageBackground border border-borderColor rounded p-2 my-1.5 overflow-x-auto text-[11px] font-mono not-italic">
+      <pre className="bg-gray-50 border border-gray-200 rounded p-2 my-1.5 overflow-x-auto text-[11px] font-mono not-italic">
         <code>{children}</code>
       </pre>
     ),
@@ -45,120 +45,89 @@ const thinkingMarkdownComponents = {
   ),
 };
 
-/**
- * Collapsible "Thinking… / Thought for {N}s" block shown above an assistant answer.
- *
- * Props:
- *  - thinking:        { segments: [{ toolIndex, text }], startedAt?, elapsedMs? } | undefined
- *                     Genuine extended-reasoning text (only present if the model produced it).
- *  - isThinking:      true while the model is generating before the first answer token.
- *  - thinkingStartedAt: epoch ms when the request was sent (for the live ticker).
- *  - thinkingMs:      measured elapsed time, frozen at the first answer token / completion.
- *  - hasText:         whether the assistant answer has started.
- *
- * Elapsed time is always real (measured) — never fabricated. Reasoning text is
- * only rendered when genuinely produced (thinking.segments present).
- */
-export default function ThinkingBlock({
-  thinking,
-  isThinking,
-  thinkingStartedAt,
-  thinkingMs,
-  hasText,
-}) {
+export default function ThinkingBlock({ thinking, displaySegments, streaming, hasText }) {
   const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const panelId = useId();
 
-  // While actively thinking (no frozen time yet), tick a live clock.
   useEffect(() => {
-    if (!isThinking || thinkingMs !== undefined) return;
+    if (!streaming || thinking?.elapsedMs) return;
     const h = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(h);
-  }, [isThinking, thinkingMs]);
+  }, [streaming, thinking?.elapsedMs]);
 
-  const hasReasoning = !!thinking?.segments?.length;
+  if (!thinking || !thinking.segments?.length) return null;
 
-  // Nothing to show: not thinking, no measured time, and no reasoning text.
-  // (Happens for persisted assistant messages with no reasoning text.)
-  if (!isThinking && thinkingMs === undefined && !hasReasoning) return null;
-
-  // Real measured elapsed (frozen), or a live measurement from the send time.
+  const body = displaySegments ?? thinking.segments;
+  const totalSteps = thinking.segments.length;
   const elapsedMs =
-    thinkingMs ??
-    (thinkingStartedAt ? now - thinkingStartedAt : undefined);
-  const seconds =
-    elapsedMs !== undefined ? Math.max(1, Math.round(elapsedMs / 1000)) : null;
-
-  // Live "Thinking…" state: streaming, before the first answer token.
-  const showLiveTicker = isThinking && !hasText;
+    thinking.elapsedMs ??
+    (thinking.startedAt ? now - thinking.startedAt : 0);
+  // Hydrated history carries neither elapsedMs nor startedAt, so any computed
+  // duration would be a fake "1s". Only show a seconds count when it's real.
+  const elapsedKnown = thinking.elapsedMs != null || thinking.startedAt != null;
+  const seconds = Math.max(1, Math.round(elapsedMs / 1000));
+  const hasBody = body.length > 0;
+  const showLiveTicker = streaming && !hasText && hasBody;
 
   if (showLiveTicker) {
-    const latest = hasReasoning
-      ? thinking.segments[thinking.segments.length - 1]
-      : null;
+    const latest = body[body.length - 1];
     return (
       <div className="mb-3 rounded-xl bg-gradient-to-r from-primary/5 to-purple-50 border border-primary/10 px-3 py-2.5">
-        <div className="flex items-center gap-1.5 text-primary text-xs font-medium">
-          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          <span>Thinking{seconds !== null ? `… ${seconds}s` : "…"}</span>
+        <div className="flex items-center gap-1.5 text-primary text-xs font-medium mb-1.5">
+          <Sparkles aria-hidden="true" className="w-3.5 h-3.5 animate-pulse motion-reduce:animate-none" />
+          <span>Thinking… {seconds}s</span>
         </div>
-        {latest?.text ? (
-          <div className="mt-1.5 text-xs text-secondary italic line-clamp-3 leading-relaxed [&_p]:m-0">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={thinkingMarkdownComponents}
-            >
-              {latest.text}
-            </ReactMarkdown>
-          </div>
-        ) : null}
+        <div className="text-xs text-gray-500 italic line-clamp-3 leading-relaxed [&_p]:m-0">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={thinkingMarkdownComponents}
+          >
+            {latest?.text || ""}
+          </ReactMarkdown>
+        </div>
       </div>
     );
   }
-
-  // Collapsed "Thought for {N}s" with a chevron. Expands to the reasoning text
-  // if any was produced; otherwise the label alone (no fabricated reasoning).
-  const label = seconds !== null ? `Thought for ${seconds}s` : "Thinking";
-  const canExpand = hasReasoning;
 
   return (
     <div className="mb-3">
       <button
         type="button"
-        onClick={() => canExpand && setExpanded((v) => !v)}
-        className={`inline-flex items-center gap-1.5 text-xs text-secondary transition-colors ${
-          canExpand ? "hover:text-blue cursor-pointer" : "cursor-default"
-        }`}
-        aria-expanded={canExpand ? expanded : undefined}
+        onClick={() => hasBody && setExpanded((v) => !v)}
+        aria-expanded={hasBody ? expanded : undefined}
+        aria-controls={hasBody ? panelId : undefined}
+        className={`inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-600 transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${hasBody ? "cursor-pointer" : "cursor-default"}`}
       >
-        {canExpand && (
+        {hasBody && (
           <ChevronRight
+            aria-hidden="true"
             className={`w-3 h-3 transition-transform duration-200 ${
               expanded ? "rotate-90" : ""
             }`}
           />
         )}
-        <Sparkles className="w-3 h-3" />
-        <span>{label}</span>
+        <Sparkles aria-hidden="true" className="w-3 h-3" />
+        <span>
+          {elapsedKnown ? `Thought for ${seconds}s` : "Thought"}
+          {!hasBody && totalSteps > 1 ? ` · reasoned across ${totalSteps} steps` : ""}
+        </span>
       </button>
-      {canExpand && (
+      {expanded && hasBody && (
         <div
-          className={`overflow-hidden transition-all duration-200 ease-out ${
-            expanded ? "max-h-[2000px] opacity-100 mt-2" : "max-h-0 opacity-0"
-          }`}
+          id={panelId}
+          className="mt-2 text-xs text-gray-400 border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed"
         >
-          <div className="text-xs text-secondary border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed">
-            {thinking.segments.map((s, i) => (
-              <div key={i}>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={thinkingMarkdownComponents}
-                >
-                  {s.text || ""}
-                </ReactMarkdown>
-              </div>
-            ))}
-          </div>
+          {body.map((s, i) => (
+            <div key={i}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={thinkingMarkdownComponents}
+              >
+                {s.text || ""}
+              </ReactMarkdown>
+            </div>
+          ))}
         </div>
       )}
     </div>

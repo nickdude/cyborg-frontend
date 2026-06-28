@@ -14,18 +14,21 @@ export const metadata = {
   title: "Cyborg Healthcare",
   description: "Healthcare platform with AI-powered insights",
   manifest: "/manifest.json",
-  themeColor: "#000000",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Cyborg",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({ children }) {

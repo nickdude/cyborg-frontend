@@ -33,6 +33,16 @@ export default function PatientDetail() {
   const [planStatus, setPlanStatus] = useState(null);
   const [planGoalCount, setPlanGoalCount] = useState(0);
 
+  // Escape-to-close the full-screen mobile chat modal
+  useEffect(() => {
+    if (!mobileChatOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setMobileChatOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileChatOpen]);
+
   // Auth guard: redirect non-doctors away
   useEffect(() => {
     if (authLoading) return;
@@ -271,9 +281,10 @@ export default function PatientDetail() {
         <div className="relative mx-auto flex h-14 max-w-[1400px] items-center justify-between px-5 md:px-6">
           <button
             onClick={() => router.back()}
-            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors z-10"
+            className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#541d7a]/40"
+            aria-label="Go back"
           >
-            <svg width="8" height="16" viewBox="0 0 8 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="8" height="16" viewBox="0 0 8 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M7 1L1 8L7 15" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -466,9 +477,10 @@ export default function PatientDetail() {
 
             {/* Review Status Card */}
             {planStatus && (
-              <div
+              <button
+                type="button"
                 onClick={() => router.push(`/doctor/patients/${patientId}/goals`)}
-                className={`mb-6 cursor-pointer rounded-2xl border p-5 shadow-sm ring-1 ring-black/5 transition-colors ${
+                className={`mb-6 w-full text-left cursor-pointer rounded-2xl border p-5 shadow-sm ring-1 ring-black/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#541d7a]/40 focus-visible:ring-offset-2 ${
                   planStatus === "pending_review"
                     ? "bg-amber-50 border-amber-200 hover:bg-amber-100"
                     : planStatus === "draft"
@@ -513,7 +525,7 @@ export default function PatientDetail() {
                     : "text-gray-400"
                   }`} />
                 </div>
-              </div>
+              </button>
             )}
 
             {/* Your Action Plan */}
@@ -572,11 +584,17 @@ export default function PatientDetail() {
 
       {/* Mobile Chatbot Modal — full screen */}
       {mobileChatOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-white flex flex-col">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`AI assistant for ${patientName}`}
+          className="lg:hidden fixed inset-0 z-50 bg-white flex flex-col"
+        >
+          <div className="flex items-center justify-between px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] border-b border-gray-100">
             <button
               onClick={() => setMobileChatOpen(false)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#541d7a]/40"
+              aria-label="Close chat"
             >
               <X className="h-5 w-5 text-gray-600" />
             </button>
@@ -595,9 +613,12 @@ export default function PatientDetail() {
       {/* Mobile Chatbot FAB */}
       <button
         onClick={() => setMobileChatOpen(true)}
-        className="lg:hidden fixed bottom-5 right-5 h-14 w-14 rounded-full bg-[#541d7a] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] hover:bg-[#441566] transition-colors flex items-center justify-center z-40"
+        className="lg:hidden fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 h-14 w-14 rounded-full bg-[#541d7a] shadow-[0px_0px_5px_0px_rgba(0,0,0,0.05)] hover:bg-[#441566] transition-colors flex items-center justify-center z-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#541d7a]/50 focus-visible:ring-offset-2"
+        aria-label="Open AI assistant"
+        aria-haspopup="dialog"
+        aria-expanded={mobileChatOpen}
       >
-        <img src="/assets/doctor/cyborg-logo.png" alt="Chat" className="w-6 h-6 object-cover" />
+        <img src="/assets/doctor/cyborg-logo.png" alt="" className="w-6 h-6 object-cover" />
       </button>
     </div>
   );

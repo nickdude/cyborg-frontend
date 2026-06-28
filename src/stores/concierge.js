@@ -3,60 +3,8 @@
 import { create } from "zustand";
 import { conciergeAPI } from "@/services/api";
 import { streamMessage } from "@/services/sse";
-
-const newId = () =>
-  typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `id-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-function hydrateMessage(raw) {
-  if (raw.role === "user") {
-    return {
-      id: newId(),
-      role: "user",
-      content: [{ type: "text", text: raw.content || "" }],
-      createdAt: raw.createdAt || new Date().toISOString(),
-    };
-  }
-  const content = [];
-  const text = raw.content || "";
-  const toolUses = Array.isArray(raw.toolUses) ? raw.toolUses : [];
-  for (const tu of toolUses) {
-    content.push({
-      type: "tool",
-      id: newId(),
-      name: tu.name,
-      input: tu.input,
-      result: tu.result,
-      ok: true,
-      status: "done",
-    });
-  }
-  if (text) content.push({ type: "text", text });
-
-  let thinking;
-  if (raw.thinking && typeof raw.thinking === "object") {
-    const segments = Object.entries(raw.thinking).map(([k, v]) => ({
-      toolIndex: Number(k),
-      text: String(v || ""),
-    }));
-    segments.sort((a, b) => a.toolIndex - b.toolIndex);
-    if (segments.length) thinking = { segments };
-  }
-
-  return {
-    id: newId(),
-    role: "assistant",
-    content,
-    thinking,
-    // Persisted messages: not actively thinking, and the backend doesn't store
-    // the measured elapsed time, so leave thinkingMs undefined (never fabricate it).
-    isThinking: false,
-    thinkingStartedAt: undefined,
-    thinkingMs: undefined,
-    createdAt: raw.createdAt || new Date().toISOString(),
-  };
-}
+import { createChatReducer, hydrateMessage } from "./conciergeReducer";
+import { newId } from "../utils/id";
 
 export const useConciergeStore = create((set, get) => ({
   chats: {},
@@ -173,11 +121,6 @@ export const useConciergeStore = create((set, get) => ({
       role: "assistant",
       content: [],
       thinking: undefined,
-      // Thinking timing (elapsed time MUST be real/measured, never hardcoded).
-      // Clock starts the moment we send; stops at the first answer token or stream completion.
-      thinkingStartedAt: Date.now(),
-      thinkingMs: undefined,
-      isThinking: true,
       createdAt: new Date().toISOString(),
     };
 
@@ -204,183 +147,94 @@ export const useConciergeStore = create((set, get) => ({
         return { messages: { ...s.messages, [chatId]: next } };
       });
 
-    const onEvent = (evt) => {
-      switch (evt.type) {
-        case "textDelta":
-          patchAssistant((m) => {
-            const content = [...m.content];
-            const last = content[content.length - 1];
-            if (last && last.type === "text") {
-              content[content.length - 1] = {
-                ...last,
-                text: last.text + (evt.text || ""),
-              };
-            } else {
-              content.push({ type: "text", text: evt.text || "" });
+    const onEvent = createChatReducer({
+      patchAssistant,
+      onDone: () => {
+        set((s) => {
+          const existing = s.chats[chatId] || {};
+          // Derive title from first user message if backend hasn't auto-set yet
+          let title = existing.title;
+          if (!title || title === "New Chat") {
+            const firstUser = (s.messages[chatId] || []).find(
+              (m) => m.role === "user"
+            );
+            const userText = firstUser?.content?.[0]?.text;
+            if (userText) {
+              title = userText.slice(0, 60).replace(/\n/g, " ").trim();
+              if (userText.length > 60) title += "…";
             }
-            // First answer token: stop the thinking clock and freeze the
-            // measured elapsed time (from send to now).
-            const next = { ...m, content };
-            if (m.isThinking) {
-              next.isThinking = false;
-              if (m.thinkingMs === undefined && m.thinkingStartedAt) {
-                next.thinkingMs = Date.now() - m.thinkingStartedAt;
-              }
-            }
-            return next;
-          });
-          break;
-
-        case "toolStart":
-          patchAssistant((m) => ({
-            ...m,
-            content: [
-              ...m.content,
-              {
-                type: "tool",
-                id: newId(),
-                name: evt.name,
-                input: evt.input,
-                status: "running",
-              },
-            ],
-          }));
-          break;
-
-        case "toolEnd":
-          patchAssistant((m) => {
-            const content = [...m.content];
-            for (let i = content.length - 1; i >= 0; i--) {
-              const b = content[i];
-              if (
-                b.type === "tool" &&
-                b.name === evt.name &&
-                b.status === "running"
-              ) {
-                content[i] = {
-                  ...b,
-                  status: evt.ok === false ? "error" : "done",
-                  result: evt.result,
-                  ok: evt.ok !== false,
-                };
-                break;
-              }
-            }
-            return { ...m, content };
-          });
-          break;
-
-        case "thinkingDelta":
-          patchAssistant((m) => {
-            const segments = [...(m.thinking?.segments || [])];
-            const idx =
-              typeof evt.toolIndex === "number" ? evt.toolIndex : -1;
-            const existing = segments.findIndex((s) => s.toolIndex === idx);
-            if (existing === -1) {
-              segments.push({ toolIndex: idx, text: evt.text || "" });
-            } else {
-              segments[existing] = {
-                ...segments[existing],
-                text: segments[existing].text + (evt.text || ""),
-              };
-            }
-            segments.sort((a, b) => a.toolIndex - b.toolIndex);
-            return {
-              ...m,
-              thinking: {
-                segments,
-                startedAt: m.thinking?.startedAt || Date.now(),
-              },
-            };
-          });
-          break;
-
-        case "thinkingUnsupported":
-          break;
-
-        case "done":
-          set((s) => {
-            const existing = s.chats[chatId] || {};
-            // Derive title from first user message if backend hasn't auto-set yet
-            let title = existing.title;
-            if (!title || title === "New Chat") {
-              const firstUser = (s.messages[chatId] || []).find(
-                (m) => m.role === "user"
-              );
-              const userText = firstUser?.content?.[0]?.text;
-              if (userText) {
-                title = userText.slice(0, 60).replace(/\n/g, " ").trim();
-                if (userText.length > 60) title += "\u2026";
-              }
-            }
-            return {
-              streams: {
-                ...s.streams,
-                [chatId]: {
-                  status: "done",
-                  startedAt: s.streams[chatId]?.startedAt,
-                },
-              },
-              chats: {
-                ...s.chats,
-                [chatId]: {
-                  ...existing,
-                  title: title || existing.title || "New Chat",
-                  updatedAt: new Date().toISOString(),
-                },
-              },
-              chatOrder: [chatId, ...s.chatOrder.filter((id) => id !== chatId)],
-            };
-          });
-          patchAssistant((m) => {
-            const next = { ...m };
-            // Stream finished. If no answer token ever arrived (e.g. tool-only
-            // turn or empty answer), freeze the measured elapsed time now.
-            next.isThinking = false;
-            if (m.thinkingMs === undefined && m.thinkingStartedAt) {
-              next.thinkingMs = Date.now() - m.thinkingStartedAt;
-            }
-            // Keep the reasoning-text block's own elapsed in sync for the
-            // existing live-ticker path (only relevant when reasoning text exists).
-            if (m.thinking) {
-              next.thinking = {
-                ...m.thinking,
-                elapsedMs:
-                  next.thinkingMs ??
-                  (m.thinking.startedAt
-                    ? Date.now() - m.thinking.startedAt
-                    : undefined),
-              };
-            }
-            return next;
-          });
-          break;
-
-        case "error":
-          // Stop the thinking spinner so it doesn't hang on a failed stream.
-          patchAssistant((m) => {
-            if (!m.isThinking) return m;
-            const next = { ...m, isThinking: false };
-            if (m.thinkingMs === undefined && m.thinkingStartedAt) {
-              next.thinkingMs = Date.now() - m.thinkingStartedAt;
-            }
-            return next;
-          });
-          set((s) => ({
+          }
+          return {
             streams: {
               ...s.streams,
               [chatId]: {
-                status: "error",
-                error: evt.message || "stream error",
+                status: "done",
+                startedAt: s.streams[chatId]?.startedAt,
               },
             },
-          }));
-          break;
-
-        default:
-          break;
-      }
-    };
+            chats: {
+              ...s.chats,
+              [chatId]: {
+                ...existing,
+                title: title || existing.title || "New Chat",
+                updatedAt: new Date().toISOString(),
+              },
+            },
+            chatOrder: [chatId, ...s.chatOrder.filter((id) => id !== chatId)],
+          };
+        });
+        patchAssistant((m) => {
+          // A turn that reached `done` has finished all its tools; a dropped
+          // toolEnd frame must not leave a permanent spinner — resolve any step
+          // still running/pending to "done".
+          const content = m.content.map((b) =>
+            b.type === "step" && (b.status === "running" || b.status === "pending")
+              ? { ...b, status: "done" }
+              : b
+          );
+          const thinking = m.thinking
+            ? {
+                ...m.thinking,
+                elapsedMs: m.thinking.startedAt
+                  ? Date.now() - m.thinking.startedAt
+                  : undefined,
+              }
+            : m.thinking;
+          return { ...m, content, thinking };
+        });
+      },
+      onError: (evt) => {
+        set((s) => ({
+          streams: {
+            ...s.streams,
+            [chatId]: {
+              status: "error",
+              error: evt.message || "stream error",
+            },
+          },
+        }));
+        // Don't leave a blank bubble with tool steps spinning forever: flip any
+        // in-flight step to "error", and if nothing visible was produced, surface
+        // an inline interrupted notice so the user sees something.
+        patchAssistant((m) => {
+          const content = m.content.map((b) =>
+            b.type === "step" && (b.status === "running" || b.status === "pending")
+              ? { ...b, status: "error" }
+              : b
+          );
+          const hasVisibleText = content.some(
+            (b) => b.type === "text" && b.text && b.text.trim()
+          );
+          if (!hasVisibleText) {
+            content.push({
+              type: "text",
+              text: "\n\n_The response was interrupted. Please try again._",
+            });
+          }
+          return { ...m, content };
+        });
+      },
+    });
 
     streamMessage(chatId, text, onEvent).catch((err) => {
       console.error("[concierge] streamMessage crashed", err);

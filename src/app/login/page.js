@@ -8,6 +8,7 @@ import Link from "next/link";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
+import SocialButton from "@/components/SocialButton";
 import CyborgLogo from "@/components/CyborgLogo";
 import { Eye, EyeOff } from "lucide-react";
 import { getNextRoute } from "@/utils/navigationFlow";
@@ -45,6 +46,7 @@ export default function Login() {
   const [loginMethod, setLoginMethod] = useState("email-otp"); // "email-otp", "phone-otp", or "password"
   const [formData, setFormData] = useState({
     email: "",
+    phone: "",
     password: "",
   });
   const [otp, setOtp] = useState("");
@@ -73,7 +75,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError("");
-        
+
     // Ensure correct method when submitting from password screen
     const activeMethod = step === 3 ? "password" : loginMethod;
 
@@ -82,6 +84,8 @@ export default function Login() {
 
       if (activeMethod === "email-otp") {
         loginPayload.email = formData.email;
+      } else if (activeMethod === "phone-otp") {
+        loginPayload.phone = formData.phone;
       } else if (activeMethod === "password") {
         loginPayload.email = formData.email;
         loginPayload.password = formData.password;
@@ -141,6 +145,56 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  const handlePhoneLogin = () => {
+    setStep(2);
+    setLoginMethod("phone-otp");
+    setFormData({ ...formData, email: "", password: "" });
+    setError("");
+  };
+
+  if (step === 2) {
+    return (
+      <AuthShell>
+          <div className="mb-8 w-32">
+            <CyborgLogo />
+          </div>
+
+          <h2 className="text-2xl font-medium text-black mb-2">Sign in with Phone</h2>
+          <p className="text-secondary text-sm mb-8">Enter your phone number to continue</p>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin}>
+            <Input
+              type="tel"
+              name="phone"
+              placeholder="+1 (555) 000-0000"
+              value={formData.phone}
+              onChange={handleInputChange}
+            />
+
+            <Button fullWidth variant="primary" disabled={loading || !formData.phone} className="mb-4">
+              {loading ? "Sending OTP..." : "Send OTP"}
+            </Button>
+          </form>
+
+          <p className="text-center text-secondary text-sm">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="text-primary font-semibold hover:underline"
+            >
+              Back to email
+            </button>
+          </p>
+      </AuthShell>
+    );
+  }
 
   // Password Login Step
   if (step === 3) {
@@ -224,7 +278,7 @@ export default function Login() {
           <p className="text-secondary text-sm mb-8">
             Enter the 6-digit code sent to{" "}
             <span className="font-semibold text-gray-900">
-              {formData.email}
+              {formData.email || formData.phone}
             </span>
           </p>
 
@@ -261,7 +315,7 @@ export default function Login() {
               onClick={() => setStep(1)}
               className="text-primary font-semibold hover:underline"
             >
-              Change email
+              Change {formData.email ? "email" : "phone"}
             </button>
           </p>
       </AuthShell>
@@ -333,11 +387,18 @@ export default function Login() {
 
         <div className="flex items-center gap-4 my-6">
           <div className="flex-1 border-t border-lightGray"></div>
-          <span className="text-gray text-xs">or</span>
+          <span className="text-brandGray text-xs">or</span>
           <div className="flex-1 border-t border-lightGray"></div>
         </div>
 
-        <GoogleAuthButton label="Sign in with Google" onError={setError} />
+        <GoogleAuthButton label="Sign in with Google" onError={setError} className="mb-3" />
+
+        <SocialButton
+          icon="/assets/icons/phone.svg"
+          onClick={handlePhoneLogin}
+        >
+          Sign in using Phone
+        </SocialButton>
 
         <div className="mt-8 pt-6 text-center space-y-1">
           <Link href="/privacy" className="text-secondary hover:text-gray-900 text-lg block">

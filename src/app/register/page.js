@@ -236,7 +236,7 @@ function Register() {
       const response = await authAPI.register(payload);
 
       setUserId(response.data.userId);
-      
+
       // Always go to OTP verification step
       setStep(2);
       if (useOTP) {
@@ -545,8 +545,8 @@ function Register() {
 
           <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
             <p className="text-xs text-gray-600 mb-2">
-              {useOTP 
-                ? "We'll send a one-time password to your email for verification." 
+              {useOTP
+                ? "We'll send a one-time password to your email for verification."
                 : "Create a secure password to protect your account. You'll still need to verify your email with an OTP."}
             </p>
             <button

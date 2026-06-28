@@ -225,7 +225,7 @@ export default function UserActions() {
 
         {/* Notification Dropdown */}
         {showDropdown && (
-          <div className="absolute right-0 mt-2 w-80 bg-white border border-borderColor rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+          <div className="fixed inset-x-2 top-[4.5rem] mx-auto max-w-md sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:mx-0 sm:max-w-none sm:w-80 bg-white border border-borderColor rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
             <div className="p-4 border-b border-borderColor flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Notifications</h3>
               <div className="flex items-center gap-2">

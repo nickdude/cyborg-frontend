@@ -63,7 +63,7 @@ export default function Sources({ content }) {
   if (!Array.isArray(content)) return null;
   const all = [];
   for (const block of content) {
-    if (block?.type !== "tool") continue;
+    if (block?.type !== "tool" && block?.type !== "step") continue;
     if (!PERPLEXITY_TOOLS.has(block.name)) continue;
     if (block.status !== "done") continue;
     all.push(...extractCitationsFromResult(block.result));
@@ -79,7 +79,7 @@ export default function Sources({ content }) {
 
   return (
     <div className="mt-3">
-      <div className="text-[10px] uppercase tracking-wider text-secondary font-medium mb-1.5">
+      <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1.5">
         Sources
       </div>
       <div className="flex flex-wrap gap-1.5">
@@ -89,11 +89,11 @@ export default function Sources({ content }) {
             href={c.url}
             target="_blank"
             rel="noreferrer noopener"
-            className="inline-flex items-center gap-1 text-[11px] bg-pageBackground hover:bg-pageBackground border border-borderColor rounded-md px-2 py-1 text-secondary hover:text-primary transition-colors"
+            className="inline-flex items-center gap-1 text-[11px] bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md px-2 py-1 text-gray-600 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             title={c.url}
           >
-            <span className="truncate max-w-[120px]">{c.title}</span>
-            <ExternalLink className="w-2.5 h-2.5 shrink-0 text-secondary" />
+            <span className="truncate max-w-[40vw] sm:max-w-[160px]">{c.title}</span>
+            <ExternalLink className="w-2.5 h-2.5 shrink-0 text-gray-400" />
           </a>
         ))}
       </div>
