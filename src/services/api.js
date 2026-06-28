@@ -199,6 +199,7 @@ export const paymentAPI = {
   getAllPlans: () => API.get("/api/payments/plans"),
   createOrder: (data) => API.post("/api/payments/create-order", data),
   verifyPayment: (data) => API.post("/api/payments/verify-payment", data),
+  activateFreePlan: (data) => API.post("/api/payments/activate-free", data),
   getUserSubscription: (userId) => API.get(`/api/payments/${userId}/subscription`),
 };
 

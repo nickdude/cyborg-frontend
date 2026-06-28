@@ -233,6 +233,34 @@ export default function MembershipPage() {
       return;
     }
 
+    // Free plan (e.g. AMINO9 Baseline): no Razorpay — activate directly.
+    if (!selectedPlan.price || selectedPlan.price <= 0) {
+      setLoading(true);
+      setError("");
+      try {
+        const resp = await paymentAPI.activateFreePlan({
+          userId: user.id,
+          planType: selectedPlan.id,
+          firstName,
+          lastName,
+          email,
+          zip,
+          dob: `${dobYear}-${dobMonth}-${dobDay}`,
+          phone,
+        });
+        const sub = resp?.data?.subscription;
+        if (sub) setSubscription(sub);
+        const updatedUser = { ...user, hasActiveSubscription: true };
+        updateUser(updatedUser);
+        setLoading(false);
+        router.push(getNextRoute(updatedUser));
+      } catch (err) {
+        setError(err.message || "Could not activate the free plan");
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!scriptReady || !window?.Razorpay) {
       setError("Payment gateway not ready. Please refresh and try again.");
       return;
@@ -380,8 +408,14 @@ export default function MembershipPage() {
                       </ul>
 
                       <div className="mt-auto flex items-end gap-1 border-t border-tertiary pt-6">
-                        <span className="text-3xl font-bold text-primary">₹{p.price?.toLocaleString("en-IN")}</span>
-                        <span className="mb-1 text-sm text-secondary">/{p.billingPeriod || "month"}</span>
+                        {p.price > 0 ? (
+                          <>
+                            <span className="text-3xl font-bold text-primary">₹{p.price?.toLocaleString("en-IN")}</span>
+                            <span className="mb-1 text-sm text-secondary">/{p.billingPeriod || "month"}</span>
+                          </>
+                        ) : (
+                          <span className="text-3xl font-bold text-primary">Free</span>
+                        )}
                       </div>
 
                       <span
@@ -513,7 +547,11 @@ export default function MembershipPage() {
 
             <div className="mt-6">
               <Button fullWidth size="lg" onClick={handlePurchase} disabled={loading}>
-                {loading ? "Processing..." : `Pay ₹${(selectedPlan?.price || 0).toLocaleString("en-IN")}`}
+                {loading
+                  ? "Processing..."
+                  : selectedPlan?.price > 0
+                  ? `Pay ₹${(selectedPlan?.price || 0).toLocaleString("en-IN")}`
+                  : "Get started — Free"}
               </Button>
             </div>
             <p className="text-secondary text-[14px] mt-8 lg:mt-9">
