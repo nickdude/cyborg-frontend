@@ -40,15 +40,13 @@ export default function ChatSidebar({
   // screens (translated off-screen when closed) but static/visible on desktop
   // (lg:static lg:translate-x-0). We only want to hide it from the tab order /
   // AT when it is closed AND on a small screen.
-  // Lazy-init from matchMedia (SSR-safe) so the very first client render already
-  // reflects the real breakpoint. Initializing to false made the desktop
-  // (lg:static) sidebar evaluate offscreen=true and render inert/aria-hidden for
-  // one paint until the effect below ran.
-  const [isDesktop, setIsDesktop] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia
-      ? window.matchMedia("(min-width: 1024px)").matches
-      : false
-  );
+  // Initialize to false (the SSR value) so the server-rendered HTML and the
+  // first client render agree. Reading matchMedia during render (e.g. in a lazy
+  // useState initializer) returns the real breakpoint on the client's initial
+  // hydration render while the server saw `false`, which diverges the
+  // offscreen-derived aria-hidden/inert attributes (hydration mismatch). The
+  // effect below reads the real breakpoint right after mount.
+  const [isDesktop, setIsDesktop] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mql = window.matchMedia("(min-width: 1024px)");

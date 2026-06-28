@@ -14,12 +14,17 @@ function todayUTC() {
 
 export default function TimelineFeed({ userId, actions }) {
   const router = useRouter();
-  const [date, setDate] = useState(todayUTC);
+  const [date, setDate] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Defer current-date computation to the client to avoid SSR/hydration mismatch.
+  useEffect(() => {
+    setDate(todayUTC());
+  }, []);
+
   const fetchTimeline = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !date) return;
     setLoading(true);
     try {
       const resp = await timelineAPI.get(userId, date);
@@ -37,7 +42,7 @@ export default function TimelineFeed({ userId, actions }) {
 
   return (
     <div>
-      <TimelineDateNav date={date} onChange={setDate} />
+      {date && <TimelineDateNav date={date} onChange={setDate} />}
 
       <div className="mt-4 space-y-3">
         {loading && entries.length === 0 && (

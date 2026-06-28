@@ -85,6 +85,16 @@ export default function Dashboard() {
     const [planLoading, setPlanLoading] = useState(true);
     const [homeTab, setHomeTab] = useState("timeline"); // timeline | twin
 
+    // Time-based greeting depends on the client clock, so computing it during
+    // render would differ between server and browser. Defer it to after mount
+    // (empty placeholder during SSR / first client render) to avoid a hydration
+    // mismatch.
+    const [greeting, setGreeting] = useState("");
+    useEffect(() => {
+        const h = new Date().getHours();
+        setGreeting(h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening");
+    }, []);
+
     useEffect(() => {
         let active = true;
         actionPlanAPI
@@ -225,10 +235,6 @@ export default function Dashboard() {
     const cyborgScore = numOrNull(plan?.healthReport?.cyborgScore);
     const bioAge = numOrNull(plan?.healthReport?.bioAge);
     const planReady = plan?.status === "ready" || plan?.status === "approved";
-    const greeting = (() => {
-        const h = new Date().getHours();
-        return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-    })();
     const initials = (userName || "U").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
     // ── Member health journey (drives the home Timeline) ─────────────────────
@@ -495,19 +501,28 @@ function TimelineContent({ processing, journey, journeyDone }) {
 }
 
 function UpcomingCard({ processing, journey }) {
-    const today = new Date();
-    const days = Array.from({ length: 14 }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() + i);
-        return d;
-    });
+    // The 14-day strip is anchored on the current date, which differs between
+    // the server and the browser (timezone / clock). Compute it after mount and
+    // render stable empty placeholders during SSR to avoid a hydration mismatch.
+    const [today, setToday] = useState(null);
+    useEffect(() => { setToday(new Date()); }, []);
+
+    const days = today
+        ? Array.from({ length: 14 }, (_, i) => {
+            const d = new Date(today);
+            d.setDate(today.getDate() + i);
+            return d;
+        })
+        : Array.from({ length: 14 }, () => null);
     // Mark days in the window that carry an upcoming milestone.
     const marks = new Set();
-    (journey || []).forEach((m) => {
-        if (!m.date) return;
-        const md = new Date(m.date);
-        days.forEach((d, i) => { if (d.toDateString() === md.toDateString()) marks.add(i); });
-    });
+    if (today) {
+        (journey || []).forEach((m) => {
+            if (!m.date) return;
+            const md = new Date(m.date);
+            days.forEach((d, i) => { if (d && d.toDateString() === md.toDateString()) marks.add(i); });
+        });
+    }
 
     return (
         <div className="overflow-hidden rounded-3xl bg-[#1b1b1d] text-white">
@@ -522,10 +537,10 @@ function UpcomingCard({ processing, journey }) {
                         <div key={i} className="flex flex-col items-center gap-1">
                             <span
                                 className={`grid h-9 w-9 place-items-center rounded-full text-sm font-medium ${
-                                    i === 0 ? "bg-white text-black" : "bg-white/10 text-white/80"
+                                    d && i === 0 ? "bg-white text-black" : "bg-white/10 text-white/80"
                                 }`}
                             >
-                                {d.getDate()}
+                                {d ? d.getDate() : ""}
                             </span>
                             <span className={`h-1 w-1 rounded-full ${marks.has(i) ? "bg-fuchsia-400" : "bg-transparent"}`} />
                         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { activityAPI } from "@/services/api";
 
@@ -10,13 +10,19 @@ function toLocalDatetimeString(date) {
 }
 
 export default function ActivityDetailScreen({ activity, userId, onSave, onBack }) {
-  const now = new Date();
-  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-
-  const [startTime, setStartTime] = useState(toLocalDatetimeString(now));
-  const [endTime, setEndTime] = useState(toLocalDatetimeString(oneHourLater));
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Defer current-time defaults to the client to avoid hydration mismatch
+  // (server time != client time when computed during render).
+  useEffect(() => {
+    const now = new Date();
+    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+    setStartTime(toLocalDatetimeString(now));
+    setEndTime(toLocalDatetimeString(oneHourLater));
+  }, []);
 
   const handleSave = async () => {
     if (!userId || !activity) return;

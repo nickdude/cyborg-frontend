@@ -54,6 +54,14 @@ export default function MealReviewScreen({
     initialData?.consumedAt ? new Date(initialData.consumedAt) : new Date()
   );
   const [timeEditing, setTimeEditing] = useState(false);
+  // Defer time-dependent rendering to the client. `consumedAt` can default to
+  // `new Date()` and `formatHumanDateTime` reads the current time + the runtime
+  // locale, all of which differ between server and browser → hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setTitle(initialData?.title || "");
@@ -170,7 +178,7 @@ export default function MealReviewScreen({
               <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
               <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            {formatHumanDateTime(consumedAt)}
+            {mounted ? formatHumanDateTime(consumedAt) : "…"}
           </button>
         )}
       </div>

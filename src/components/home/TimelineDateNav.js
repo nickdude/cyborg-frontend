@@ -1,13 +1,17 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-function formatLabel(dateStr) {
-  const today = new Date().toISOString().slice(0, 10);
-  if (dateStr === today) return "Today";
+function formatLabel(dateStr, today) {
+  if (today) {
+    if (dateStr === today) return "Today";
 
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  if (dateStr === yesterday) return "Yesterday";
+    const yesterday = new Date(new Date(today + "T00:00:00Z").getTime() - 86400000)
+      .toISOString()
+      .slice(0, 10);
+    if (dateStr === yesterday) return "Yesterday";
+  }
 
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-US", {
     weekday: "short",
@@ -17,8 +21,13 @@ function formatLabel(dateStr) {
 }
 
 export default function TimelineDateNav({ date, onChange }) {
-  const today = new Date().toISOString().slice(0, 10);
-  const isToday = date === today;
+  const [today, setToday] = useState(null);
+
+  useEffect(() => {
+    setToday(new Date().toISOString().slice(0, 10));
+  }, []);
+
+  const isToday = today !== null && date === today;
 
   const shift = (days) => {
     const d = new Date(date + "T00:00:00");
@@ -37,7 +46,7 @@ export default function TimelineDateNav({ date, onChange }) {
         <ChevronLeft size={18} className="text-[#6d6f7b]" />
       </button>
 
-      <span className="text-sm font-medium text-black">{formatLabel(date)}</span>
+      <span className="text-sm font-medium text-black">{formatLabel(date, today)}</span>
 
       <button
         type="button"
