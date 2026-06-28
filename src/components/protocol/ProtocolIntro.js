@@ -229,7 +229,7 @@ export default function ProtocolIntro({ userName = "there", sex = "male", bioAge
         <div className="pb-[8vh]">
           <h2 className="text-[26px] font-semibold text-white">Your biological age is {bioNum != null ? bioNum.toFixed(1) : "—"}</h2>
           <p className="mt-2 max-w-[440px] text-[14px] text-white/65">
-            {youngerBy != null && youngerBy >= 0 ? `You are ${Math.abs(youngerBy)} years younger than your chronological age!` : "Here's how your biology compares to your age."}
+            {youngerBy != null && youngerBy >= 0 ? `You are ${Math.round(Math.abs(youngerBy) * 10) / 10} years younger than your chronological age!` : "Here's how your biology compares to your age."}
           </p>
           <DarkContinue onClick={next} />
         </div>

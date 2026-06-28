@@ -174,7 +174,7 @@ function HealthReport({ hr, thesis }) {
         <div className="rounded-2xl border border-borderColor bg-white p-4">
           <p className="text-xs font-medium text-secondary">Biological age</p>
           <p className="mt-1 text-[28px] font-bold leading-none text-blue">{bioStr}</p>
-          <p className="mt-2 text-xs text-secondary">{delta != null ? `${Math.abs(delta)} years ${delta >= 0 ? "younger" : "older"} than your actual age` : "PhenoAge estimate"}</p>
+          <p className="mt-2 text-xs text-secondary">{delta != null ? `${Math.round(Math.abs(delta) * 10) / 10} years ${delta >= 0 ? "younger" : "older"} than your actual age` : "PhenoAge estimate"}</p>
         </div>
       </div>
       {(mc.total != null) && (

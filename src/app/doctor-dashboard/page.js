@@ -160,7 +160,7 @@ function PatientCard({ patient, onClick }) {
               <p className="text-[11px] font-semibold uppercase tracking-wide text-secondary">Biological Age</p>
               <p className="text-sm text-gray-500">
                 {bioAgeDiff != null
-                  ? `${Math.abs(bioAgeDiff)} yrs ${bioAgeDiff > 0 ? "younger" : "older"} than age`
+                  ? `${Math.round(Math.abs(bioAgeDiff) * 10) / 10} yrs ${bioAgeDiff > 0 ? "younger" : "older"} than age`
                   : "Awaiting report"}
               </p>
             </div>
