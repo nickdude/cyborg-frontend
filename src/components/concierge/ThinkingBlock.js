@@ -46,7 +46,8 @@ export const thinkingMarkdownComponents = {
 };
 
 export default function ThinkingBlock({ thinking, displaySegments, streaming, hasText }) {
-  const [expanded, setExpanded] = useState(false);
+  // Default to expanded so the "Thought for Xs" reasoning shows without a click.
+  const [expanded, setExpanded] = useState(true);
   const [now, setNow] = useState(Date.now());
   const panelId = useId();
 

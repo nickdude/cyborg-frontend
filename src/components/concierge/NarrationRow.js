@@ -7,7 +7,8 @@ import { TOOL_META } from "./ToolChip";
 import { thinkingMarkdownComponents } from "./ThinkingBlock";
 
 export default function NarrationRow({ block, thinkingText }) {
-  const [open, setOpen] = useState(false);
+  // Reasoning is expanded by default so users see the model's thinking without a click.
+  const [open, setOpen] = useState(true);
   const panelId = useId();
   // Raw tool input/result ("View raw") is intentionally not surfaced to users —
   // a row is only expandable when there's human-readable reasoning to show.
