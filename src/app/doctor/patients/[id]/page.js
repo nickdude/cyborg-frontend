@@ -33,7 +33,6 @@ export default function PatientDetail() {
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
   const [planStatus, setPlanStatus] = useState(null);
   const [planGoalCount, setPlanGoalCount] = useState(0);
-  const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   // Escape-to-close the full-screen mobile chat modal
   useEffect(() => {
@@ -84,7 +83,6 @@ export default function PatientDetail() {
         const planData = planRes?.data || planRes;
         setPlanStatus(planData.status || null);
         setPlanGoalCount((planData.goals || []).length);
-        setRecommendedProducts(planData.nextSteps?.recommendedProducts || []);
       } catch {
         setPlanStatus(null);
       }
@@ -148,10 +146,10 @@ export default function PatientDetail() {
     (g) => g.priority === "high" || g.priority === "High"
   );
 
-  // Protocol items = the plan's recommended products, deduped with AMINO 9 first
-  // (shared helper, so this card matches the goals page). Card shows the top few;
-  // the count reflects the full deduped list.
-  const protocolItems = orderRecommendedProducts(recommendedProducts);
+  // Single source of truth: the goals' protocol items (which now include AMINO 9),
+  // deduped + AMINO-9-first via the shared helper — so this card, the goals page,
+  // and recommendedProducts all reflect the same set. Card shows the top few.
+  const protocolItems = orderRecommendedProducts(goals.flatMap((g) => g.protocolItems || []));
   const topProtocolItems = protocolItems.slice(0, 5);
   const actionPlanItems = goals.map((g) => ({
     name: g.title,
