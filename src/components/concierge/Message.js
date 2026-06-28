@@ -130,6 +130,22 @@ function Message({ message, streaming }) {
   // step. Attach the real-thinking text only to the FIRST step with a given
   // segmentIndex; later steps with the same segmentIndex get thinkingText=undefined
   // so the reasoning isn't duplicated under each parallel tool.
+  // The top-level "Thought for Xs" block carries the reasoning segments NOT shown
+  // inline under a step — i.e. the FINAL, post-tool reasoning. Chronologically
+  // that happens AFTER the tool steps and BEFORE the answer, so inject it there
+  // (not above the steps, which inverted the order). Pre-tool reasoning stays
+  // nested under the tool chip that it motivated.
+  const thinkingEl = (
+    <ThinkingBlock
+      key="thinking"
+      thinking={message.thinking}
+      displaySegments={orphanThinking?.segments}
+      streaming={streaming}
+      hasText={hasText}
+    />
+  );
+  let thinkingInjected = false;
+
   const shownSegs = new Set();
   for (let k = 0; k < content.length; ) {
     const block = content[k];
@@ -150,6 +166,8 @@ function Message({ message, streaming }) {
         </div>
       );
     } else if (block.type === "text") {
+      // Final reasoning sits just before the answer.
+      if (!thinkingInjected) { rendered.push(thinkingEl); thinkingInjected = true; }
       const isLastText = streaming && k === lastTextIdx;
       rendered.push(
         isLastText ? <TypewriterMarkdown key={k} text={block.text} /> : <MarkdownBody key={k} text={block.text} />
@@ -159,6 +177,9 @@ function Message({ message, streaming }) {
       k++;
     }
   }
+  // No answer text yet (pure thinking, or tools still running): reasoning renders
+  // after whatever steps exist.
+  if (!thinkingInjected) rendered.push(thinkingEl);
 
   return (
     <div className="flex justify-start gap-2.5 animate-[fadeIn_0.2s_ease-out]" aria-busy={streaming || undefined}>
@@ -166,13 +187,6 @@ function Message({ message, streaming }) {
         <span className="text-[10px] font-bold text-white">C</span>
       </div>
       <div className="max-w-full min-w-0">
-        <ThinkingBlock
-          thinking={message.thinking}
-          displaySegments={orphanThinking?.segments}
-          streaming={streaming}
-          hasText={hasText}
-        />
-
         {!hasAnyContent && streaming && (
           <div className="flex items-center gap-1.5 py-2 text-secondary" role="status" aria-label="Cyborg is thinking">
             <div className="flex gap-1">
