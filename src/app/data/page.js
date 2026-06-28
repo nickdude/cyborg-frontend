@@ -434,17 +434,10 @@ export default function DataDashboard() {
 
   // Which digital-twin body to show. Explicit user choice (localStorage) wins;
   // otherwise default from the profile's biologicalSex.
+  // The body figure is locked to the patient's biological sex — not switchable.
   const [sex, setSex] = useState("male");
   useEffect(() => {
-    let stored = null;
-    try {
-      stored = typeof window !== "undefined" ? localStorage.getItem("twinSex") : null;
-    } catch {}
-    if (stored === "male" || stored === "female") {
-      setSex(stored);
-    } else if (user?.biologicalSex) {
-      setSex(normalizeSex(user.biologicalSex));
-    }
+    if (user?.biologicalSex) setSex(normalizeSex(user.biologicalSex));
   }, [user?.biologicalSex]);
 
   const handleSexChange = useCallback(
@@ -941,9 +934,6 @@ export default function DataDashboard() {
 
               {/* Center: 3D digital-twin body, organ coloured by the selected category status */}
               <div className="hidden lg:sticky lg:top-4 lg:block">
-                <div className="mb-3 flex justify-center">
-                  <SexToggle value={sex} onChange={handleSexChange} />
-                </div>
                 <div className="relative h-[680px] w-full overflow-hidden rounded-2xl">
                   <BodyModelClient
                     highlight={organHighlight}
@@ -956,9 +946,6 @@ export default function DataDashboard() {
 
               {/* Mobile-only digital twin (above the content panel), recolours with the selected category */}
               <div className="lg:hidden">
-                <div className="mb-3 flex justify-center">
-                  <SexToggle value={sex} onChange={handleSexChange} />
-                </div>
                 <div className="relative h-[360px] w-full overflow-hidden rounded-2xl bg-white">
                   <BodyModelClient
                     highlight={organHighlight}
@@ -1251,9 +1238,6 @@ export default function DataDashboard() {
                 </button>
 
                 <div className="rounded-2xl bg-white p-4">
-                  <div className="mb-3 flex justify-center">
-                    <SexToggle value={sex} onChange={handleSexChange} />
-                  </div>
                   <div className="relative h-[480px] w-full overflow-hidden rounded-xl bg-[#f7f7fa]">
                     <BodyModelClient highlight={null} status="good" sex={sex} className="h-full w-full" />
                   </div>

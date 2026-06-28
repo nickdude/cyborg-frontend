@@ -263,7 +263,7 @@ export default function RecordsTable({
             </svg>
           </button>
           {filterOpen && (
-            <div className="absolute right-0 top-11 z-20 w-44 overflow-hidden rounded-xl border border-borderColor bg-white py-1 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.18)]">
+            <div className="absolute left-0 top-11 z-20 w-44 overflow-hidden rounded-xl border border-borderColor bg-white py-1 shadow-[0_8px_30px_-8px_rgba(0,0,0,0.18)]">
               {FILTER_OPTIONS.map((opt) => (
                 <button
                   key={opt.id}
