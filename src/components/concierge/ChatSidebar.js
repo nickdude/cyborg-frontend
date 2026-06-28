@@ -100,7 +100,7 @@ export default function ChatSidebar({
       <aside
         aria-hidden={offscreen || undefined}
         inert={offscreen ? "" : undefined}
-        className={`fixed z-50 top-0 left-0 h-full w-72 bg-white/95 backdrop-blur-xl border-r border-gray-100 flex flex-col transform transition-transform duration-300 ease-out ${
+        className={`fixed z-50 top-0 left-0 h-full w-72 bg-white/95 backdrop-blur-xl border-r border-borderColor flex flex-col transform transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:static lg:translate-x-0`}
       >
@@ -108,40 +108,40 @@ export default function ChatSidebar({
           <div className="flex items-center gap-1">
             <Link
               href="/dashboard"
-              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-xl hover:bg-pageBackground transition-colors"
               aria-label="Back to dashboard"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-5 h-5 text-secondary" />
             </Link>
-            <span className="text-sm font-semibold text-gray-900">Chats</span>
+            <span className="text-sm font-semibold text-blue">Chats</span>
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="lg:hidden p-2 rounded-xl hover:bg-pageBackground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             aria-label="Close sidebar"
           >
-            <X className="w-4 h-4 text-gray-500" />
+            <X className="w-4 h-4 text-secondary" />
           </button>
         </div>
 
         <div className="px-3">
           <button
             onClick={onNew}
-            className="w-full flex items-center justify-center gap-2 bg-primary text-white rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition-all duration-150 shadow-sm shadow-primary/20 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 bg-black text-white rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-black/85 active:scale-[0.98] transition-all duration-150 shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" /> New chat
           </button>
         </div>
 
         <div className="px-3 pt-3">
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus-within:bg-white focus-within:border-primary/30 transition-all duration-200">
-            <Search className="w-3.5 h-3.5 text-gray-400" />
+          <div className="flex items-center gap-2 bg-pageBackground border border-borderColor rounded-full px-3 py-2 focus-within:bg-white focus-within:border-primary/40 transition-all duration-200">
+            <Search className="w-3.5 h-3.5 text-secondary" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
               aria-label="Search chats"
-              className="flex-1 outline-none text-base sm:text-sm bg-transparent placeholder:text-gray-400"
+              className="flex-1 outline-none text-base sm:text-sm bg-transparent placeholder:text-secondary"
             />
           </div>
         </div>
@@ -152,17 +152,17 @@ export default function ChatSidebar({
             if (!rows || !rows.length) return null;
             return (
               <div key={label} className="mt-3">
-                <div className="px-4 text-[10px] uppercase tracking-wider text-gray-500 font-medium mb-1">
+                <div className="px-4 text-[11px] uppercase tracking-wide text-secondary font-semibold mb-1">
                   {label}
                 </div>
                 {rows.map((c) => (
                   <button
                     key={c._id}
                     onClick={() => onSelect(c._id)}
-                    className={`w-full text-left px-4 py-2 min-h-[44px] text-[13px] transition-colors truncate rounded-lg mx-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+                    className={`w-full text-left px-4 py-2 min-h-[44px] text-[13px] transition-colors truncate rounded-xl mx-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                       activeChatId === c._id
                         ? "bg-primary/10 text-primary font-medium"
-                        : "text-gray-700 hover:bg-gray-50"
+                        : "text-secondary hover:bg-pageBackground hover:text-blue"
                     }`}
                     style={{ maxWidth: "calc(100% - 8px)" }}
                     title={c.title}
@@ -174,7 +174,7 @@ export default function ChatSidebar({
             );
           })}
           {!Object.keys(buckets).length && (
-            <div className="px-4 py-8 text-center text-sm text-gray-500">
+            <div className="px-4 py-8 text-center text-sm text-secondary">
               No chats yet
             </div>
           )}

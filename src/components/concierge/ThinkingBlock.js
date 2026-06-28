@@ -7,7 +7,7 @@ import remarkGfm from "remark-gfm";
 export const thinkingMarkdownComponents = {
   p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
   strong: ({ children }) => (
-    <strong className="font-semibold text-gray-500 not-italic">{children}</strong>
+    <strong className="font-semibold text-secondary not-italic">{children}</strong>
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
   ul: ({ children }) => (
@@ -19,11 +19,11 @@ export const thinkingMarkdownComponents = {
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   code: ({ inline, children }) =>
     inline ? (
-      <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px] font-mono not-italic">
+      <code className="bg-pageBackground px-1 py-0.5 rounded text-[11px] font-mono not-italic">
         {children}
       </code>
     ) : (
-      <pre className="bg-gray-50 border border-gray-200 rounded p-2 my-1.5 overflow-x-auto text-[11px] font-mono not-italic">
+      <pre className="bg-pageBackground border border-borderColor rounded-md p-2 my-1.5 overflow-x-auto text-[11px] font-mono not-italic">
         <code>{children}</code>
       </pre>
     ),
@@ -78,7 +78,7 @@ export default function ThinkingBlock({ thinking, displaySegments, streaming, ha
           <Sparkles aria-hidden="true" className="w-3.5 h-3.5 animate-pulse motion-reduce:animate-none" />
           <span>Thinking… {seconds}s</span>
         </div>
-        <div className="text-xs text-gray-500 italic line-clamp-3 leading-relaxed [&_p]:m-0">
+        <div className="text-xs text-secondary italic line-clamp-3 leading-relaxed [&_p]:m-0">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={thinkingMarkdownComponents}
@@ -97,7 +97,7 @@ export default function ThinkingBlock({ thinking, displaySegments, streaming, ha
         onClick={() => hasBody && setExpanded((v) => !v)}
         aria-expanded={hasBody ? expanded : undefined}
         aria-controls={hasBody ? panelId : undefined}
-        className={`inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-600 transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${hasBody ? "cursor-pointer" : "cursor-default"}`}
+        className={`inline-flex items-center gap-1.5 text-xs text-secondary hover:text-blue transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${hasBody ? "cursor-pointer" : "cursor-default"}`}
       >
         {hasBody && (
           <ChevronRight
@@ -116,7 +116,7 @@ export default function ThinkingBlock({ thinking, displaySegments, streaming, ha
       {expanded && hasBody && (
         <div
           id={panelId}
-          className="mt-2 text-xs text-gray-400 border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed"
+          className="mt-2 text-xs text-secondary border-l-2 border-primary/15 pl-3 space-y-2 italic leading-relaxed"
         >
           {body.map((s, i) => (
             <div key={i}>

@@ -109,7 +109,7 @@ export default function ConciergePage() {
   };
 
   return (
-    <div className="h-dvh flex bg-white">
+    <div className="h-dvh flex bg-pageBackground">
       <ChatSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -118,17 +118,19 @@ export default function ConciergePage() {
         onNew={handleNew}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="flex items-center gap-2 px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] border-b border-gray-100 bg-white">
+      {/* pb on mobile reserves room for the fixed BottomNavbar (lg:hidden) so it
+          doesn't overlap the Composer; removed at lg where the nav is hidden. */}
+      <div className="flex-1 flex flex-col min-w-0 pb-[calc(env(safe-area-inset-bottom)+4.75rem)] lg:pb-0">
+        <header className="flex items-center gap-2 px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] border-b border-borderColor bg-white">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="lg:hidden p-2 rounded-xl hover:bg-pageBackground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             aria-label="Open sidebar"
           >
-            <Menu className="w-5 h-5 text-gray-600" />
+            <Menu className="w-5 h-5 text-secondary" />
           </button>
-          <div className="font-semibold text-gray-900">Concierge</div>
-          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+          <div className="font-semibold text-blue">Concierge</div>
+          <span className="text-[11px] tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
             BETA
           </span>
         </header>

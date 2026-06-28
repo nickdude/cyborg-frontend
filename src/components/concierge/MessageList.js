@@ -43,7 +43,7 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">
+            <h1 className="text-xl font-semibold text-blue mb-1">
               Hi {firstName || "there"}
             </h1>
             <p className="text-secondary text-sm mb-6">
@@ -54,7 +54,7 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
                 <button
                   key={p}
                   onClick={() => onQuickPrompt?.(p)}
-                  className="text-sm text-left bg-white border border-gray-200 rounded-xl px-4 py-3 hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-200 text-gray-700 cursor-pointer"
+                  className="text-sm text-left bg-white border border-borderColor rounded-2xl px-4 py-3 hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-200 text-blue cursor-pointer"
                 >
                   {p}
                 </button>
@@ -82,7 +82,7 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
       {!isPinned && (
         <button
           onClick={jumpToBottom}
-          className="absolute bottom-4 right-4 bg-primary text-white rounded-full w-9 h-9 min-h-[44px] min-w-[44px] shadow-lg shadow-primary/25 hover:bg-primary/90 active:scale-95 transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+          className="absolute bottom-4 right-4 bg-black text-white rounded-full w-9 h-9 min-h-[44px] min-w-[44px] shadow-lg shadow-[0_10px_30px_rgba(0,0,0,0.12)] hover:bg-black/85 active:scale-95 transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
           aria-label="Jump to latest"
         >
           <ArrowDown className="w-4 h-4" />

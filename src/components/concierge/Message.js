@@ -31,37 +31,37 @@ function MarkdownBody({ text }) {
         ),
         li: ({ children }) => <li className="leading-relaxed">{children}</li>,
         blockquote: ({ children }) => (
-          <blockquote className="border-l-2 border-primary/30 pl-3 my-3 text-gray-600 italic">
+          <blockquote className="border-l-2 border-primary/30 pl-3 my-3 text-secondary italic">
             {children}
           </blockquote>
         ),
         code: ({ inline, children }) =>
           inline ? (
-            <code className="bg-gray-100 text-primary px-1.5 py-0.5 rounded text-[13px] font-mono">
+            <code className="bg-pageBackground text-primary px-1.5 py-0.5 rounded-md text-[13px] font-mono">
               {children}
             </code>
           ) : (
-            <pre className="bg-gray-50 border border-gray-200 rounded-lg p-3 my-3 overflow-x-auto text-[13px] font-mono">
+            <pre className="bg-pageBackground border border-borderColor rounded-xl p-3 my-3 overflow-x-auto text-[13px] font-mono">
               <code>{children}</code>
             </pre>
           ),
         table: ({ children }) => (
-          <div className="overflow-x-auto my-3 rounded-lg border border-gray-200">
+          <div className="overflow-x-auto my-3 rounded-xl border border-borderColor">
             <table className="w-full text-[13px]">{children}</table>
           </div>
         ),
         thead: ({ children }) => (
-          <thead className="bg-gray-50 text-left">{children}</thead>
+          <thead className="bg-pageBackground text-left">{children}</thead>
         ),
         th: ({ children }) => (
-          <th className="px-3 py-2 font-medium text-gray-600 border-b border-gray-200">
+          <th className="px-3 py-2 font-medium text-secondary border-b border-borderColor">
             {children}
           </th>
         ),
         td: ({ children }) => (
-          <td className="px-3 py-2 border-b border-gray-100">{children}</td>
+          <td className="px-3 py-2 border-b border-borderColor">{children}</td>
         ),
-        hr: () => <hr className="my-4 border-gray-200" />,
+        hr: () => <hr className="my-4 border-borderColor" />,
         a: ({ href, children }) => (
           <a
             href={href}
@@ -89,7 +89,7 @@ function Message({ message, streaming }) {
     const text = message.content?.[0]?.text || "";
     return (
       <div className="flex justify-end animate-[fadeIn_0.2s_ease-out]">
-        <div className="max-w-[88%] sm:max-w-[80%] bg-primary text-white rounded-[20px] rounded-br-md px-4 py-3 text-sm whitespace-pre-wrap break-words shadow-sm">
+        <div className="max-w-[88%] sm:max-w-[80%] bg-primary text-white rounded-2xl rounded-br-md px-4 py-3 text-sm whitespace-pre-wrap break-words shadow-sm">
           {text}
         </div>
       </div>
@@ -174,7 +174,7 @@ function Message({ message, streaming }) {
         />
 
         {!hasAnyContent && streaming && (
-          <div className="flex items-center gap-1.5 py-2 text-gray-400" role="status" aria-label="Cyborg is thinking">
+          <div className="flex items-center gap-1.5 py-2 text-secondary" role="status" aria-label="Cyborg is thinking">
             <div className="flex gap-1">
               <div
                 className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce motion-reduce:animate-none"
@@ -192,7 +192,7 @@ function Message({ message, streaming }) {
           </div>
         )}
 
-        <div className="text-sm text-gray-800 leading-relaxed break-words">{rendered}</div>
+        <div className="text-sm text-blue leading-relaxed break-words">{rendered}</div>
 
         <Sources content={message.content} />
         {/* Only the actively-streaming message carries a live region, so a screen
