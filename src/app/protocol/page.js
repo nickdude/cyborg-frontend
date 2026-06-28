@@ -418,7 +418,7 @@ export default function Protocol() {
                 <ActionPlan plan={plan} userName={firstName} />
               </div>
             ) : (
-              <div className="animate-fade-in grid gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-12">
+              <div className="animate-fade-in grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-12">
                 {/* LEFT — Protocol (Products / General) */}
                 <div>
                   <h1 className="font-inter text-3xl font-semibold text-black lg:text-4xl">Protocol</h1>
