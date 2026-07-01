@@ -84,9 +84,9 @@ export default function ProductCard({ product, onAdded }) {
       {/* Price + quantity stepper, pinned to the bottom of the card. */}
       <div className="mt-5 flex items-center justify-between gap-3 pt-1">
         <div className="flex items-baseline gap-2">
-          <span className="text-[17px] font-semibold text-blue lg:text-lg">${product.price}</span>
+          <span className="text-[17px] font-semibold text-blue lg:text-lg">₹{Number(product.price).toLocaleString("en-IN")}</span>
           {product.originalPrice && (
-            <span className="text-sm text-secondary/70 line-through">${product.originalPrice}</span>
+            <span className="text-sm text-secondary/70 line-through">₹{Number(product.originalPrice).toLocaleString("en-IN")}</span>
           )}
         </div>
 

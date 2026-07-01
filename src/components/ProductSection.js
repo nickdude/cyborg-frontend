@@ -3,7 +3,7 @@
 import ProductCard from "./ProductCard";
 
 // Superpower-style section: heading + supporting description, then a card grid.
-export default function ProductSection({ title, subtitle, products }) {
+export default function ProductSection({ title, subtitle, products, onAdded }) {
   return (
     <section className="space-y-5">
       <div className="max-w-2xl">
@@ -17,7 +17,7 @@ export default function ProductSection({ title, subtitle, products }) {
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={product.id} product={product} onAdded={onAdded} />
         ))}
       </div>
     </section>

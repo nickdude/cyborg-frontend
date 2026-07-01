@@ -793,7 +793,7 @@ export default function DataDashboard() {
 
   return (
     <div
-      className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10"
+      className="min-h-screen bg-pageBackground pb-32 font-inter lg:pb-12"
       style={{ fontFamily: "'nbinternationalproboo', Inter, ui-sans-serif, system-ui, sans-serif" }}
     >
       <style

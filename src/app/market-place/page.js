@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ShoppingCart } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import ProductSection from "@/components/ProductSection";
-import { productAPI } from "@/services/api";
+import { productAPI, cartAPI } from "@/services/api";
 
 // Top-level category tabs (superpower marketplace).
 // `match` maps the tab to our real product `type` values; "all" shows everything.
@@ -57,6 +57,23 @@ function MarketplaceInner() {
   const [productsData, setProductsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Live cart count for the always-visible cart button (so added items are never lost).
+  const [cartCount, setCartCount] = useState(0);
+  const refreshCart = useCallback(async () => {
+    try {
+      const res = await cartAPI.get();
+      setCartCount(res?.data?.itemCount || 0);
+    } catch {
+      /* not logged in / empty — leave the count as-is */
+    }
+  }, []);
+  useEffect(() => {
+    refreshCart();
+    const onFocus = () => refreshCart();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [refreshCart]);
 
   // Preselect the tab from ?category= in the URL (e.g. /market-place?category=tests).
   useEffect(() => {
@@ -119,25 +136,41 @@ function MarketplaceInner() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-pageBackground pb-24 font-inter lg:pb-10">
       <div className="mx-auto max-w-[1200px] px-4 pt-6 sm:px-6 lg:px-8 lg:pt-10">
-        {/* Header — title + management links */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        {/* Header — title + always-visible cart/orders (mobile + desktop) */}
+        <div className="flex items-start justify-between gap-4">
           <h1 className="text-[32px] font-semibold tracking-[-0.02em] text-blue lg:text-[40px]">
             Marketplace
           </h1>
-          <div className="hidden flex-wrap items-center gap-x-6 gap-y-2 text-sm text-secondary sm:flex">
-            <Link href="/market-place?category=supplements" className="transition hover:text-blue">
-              Manage Supplements
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <Link
+              href="/cart"
+              aria-label={`Cart${cartCount ? ` (${cartCount} items)` : ""}`}
+              className="relative inline-flex h-11 items-center gap-2 rounded-full border border-borderColor bg-white px-4 text-sm font-semibold text-blue shadow-sm transition hover:border-primary/40 hover:text-black"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              <span className="hidden sm:inline">Cart</span>
+              {cartCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-[20px] place-items-center rounded-full bg-primary px-1 text-[11px] font-bold leading-none text-white">
+                  {cartCount}
+                </span>
+              )}
             </Link>
-            <Link href="/market-place?category=prescriptions" className="transition hover:text-blue">
-              Manage Prescriptions
-            </Link>
-            <Link href="/cart" className="font-medium text-blue transition hover:text-black">
-              Cart
-            </Link>
-            <Link href="/orders" className="font-medium text-blue transition hover:text-black">
-              View Orders
+            <Link
+              href="/orders"
+              className="inline-flex h-11 items-center rounded-full border border-borderColor bg-white px-4 text-sm font-semibold text-blue shadow-sm transition hover:border-primary/40 hover:text-black"
+            >
+              Orders
             </Link>
           </div>
+        </div>
+        {/* Desktop-only management shortcuts */}
+        <div className="mt-3 hidden flex-wrap items-center gap-x-6 gap-y-2 text-sm text-secondary sm:flex">
+          <Link href="/market-place?category=supplements" className="transition hover:text-blue">
+            Manage Supplements
+          </Link>
+          <Link href="/market-place?category=prescriptions" className="transition hover:text-blue">
+            Manage Prescriptions
+          </Link>
         </div>
 
         {/* Category tabs + search */}
@@ -233,6 +266,7 @@ function MarketplaceInner() {
                   title={meta?.title || section}
                   subtitle={meta?.subtitle}
                   products={products}
+                  onAdded={refreshCart}
                 />
               );
             })

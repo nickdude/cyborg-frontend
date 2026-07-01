@@ -313,7 +313,7 @@ export default function SemaglutidePage() {
                 {featuredPlan.name}
               </h3>
               <p className="text-2xl font-semibold font-inter text-black">
-                ${featuredPlan.price}/{featuredPlan.frequency}
+                ₹{featuredPlan.price}/{featuredPlan.frequency}
               </p>
             </div>
 

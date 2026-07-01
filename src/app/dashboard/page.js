@@ -184,9 +184,9 @@ export default function Dashboard() {
                         },
                         {
                             image: "/assets/refer-friend.png",
-                            textLines: ["Refer your friends and", "earn $299"],
-                            subtext: "Get $299 each",
-                            action: { type: "button", label: "Earn $299" },
+                            textLines: ["Refer your friends and", "earn ₹299"],
+                            subtext: "Get ₹299 each",
+                            action: { type: "button", label: "Earn ₹299" },
                         },
                     ],
                 },
@@ -277,7 +277,7 @@ export default function Dashboard() {
     //    original dashboard) ─────────────────────────────────────────────────
     if (homeTab === "twin") {
         return (
-            <div className="min-h-screen bg-pageBackground font-inter pb-28 lg:pb-12">
+            <div className="min-h-screen bg-pageBackground font-inter pb-36 lg:pb-16">
                 <div className="mx-auto w-full max-w-[1180px] px-4 pt-4 lg:px-8 lg:pt-6">
                     <HomeTabs active={homeTab} onChange={setHomeTab} />
 
@@ -312,7 +312,7 @@ export default function Dashboard() {
 
     // ── Default: Timeline home (purple header + swipeable score cards) ─────────
     return (
-        <div className="min-h-screen bg-pageBackground font-inter pb-28 lg:pb-12">
+        <div className="min-h-screen bg-pageBackground font-inter pb-36 lg:pb-16">
             <div className="mx-auto w-full max-w-[680px] px-3 pt-3 sm:px-4 sm:pt-4 lg:px-6 lg:pt-6">
                 <PurpleHeader
                     greeting={greeting}
@@ -831,7 +831,7 @@ function LiveBetterCard() {
         {
             image: "/assets/refer-friend.png",
             eyebrow: "Give the gift of health.",
-            lines: ["Refer your friends and earn $299"],
+            lines: ["Refer your friends and earn ₹299"],
         },
     ];
 

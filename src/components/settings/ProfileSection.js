@@ -36,6 +36,8 @@ export default function ProfileSection() {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [menuFor, setMenuFor] = useState(null); // address id whose ⋯ menu is open
+  const [addrBusy, setAddrBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!userId) {
@@ -68,6 +70,39 @@ export default function ProfileSection() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  const addrId = (a) => a.id || a._id;
+
+  const handleDeleteAddress = async (id) => {
+    if (!id || addrBusy) return;
+    if (!confirm("Delete this address? This can't be undone.")) return;
+    setMenuFor(null);
+    setAddrBusy(true);
+    try {
+      await addressAPI.remove(id);
+      setAddresses((prev) => prev.filter((a) => addrId(a) !== id)); // optimistic
+      // Resync (a new default may have been promoted server-side) — no page spinner.
+      addressAPI.list().then((r) => setAddresses(r?.data || [])).catch(() => {});
+    } catch (e) {
+      setError(e.message || "Failed to delete address");
+    } finally {
+      setAddrBusy(false);
+    }
+  };
+
+  const handleSetDefault = async (id) => {
+    if (!id || addrBusy) return;
+    setMenuFor(null);
+    setAddrBusy(true);
+    try {
+      await addressAPI.setDefault(id);
+      await load();
+    } catch (e) {
+      setError(e.message || "Failed to update default address");
+    } finally {
+      setAddrBusy(false);
+    }
+  };
 
   useEffect(() => {
     load();
@@ -135,7 +170,48 @@ export default function ProfileSection() {
                           .join(", ")}
                       </p>
                     </div>
-                    <MoreHorizontal className="mt-1 h-5 w-5 shrink-0 text-secondary/60" />
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setMenuFor(menuFor === addrId(a) ? null : addrId(a))}
+                        aria-label="Address options"
+                        aria-haspopup="menu"
+                        aria-expanded={menuFor === addrId(a)}
+                        className="mt-0.5 grid h-8 w-8 place-items-center rounded-full text-secondary/60 transition hover:bg-pageBackground hover:text-black"
+                      >
+                        <MoreHorizontal className="h-5 w-5" />
+                      </button>
+                      {menuFor === addrId(a) && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setMenuFor(null)} />
+                          <div
+                            role="menu"
+                            className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl border border-borderColor bg-white py-1 shadow-[0_12px_32px_-8px_rgba(16,24,40,0.18)]"
+                          >
+                            {!a.isDefault && (
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => handleSetDefault(addrId(a))}
+                                disabled={addrBusy}
+                                className="block w-full px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                              >
+                                Set as default
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => handleDeleteAddress(addrId(a))}
+                              disabled={addrBusy}
+                              className="block w-full px-4 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                            >
+                              Delete address
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))
               )}

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { paymentAPI } from "@/services/api";
 import UserActions from "./UserActions";
 import BottomNavbar from "./BottomNavbar";
 import TopNavbar from "./TopNavbar";
@@ -19,19 +20,53 @@ const PATIENT_ONLY_PAGES = [
   "/market-place/prescriptions/semaglutide",
 ];
 
+// Free (AMINO9 Baseline) members can ONLY use the AI Concierge. Everything else
+// bounces them to /concierge — except /settings and /membership so they can still
+// manage their account and upgrade.
+const FREE_ALLOWED_PREFIXES = ["/concierge", "/settings", "/membership"];
+
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
   const isDoctor = user?.userType === "doctor";
 
+  // Determine the member's plan (baseline = free) so we can gate feature access.
+  const [planType, setPlanType] = useState(undefined); // undefined = unknown yet
+  useEffect(() => {
+    if (!user?.id || isDoctor) {
+      setPlanType(null);
+      return;
+    }
+    let active = true;
+    paymentAPI
+      .getUserSubscription(user.id)
+      .then((res) => { if (active) setPlanType(res?.data?.planType ?? null); })
+      .catch(() => { if (active) setPlanType(null); });
+    return () => { active = false; };
+  }, [user?.id, isDoctor]);
+
+  const isFreeMember = planType === "baseline";
+  const freeAllowed = FREE_ALLOWED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+
   useEffect(() => {
     if (isDoctor && PATIENT_ONLY_PAGES.includes(pathname)) {
       router.replace("/doctor-dashboard");
+      return;
     }
-  }, [isDoctor, pathname, router]);
+    // Free members are confined to the AI Concierge (+ settings/membership).
+    if (isFreeMember && !freeAllowed) {
+      router.replace("/concierge");
+    }
+  }, [isDoctor, isFreeMember, freeAllowed, pathname, router]);
 
   if (isDoctor && PATIENT_ONLY_PAGES.includes(pathname)) {
+    return null;
+  }
+  // Don't flash a locked page before the redirect lands.
+  if (isFreeMember && !freeAllowed) {
     return null;
   }
 

@@ -13,14 +13,14 @@ const HOW_IT_WORKS = [
       "Invite your friends to join Cyborg using your unique referral link.",
   },
   {
-    title: "Give $299 to your friends",
+    title: "Give ₹299 to your friends",
     description:
-      "When your friends join Cyborg, they get $299 to spend in the Cyborg Supplement Marketplace.",
+      "When your friends join Cyborg, they get ₹299 to spend in the Cyborg Supplement Marketplace.",
   },
   {
-    title: "Earn $299 in credit",
+    title: "Earn ₹299 in credit",
     description:
-      "You'll also receive $299 for every friend who signs up with your link.",
+      "You'll also receive ₹299 for every friend who signs up with your link.",
   },
   {
     title: "Redeem your credits",
@@ -32,7 +32,7 @@ const FAQS = [
   {
     question: "When do I get my reward?",
     answer:
-      "Your $299 credit is applied to your account as soon as your friend signs up with your referral link and completes their first order.",
+      "Your ₹299 credit is applied to your account as soon as your friend signs up with your referral link and completes their first order.",
   },
   {
     question: "How do I use the credit?",
@@ -176,7 +176,7 @@ export default function InvitePage() {
     if (!email || !referralLink) return;
     const subject = encodeURIComponent("Join me on Cyborg");
     const body = encodeURIComponent(
-      `Hey! I'm using Cyborg and thought you'd love it too. Sign up with my link and we'll each get $299 to spend in the Cyborg Supplement Marketplace:\n\n${referralLink}`
+      `Hey! I'm using Cyborg and thought you'd love it too. Sign up with my link and we'll each get ₹299 to spend in the Cyborg Supplement Marketplace:\n\n${referralLink}`
     );
     if (typeof window !== "undefined") {
       window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
@@ -230,11 +230,11 @@ export default function InvitePage() {
         <div className="mx-auto w-full max-w-3xl px-5 pb-28 pt-10 sm:pt-12 lg:pb-12">
           {/* Referral block */}
           <h2 className="text-xl font-semibold text-black sm:text-2xl">
-            Refer your friends and earn $299
+            Refer your friends and earn ₹299
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-secondary">
             Share your unique referral link with friends and family. When they
-            sign up, you&apos;ll each receive $299 to spend in the Cyborg
+            sign up, you&apos;ll each receive ₹299 to spend in the Cyborg
             Supplement Marketplace.
           </p>
 
@@ -343,7 +343,7 @@ export default function InvitePage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-black">{pname}</p>
                         <p className="mt-0.5 text-xs text-secondary">
-                          {product.brand ? `${product.brand} · ` : ""}Redeem your $299 credit toward this
+                          {product.brand ? `${product.brand} · ` : ""}Redeem your ₹299 credit toward this
                         </p>
                       </div>
                     </div>

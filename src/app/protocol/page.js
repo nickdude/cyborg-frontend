@@ -23,10 +23,10 @@ const TIMING_LABELS = {
 
 function formatPrice(price) {
   if (price == null || price === "") return null;
-  if (typeof price === "number") return `$${price.toFixed(2).replace(/\.00$/, "")}`;
+  if (typeof price === "number") return `₹${price.toFixed(2).replace(/\.00$/, "")}`;
   const str = String(price).trim();
   if (!str) return null;
-  return str.startsWith("$") ? str : `$${str}`;
+  return str.startsWith("₹") ? str : `₹${str}`;
 }
 
 function buildSubtitle(item) {

@@ -70,7 +70,7 @@ export function LabsByCyborg() {
           <div className="flex items-baseline justify-between gap-3">
             <h3 className="text-xl font-semibold md:text-2xl">Labs by CYBORG</h3>
             <span className="shrink-0 text-sm font-medium text-white/85 md:text-base">
-              Starts at $100
+              Starts at ₹8,499
             </span>
           </div>
 

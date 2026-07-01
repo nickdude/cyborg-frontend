@@ -377,7 +377,7 @@ function NextSteps({ next }) {
                     )}
                     <div>
                       <p className="text-sm font-medium text-blue">{p.productName}</p>
-                      {p.price != null && <p className="text-xs text-secondary">${p.price}</p>}
+                      {p.price != null && <p className="text-xs text-secondary">₹{p.price}</p>}
                     </div>
                   </div>
                 </div>

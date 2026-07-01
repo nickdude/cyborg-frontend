@@ -108,12 +108,10 @@ export default function MembershipPage() {
         (!sub.expiryDate || new Date(sub.expiryDate) > new Date());
 
       if (isActive) {
+        // Don't redirect away — let members open this page to view/upgrade/change
+        // their plan. The active-plan banner + "current plan" state handle the rest.
         setSubscription(sub);
-        const updatedUser = { ...user, hasActiveSubscription: true };
-        updateUser(updatedUser);
-        // Skip the Membership step → go to the next appropriate screen.
-        router.replace(getNextRoute(updatedUser));
-        return; // keep the loader up during redirect (no Membership flicker)
+        updateUser({ ...user, hasActiveSubscription: true });
       }
     } catch (err) {
       // Fail open: if the check fails, show Membership so the user isn't blocked.
@@ -195,6 +193,17 @@ export default function MembershipPage() {
     script.onerror = () => setError("Failed to load payment gateway. Please retry.");
     document.body.appendChild(script);
   }, []);
+
+  // Lock the user on the Membership step — no navigating away (Back button, browser
+  // Back) until a plan is active. The free AMINO9 Baseline is always available as a
+  // ₹0 way to proceed, so nobody is truly stuck.
+  useEffect(() => {
+    if (checkingAccess || subscription) return;
+    window.history.pushState(null, "", window.location.href);
+    const onPop = () => window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [checkingAccess, subscription]);
 
   const handlePurchase = async () => {
     if (!selectedPlan) {
@@ -339,7 +348,7 @@ export default function MembershipPage() {
 
   return (
     <div className="min-h-screen bg-pageBackground text-gray-900">
-      <Navbar backHref="/dashboard" />
+      <Navbar backHref="/dashboard" showBack={false} />
 
       <main className="mx-auto w-full max-w-6xl px-4 py-6 lg:max-w-[1200px] lg:px-8 lg:py-10 xl:max-w-[1280px] 2xl:max-w-[1320px]">
 

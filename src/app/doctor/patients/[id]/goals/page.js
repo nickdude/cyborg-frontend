@@ -1303,7 +1303,7 @@ export default function GoalsProtocolPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[15px] font-medium text-black mb-1.5">Price</label>
-                  <input type="text" value={protocolForm.price} onChange={(e) => setProtocolForm((f) => ({ ...f, price: e.target.value }))} placeholder="$0" className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors" />
+                  <input type="text" value={protocolForm.price} onChange={(e) => setProtocolForm((f) => ({ ...f, price: e.target.value }))} placeholder="₹0" className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-[15px] focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-colors" />
                 </div>
                 <div>
                   <label className="block text-[15px] font-medium text-black mb-1.5">Quantity</label>

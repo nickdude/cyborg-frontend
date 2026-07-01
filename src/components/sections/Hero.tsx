@@ -9,7 +9,7 @@ const easeOut = [0.22, 1, 0.36, 1] as const;
 
 const STATS = [
   { title: "Whole body check", sub: "Detect 1,000+ conditions" },
-  { title: "Accessible", sub: "Starts at $199/year" },
+  { title: "Accessible", sub: "Starts at ₹16,499/year" },
   { title: "Trusted", sub: "1M biomarkers tested" },
 ];
 

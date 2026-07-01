@@ -17,7 +17,7 @@ export default function ProtocolProductItem({ product, onBuyClick }) {
           </div>
           <div className="flex-1">
             <h3 className="text-sm font-medium text-black font-inter lg:text-base">{product.name}</h3>
-            <p className="text-sm text-secondary mt-1 font-inter lg:text-base">${product.price}</p>
+            <p className="text-sm text-secondary mt-1 font-inter lg:text-base">₹{product.price}</p>
           </div>
         </div>
         <button

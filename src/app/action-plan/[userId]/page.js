@@ -1305,7 +1305,7 @@ function NextStepsSection({ nextSteps, protocol, onDownloadPDF, router }) {
                     {product.productName}
                   </p>
                   {product.price != null && (
-                    <p className="text-[13px] text-slate-400 mt-0.5">${product.price}</p>
+                    <p className="text-[13px] text-slate-400 mt-0.5">₹{product.price}</p>
                   )}
                 </div>
               </div>

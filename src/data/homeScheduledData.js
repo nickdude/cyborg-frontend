@@ -63,9 +63,9 @@ export const homeScheduledData = {
       },
       {
         image: "/assets/refer-friend.png",
-        textLines: ["Refer your friends and", "earn $299"],
-        subtext: "Get $299 each",
-        action: { type: "button", label: "Earn $299" },
+        textLines: ["Refer your friends and", "earn ₹299"],
+        subtext: "Get ₹299 each",
+        action: { type: "button", label: "Earn ₹299" },
       },
     ],
   },

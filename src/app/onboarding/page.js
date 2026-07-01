@@ -298,7 +298,7 @@ const SECTIONS = [
         code: "5.4",
         title: "Over the course of a year, how much do you budget for health? (excluding insurance)",
         type: "single",
-        options: ["<$1,000", "1,000 - 2,000", "2,000 - 5,000", "5,000 - 15,000", "15,000+"],
+        options: ["<₹1,000", "1,000 - 2,000", "2,000 - 5,000", "5,000 - 15,000", "15,000+"],
       },
       {
         code: "5.5",

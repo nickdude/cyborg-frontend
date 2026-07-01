@@ -110,7 +110,7 @@ export default function Home() {
                   Join Today
                 </Button>
 
-                <p className="mt-3 font-medium text-white/95 lg:text-white/70">Starting at $49.99</p>
+                <p className="mt-3 font-medium text-white/95 lg:text-white/70">Starting at ₹4,149</p>
               </article>
             ))}
           </div>
@@ -273,7 +273,7 @@ export default function Home() {
                 md:pt-16 lg:mt-0 lg:self-end lg:p-8 lg:pt-8 lg:transition-all lg:duration-300 lg:hover:-translate-y-1.5 lg:hover:shadow-[0_28px_70px_rgba(0,0,0,0.35)]">
               <div className="flex items-start justify-between gap-4">
                 <h3 className="text-[clamp(1.05rem,4.9vw,1.55rem)] font-semibold leading-[1.05] lg:text-[clamp(1.45rem,2.4vw,2.25rem)]">Labs by CYBORG</h3>
-                <p className="text-right text-[clamp(1.05rem,4.9vw,1.45rem)] font-semibold leading-[1.05] lg:text-[clamp(1.4rem,2.3vw,2.1rem)]">Starts at $100</p>
+                <p className="text-right text-[clamp(1.05rem,4.9vw,1.45rem)] font-semibold leading-[1.05] lg:text-[clamp(1.4rem,2.3vw,2.1rem)]">Starts at ₹8,499</p>
               </div>
 
               <ul className="mt-5 space-y-4 text-[clamp(1.02rem,3.8vw,1.45rem)] leading-[1.34]">
