@@ -122,7 +122,7 @@ export default function CartPage() {
                     </div>
                     <div className="mt-auto flex items-center justify-between pt-3">
                       <div className="flex items-center rounded-lg border border-borderColor">
-                        <button type="button" onClick={() => setQty(it.productId, it.quantity - 1)} disabled={busy || it.quantity <= 1} className="px-3 py-1.5 text-lg leading-none text-gray-600 disabled:opacity-40">−</button>
+                        <button type="button" onClick={() => (it.quantity <= 1 ? removeItem(it.productId) : setQty(it.productId, it.quantity - 1))} disabled={busy} aria-label={it.quantity <= 1 ? "Remove item" : "Decrease quantity"} className="px-3 py-1.5 text-lg leading-none text-gray-600 disabled:opacity-40">−</button>
                         <span className="min-w-[2rem] text-center text-sm font-medium">{it.quantity}</span>
                         <button type="button" onClick={() => setQty(it.productId, it.quantity + 1)} disabled={busy} className="px-3 py-1.5 text-lg leading-none text-gray-600">+</button>
                       </div>

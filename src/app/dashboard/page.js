@@ -263,10 +263,6 @@ export default function Dashboard() {
           date: planReady && planDate ? addDaysISO(planDate, 7) : null, href: "/consults",
           status: planReady ? "upcoming" : "locked",
           note: "Review your results with a clinician" },
-        { key: "custom", tone: "orange", Icon: FlaskConical, title: "Custom Panel",
-          date: lastReportDate ? addDaysISO(lastReportDate, 45) : null, href: "/market-place?category=tests",
-          status: hasAnyReport ? "upcoming" : "locked",
-          note: "Targeted follow-up test" },
         { key: "retest", tone: "green", Icon: RefreshCw, title: "90-day re-test",
           date: lastReportDate ? addDaysISO(lastReportDate, 90) : null, href: "/data",
           status: "locked", note: "Track your progress" },
@@ -562,6 +558,10 @@ const MILESTONE_TONE = {
 function MilestoneCard({ m }) {
     const d = evDate(m.date);
     const Icon = m.Icon;
+    // Photo chip per milestone (drop-in replaceable at /assets/timeline/<key>.jpg).
+    // Milestones without a photo (e.g. Blood Panel) show their tinted icon instead.
+    const PHOTO_KEYS = ["intake", "blood", "plan", "review", "retest"];
+    const img = m.img || (PHOTO_KEYS.includes(m.key) ? `/assets/timeline/${m.key}.jpg` : null);
     const clickable = m.status === "complete" || m.status === "active";
     const sub = m.status === "upcoming" && m.date ? `Upcoming · ${d.mon} ${d.day}` : m.note;
 
@@ -577,8 +577,17 @@ function MilestoneCard({ m }) {
                     <span className="text-[11px] uppercase tracking-wide text-secondary/60">—</span>
                 )}
             </div>
-            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${MILESTONE_TONE[m.tone] || MILESTONE_TONE.purple}`}>
+            <span className={`relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl ${MILESTONE_TONE[m.tone] || MILESTONE_TONE.purple}`}>
                 <Icon className="h-[18px] w-[18px]" />
+                {img && (
+                    <img
+                        src={img}
+                        alt=""
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover"
+                        onError={(e) => { e.currentTarget.remove(); }}
+                    />
+                )}
             </span>
             <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-blue">{m.title}</p>

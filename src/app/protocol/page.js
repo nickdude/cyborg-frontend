@@ -147,20 +147,70 @@ function GeneralRecommendations({ protocol }) {
   );
 }
 
-/* ── empty: no report uploaded yet ── */
+/* ── empty: no report uploaded yet — locked "awaiting results" layout ── */
 function NoActionPlan({ onUpload }) {
   return (
-    <div className="mx-auto max-w-md py-14 text-center lg:py-24">
-      <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-full bg-[#ece7f6]">
-        <svg className="h-7 w-7 text-primary" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+    <div className="animate-fade-in grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-12">
+      {/* LEFT — Protocol (locked placeholders) */}
+      <div>
+        <h1 className="font-inter text-3xl font-semibold text-black lg:text-4xl">Protocol</h1>
+        <h2 className="mt-7 font-inter text-xl font-semibold text-black lg:text-2xl">Your protocol items</h2>
+        <div className="mt-4 space-y-2.5">
+          {["Thyroid support complex", "Vitamin D3 + K2", "NAC + choline"].map((name, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 rounded-2xl border border-borderColor bg-white px-4 py-3.5"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-pageBackground text-secondary/50">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="5" y="11" width="14" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
+                </svg>
+              </span>
+              <div className="min-w-0 flex-1">
+                {/* blurred product name — locked until results are in (matches Superpower) */}
+                <p className="select-none truncate text-[14px] font-medium text-gray-500 blur-[3px]" aria-hidden="true">
+                  {name}
+                </p>
+                <p className="mt-1.5 text-[12px] font-medium text-secondary">Awaiting results</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={onUpload}
+          className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-black px-6 py-3.5 text-[15px] font-medium text-white transition hover:bg-black/90 active:scale-[0.99]"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+          Upload a blood report
+        </button>
       </div>
-      <h2 className="text-2xl font-semibold text-black">No action plan yet</h2>
-      <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-secondary">
-        Upload a blood report and we&apos;ll generate your Cyborg Score, monitored issues, and a personalised protocol.
-      </p>
-      <button type="button" onClick={onUpload} className="mt-7 w-full max-w-[360px] rounded-2xl bg-black px-6 py-4 text-[15px] font-medium text-white transition hover:bg-black/90 active:scale-[0.99]">
-        Upload a blood report
-      </button>
+
+      {/* RIGHT — Goals (pending / awaiting-results card) */}
+      <div>
+        <h1 className="font-inter text-3xl font-semibold text-black lg:text-4xl">Goals</h1>
+        <div className="relative mt-7 flex min-h-[240px] flex-col justify-end overflow-hidden rounded-3xl p-6 text-white shadow-sm">
+          <img
+            src="/assets/protocol/goals-awaiting.webp"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          {/* light touch of darkening at the very bottom only — keep the image bright like Superpower */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+          <span className="absolute right-4 top-4 z-10 rounded-full bg-white/20 px-3 py-1 text-[12px] font-semibold backdrop-blur-sm">
+            Pending
+          </span>
+          <div className="relative z-10">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/70">Awaiting results</p>
+            <h3 className="mt-2 max-w-[24ch] text-[20px] font-semibold leading-snug lg:text-[22px]">
+              Your health goals will unlock once your test results are processed
+            </h3>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

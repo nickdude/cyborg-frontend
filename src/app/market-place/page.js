@@ -30,8 +30,8 @@ const SECTION_META = {
     subtitle: "A comprehensive baseline read on your health.",
   },
   brain: {
-    title: "Brain & Cognitive Health",
-    subtitle: "Support focus, memory, and long-term cognitive performance.",
+    title: "Obesity & Metabolic Health",
+    subtitle: "Clinician-guided GLP-1 care for weight loss and long-term metabolic health.",
   },
   digestive: {
     title: "Digestive Health",
