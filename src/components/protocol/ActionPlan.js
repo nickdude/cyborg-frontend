@@ -148,8 +148,9 @@ function Overview() {
 
 function HealthReport({ hr, thesis }) {
   const score = hr?.cyborgScore?.final ?? hr?.cyborgScore ?? null;
-  const bio = Number(hr?.bioAge?.phenoAge ?? hr?.bioAge);
-  const bioStr = Number.isFinite(bio) ? bio.toFixed(1) : "—";
+  const bioRaw = hr?.bioAge?.phenoAge ?? hr?.bioAge;
+  const bio = bioRaw == null ? null : Number(bioRaw); // avoid Number(null) === 0
+  const bioStr = bio != null && Number.isFinite(bio) && bio > 0 ? bio.toFixed(1) : "—";
   const delta = hr?.bioAge?.delta;
   const mc = hr?.markerCounts || {};
   const grades = Object.entries(hr?.categoryGrades || {});

@@ -12,7 +12,8 @@ import { userAPI, biomarkerAPI, conciergeAPI, streamMessage } from "@/services/a
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory, categoryStatus, STATUS_COLORS } from "@/components/data/organStatus";
 import BiomarkerDetailModal from "@/components/data/BiomarkerDetailModal";
-import BiologicalAgeModal from "@/components/data/BiologicalAgeModal";
+import ScoreDetailModal from "@/components/data/ScoreDetailModal";
+import LabUploadedCard from "@/components/data/LabUploadedCard";
 import RecordsTable from "@/components/data/RecordsTable";
 import AskCyborgAI from "@/components/data/AskCyborgAI";
 import CategoryFilter from "@/components/data/CategoryFilter";
@@ -487,6 +488,8 @@ export default function DataDashboard() {
   const [scores, setScores] = useState(null);
   const [selectedBiomarker, setSelectedBiomarker] = useState(null);
   const [showBioModal, setShowBioModal] = useState(false);
+  const [detailTab, setDetailTab] = useState("score");
+  const [showLabCard, setShowLabCard] = useState(false);
 
   // Upload elapsed timer
   useEffect(() => {
@@ -518,7 +521,7 @@ export default function DataDashboard() {
         const withTrends = panel.map((bm) => {
           const history = trends[bm.id];
           if (history && history.length >= 1) {
-            return { ...bm, trend: history.map((p) => p.value) };
+            return { ...bm, trend: history.map((p) => p.value), trendDates: history.map((p) => p.date) };
           }
           return bm;
         });
@@ -546,6 +549,14 @@ export default function DataDashboard() {
       fetchBiomarkerPanel();
     }
   }, [activeTab, fetchBiomarkerPanel]);
+
+  // Show the "your past lab was uploaded" card whenever report data is present.
+  // Dismissal is session-only (state) — it comes back on reload / a new report.
+  useEffect(() => {
+    setShowLabCard(!!lastUpdated && biomarkers.length > 0);
+  }, [lastUpdated, biomarkers.length]);
+
+  const dismissLabCard = useCallback(() => setShowLabCard(false), []);
 
   const rangeOptions = [
     { id: "all", label: "All ranges" },
@@ -781,7 +792,7 @@ export default function DataDashboard() {
   const bioAgeVal = (() => {
     const v = scores?.bioAge && typeof scores.bioAge === "object" ? scores.bioAge.phenoAge : scores?.bioAge;
     const n = Number(v);
-    return Number.isFinite(n) ? n : null;
+    return Number.isFinite(n) && n > 0 ? n : null; // guard: null/0 -> null (no "Age 0")
   })();
   const chronoAge = useMemo(() => {
     const dob = user?.dateOfBirth || user?.birthDate || user?.dob;
@@ -790,6 +801,9 @@ export default function DataDashboard() {
     if (isNaN(d.getTime())) return null;
     return Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000));
   }, [user]);
+  // Fall back to the chronological age the backend baked into the score, so the
+  // younger/older diff + slider show even before the auth user's DOB is refreshed.
+  const effChrono = chronoAge ?? (scores?.bioAge && typeof scores.bioAge === "object" ? scores.bioAge.chronoAge : null) ?? null;
 
   return (
     <div
@@ -1014,55 +1028,118 @@ export default function DataDashboard() {
                           : `${fullName.split(" ")[0]}, your twin is ready — upload a report to bring it to life.`}
                       </p>
 
+                      {showLabCard && biomarkers.length > 0 && (
+                        <div className="mt-5">
+                          <LabUploadedCard
+                            biomarkers={biomarkers}
+                            onClose={dismissLabCard}
+                            onViewData={dismissLabCard}
+                          />
+                        </div>
+                      )}
+
+                      {!showLabCard && biomarkers.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowLabCard(true)}
+                          className="mt-4 inline-flex items-center gap-2 rounded-full border border-borderColor bg-white px-4 py-2 text-sm font-medium text-blue shadow-sm transition hover:bg-pageBackground"
+                        >
+                          <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M3 20h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                            <path d="M5 15l4-5 3.5 3L19 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          View report graph
+                        </button>
+                      )}
+
                       {biomarkers.length > 0 && (scoreVal != null || bioAgeVal != null) && (
                         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          {scoreVal != null && (
-                            <Link
-                              href="/dashboard?view=insights"
-                              className="group flex flex-col rounded-2xl border border-borderColor bg-white p-5 transition hover:border-blue/20"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-secondary">Cyborg score</span>
-                                <svg className="h-4 w-4 text-secondary transition group-hover:text-blue" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                  <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </div>
-                              <p className="mt-2 text-[28px] font-semibold leading-none text-blue">
-                                {Math.round(scoreVal)}
-                                <span className="text-base font-normal text-secondary"> / 100</span>
-                              </p>
-                              <span className="mt-2 text-xs text-secondary">
-                                {scoreVal >= 80 ? "Generally healthy" : scoreVal >= 60 ? "Good — room to improve" : "Needs attention"}
-                              </span>
-                            </Link>
-                          )}
-                          {bioAgeVal != null && (
-                            <button
-                              type="button"
-                              onClick={() => setShowBioModal(true)}
-                              className="group flex w-full flex-col rounded-2xl border border-borderColor bg-white p-5 text-left transition hover:border-blue/20"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-secondary">Biological age</span>
-                                <svg className="h-4 w-4 text-secondary transition group-hover:text-blue" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                  <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </div>
-                              <p className="mt-2 text-[28px] font-semibold leading-none text-blue">
-                                {Number(bioAgeVal).toFixed(1)}
-                                {chronoAge != null && (
-                                  <span className="text-base font-normal text-secondary"> / {chronoAge}</span>
-                                )}
-                              </p>
-                              <span className="mt-2 text-xs text-secondary">
-                                {chronoAge != null
-                                  ? chronoAge - bioAgeVal >= 0
-                                    ? `${(chronoAge - bioAgeVal).toFixed(1)} years younger than your actual age`
-                                    : `${Math.abs(chronoAge - bioAgeVal).toFixed(1)} years older than your actual age`
-                                  : "PhenoAge estimate"}
-                              </span>
-                            </button>
-                          )}
+                          {scoreVal != null && (() => {
+                            const sPos = Math.min(100, Math.max(0, Math.round(scoreVal)));
+                            const status = scoreVal >= 60 ? "On Track" : "Needs attention";
+                            return (
+                              <Link
+                                href="/dashboard?view=insights"
+                                className="group relative flex min-h-[172px] flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-[#7b3ff2] via-[#6a27d8] to-[#3f1585] p-5 text-left text-white shadow-sm transition hover:brightness-105"
+                              >
+                                <img src="/assets/data/score.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" onError={(e) => e.currentTarget.remove()} />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/5" />
+                                <div className="relative z-10 flex items-start justify-between">
+                                  <span className="text-[13px] font-medium text-white/85">Cyborg score</span>
+                                  <svg className="h-4 w-4 text-white/70" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                </div>
+                                <div className="relative z-10 mt-auto">
+                                  <div className="flex items-end justify-end text-right">
+                                    <div>
+                                      <p className="text-[34px] font-semibold leading-none">{Math.round(scoreVal)}</p>
+                                      <p className="mt-1 text-[13px] text-white/85">{status}</p>
+                                    </div>
+                                  </div>
+                                  <div className="relative mt-4">
+                                    <div className="h-1 rounded-full bg-white/30"><div className="h-full rounded-full bg-white" style={{ width: `${sPos}%` }} /></div>
+                                    <div className="absolute -top-[7px]" style={{ left: `${sPos}%`, transform: "translateX(-50%)" }}>
+                                      <div className="h-0 w-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-white" />
+                                    </div>
+                                    <div className="relative mt-1.5 h-3 text-[10px] text-white/70">
+                                      <span className="absolute left-0">0</span>
+                                      <span className="absolute" style={{ left: "60%", transform: "translateX(-50%)" }}>60</span>
+                                      <span className="absolute" style={{ left: "80%", transform: "translateX(-50%)" }}>80</span>
+                                      <span className="absolute right-0">100</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Link>
+                            );
+                          })()}
+                          {(() => {
+                            const hasBio = bioAgeVal != null;
+                            const delta = hasBio && effChrono != null ? bioAgeVal - effChrono : 0; // negative = younger
+                            const bPos = Math.min(100, Math.max(0, ((delta + 5) / 10) * 100));
+                            const diffText = effChrono != null
+                              ? (effChrono - bioAgeVal >= 0
+                                  ? `${(effChrono - bioAgeVal).toFixed(1)} years younger`
+                                  : `${Math.abs(effChrono - bioAgeVal).toFixed(1)} years older`)
+                              : "PhenoAge estimate";
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => { setDetailTab("bioage"); setShowBioModal(true); }}
+                                className="group relative flex min-h-[172px] w-full flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-[#5fd08a] via-[#31b36a] to-[#1a7d46] p-5 text-left text-white shadow-sm transition hover:brightness-105"
+                              >
+                                <img src="/assets/data/bioage.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" onError={(e) => e.currentTarget.remove()} />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-black/5" />
+                                <div className="relative z-10 flex items-start justify-between">
+                                  <span className="text-[13px] font-medium text-white/90">Biological age</span>
+                                  <svg className="h-4 w-4 text-white/70" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                </div>
+                                <div className="relative z-10 mt-auto">
+                                  {hasBio ? (
+                                    <>
+                                      <div className="flex items-end justify-end text-right">
+                                        <div>
+                                          <p className="text-[34px] font-semibold leading-none"><span className="mr-1 align-top text-[14px] font-normal text-white/80">Age</span>{Math.round(bioAgeVal)}</p>
+                                          <p className="mt-1 text-[13px] text-white/90">{diffText}</p>
+                                        </div>
+                                      </div>
+                                      <div className="relative mt-4">
+                                        <div className="h-1 rounded-full bg-white/30"><div className="h-full rounded-full bg-white" style={{ width: `${bPos}%` }} /></div>
+                                        <div className="absolute -top-[7px]" style={{ left: `${bPos}%`, transform: "translateX(-50%)" }}>
+                                          <div className="h-0 w-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-white" />
+                                        </div>
+                                        <div className="relative mt-1.5 h-3 text-[10px] text-white/75">
+                                          <span className="absolute left-0">-5</span>
+                                          <span className="absolute" style={{ left: `${bPos}%`, transform: "translateX(-50%)" }}>Current</span>
+                                          <span className="absolute right-0">5</span>
+                                        </div>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <p className="max-w-[22ch] text-[13px] font-medium leading-snug text-white/95">Add your date of birth in Settings to see your biological age.</p>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })()}
                         </div>
                       )}
 
@@ -1277,14 +1354,15 @@ export default function DataDashboard() {
         />
       )}
 
-      {showBioModal && (
-        <BiologicalAgeModal
-          bioAge={bioAgeVal}
-          chronoAge={chronoAge}
-          biomarkers={biomarkers}
-          onClose={() => setShowBioModal(false)}
-        />
-      )}
+      <ScoreDetailModal
+        open={showBioModal}
+        initialTab={detailTab}
+        onClose={() => setShowBioModal(false)}
+        scoreVal={scoreVal}
+        bioAgeVal={bioAgeVal}
+        effChrono={effChrono}
+        userName={[user?.firstName, user?.lastName].filter(Boolean).join(" ") || user?.name || "You"}
+      />
 
       <AskCyborgAI />
     </div>

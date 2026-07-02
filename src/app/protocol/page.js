@@ -10,6 +10,7 @@ import GoalDetail from "@/components/GoalDetail";
 import ProtocolIntro from "@/components/protocol/ProtocolIntro";
 import ActionPlan from "@/components/protocol/ActionPlan";
 import { supplementImage } from "@/utils/supplementImage";
+import { supplementInfo } from "@/utils/supplementInfo";
 
 const TIMING_LABELS = {
   morning_fasted: "Morning (Fasted)",
@@ -59,12 +60,18 @@ function SupplementBottle({ index = 0 }) {
   );
 }
 
-function ProtocolRow({ item, index = 0 }) {
+function ProtocolRow({ item, index = 0, onOpen }) {
   const subtitle = buildSubtitle(item);
   const price = formatPrice(item.price);
   const img = item.image || supplementImage(item.productName);
   return (
-    <div className="flex items-center gap-3 px-4 py-4 lg:gap-4 lg:px-5 lg:py-5">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen?.(item)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen?.(item); } }}
+      className="flex cursor-pointer items-center gap-3 px-4 py-4 transition hover:bg-pageBackground/50 lg:gap-4 lg:px-5 lg:py-5"
+    >
       {img ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={img} alt={item.productName} className="h-14 w-14 shrink-0 rounded-xl border border-borderColor bg-white object-contain p-1 lg:h-16 lg:w-16" />
@@ -80,9 +87,133 @@ function ProtocolRow({ item, index = 0 }) {
           {!price && !subtitle && <span>Recommended for you</span>}
         </div>
       </div>
-      <Link href="/market-place" className="flex-shrink-0 rounded-full bg-black px-5 py-2 text-xs font-medium text-white transition-colors hover:bg-gray-900 lg:px-6 lg:py-2.5 lg:text-sm">
+      <Link
+        href="/market-place"
+        onClick={(e) => e.stopPropagation()}
+        className="flex-shrink-0 rounded-full bg-black px-5 py-2 text-xs font-medium text-white transition-colors hover:bg-gray-900 lg:px-6 lg:py-2.5 lg:text-sm"
+      >
         Buy
       </Link>
+    </div>
+  );
+}
+
+/* Clean white supplement-bottle glyph (matches Superpower's detail modal icon). */
+function BottleGlyph({ px = 44 }) {
+  const s = Math.round(px * 0.66);
+  return (
+    <span className="grid shrink-0 place-items-center overflow-hidden rounded-xl border border-borderColor bg-white" style={{ width: px, height: px }}>
+      <svg viewBox="0 0 56 72" width={s} height={s} aria-hidden="true">
+        <rect x="18" y="3" width="20" height="11" rx="2.5" fill="#3b82f6" />
+        <rect x="18" y="9.5" width="20" height="4" rx="1.5" fill="rgba(0,0,0,0.14)" />
+        <rect x="20.5" y="13" width="15" height="5" fill="#e6e6ea" />
+        <rect x="10" y="17" width="36" height="50" rx="7" fill="#f3f3f5" stroke="#e3e3e7" />
+        <rect x="13.5" y="21" width="5" height="42" rx="2.5" fill="#ffffff" fillOpacity="0.75" />
+        <rect x="14" y="31" width="28" height="27" rx="3" fill="#ffffff" stroke="#ededf1" />
+        <rect x="18" y="36" width="20" height="3" rx="1.5" fill="#3b82f6" fillOpacity="0.85" />
+        <rect x="18" y="43" width="16" height="2.4" rx="1.2" fill="#cccccf" />
+        <rect x="18" y="48" width="18" height="2.4" rx="1.2" fill="#cccccf" />
+      </svg>
+    </span>
+  );
+}
+
+/* Protocol item detail (Superpower-style) — opens when a "today's plan" row is tapped. */
+function ProtocolItemModal({ item, onClose }) {
+  useEffect(() => {
+    if (!item) return;
+    const onKey = (e) => e.key === "Escape" && onClose?.();
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [item, onClose]);
+  if (!item) return null;
+  const timing = TIMING_LABELS[item.timing] || item.timing || "";
+  const tl = timing.toLowerCase();
+  const timingPhrase = timing ? (tl.startsWith("with") || tl.startsWith("pre") || tl.startsWith("post") ? tl : `at ${tl}`) : "";
+  const title = timingPhrase ? `Take ${item.productName} ${timingPhrase}` : `Take ${item.productName}`;
+  const bullets = [];
+  if (item.dosing) bullets.push(item.dosing);
+  if (timing) bullets.push(`Take ${tl}`);
+  if (item.howToTake && !bullets.includes(item.howToTake)) bullets.push(item.howToTake);
+  if (bullets.length === 0) bullets.push("Recommended as part of your protocol");
+  const triggers = Array.isArray(item.triggerBiomarkers) ? item.triggerBiomarkers.filter(Boolean) : [];
+  const info = supplementInfo(item, timing);
+  const why = item.whyItMatters || info.why;
+  const how = item.howToTake || info.how;
+  const evidence = info.evidence;
+  return (
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/25 p-4 backdrop-blur-md sm:p-6"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[88vh] w-full max-w-[680px] flex-col overflow-hidden rounded-3xl bg-white shadow-[0_24px_80px_rgba(0,0,0,0.28)]"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* header */}
+        <div className="flex items-start justify-between gap-4 px-6 pt-6 sm:px-9 sm:pt-8">
+          <div className="flex items-center gap-4">
+            <BottleGlyph px={52} />
+            <div>
+              <h2 className="text-[20px] font-semibold leading-snug text-black sm:text-[23px]">{title}</h2>
+              <p className="mt-0.5 text-[15px] text-secondary">Supplement</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-secondary transition hover:bg-pageBackground hover:text-black">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+
+        {/* body */}
+        <div className="flex-1 overflow-y-auto px-6 pb-9 pt-6 sm:px-9">
+          {/* product row */}
+          <Link href="/market-place" className="flex items-center gap-4 rounded-2xl border border-borderColor bg-pageBackground/50 p-4 transition hover:bg-pageBackground">
+            <BottleGlyph px={46} />
+            <span className="min-w-0 flex-1 truncate text-[15px] font-medium text-black sm:text-base">{item.productName}</span>
+            <svg className="h-5 w-5 shrink-0 text-secondary" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </Link>
+
+          {/* instruction bullets */}
+          <ul className="mt-7 space-y-3.5">
+            {bullets.map((b, i) => (
+              <li key={i} className="flex items-start gap-3 text-[16px] leading-relaxed text-black">
+                <span className="mt-[11px] h-1.5 w-1.5 shrink-0 rounded-full bg-secondary/70" />
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+
+          {triggers.length > 0 && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {triggers.map((t) => (
+                <span key={t} className="rounded-full bg-pageBackground px-3 py-1.5 text-[13px] font-medium text-secondary">{t}</span>
+              ))}
+            </div>
+          )}
+
+          {why && (
+            <div className="mt-8 border-t border-borderColor pt-7">
+              <h3 className="text-[17px] font-semibold text-black">Why We Recommend This</h3>
+              <p className="mt-2.5 text-[16px] leading-relaxed text-secondary">{why}</p>
+            </div>
+          )}
+          {how && (
+            <div className="mt-7">
+              <h3 className="text-[17px] font-semibold text-black">How to take this?</h3>
+              <p className="mt-2.5 text-[16px] leading-relaxed text-secondary">{how}</p>
+            </div>
+          )}
+          {evidence && (
+            <div className="mt-7">
+              <h3 className="text-[17px] font-semibold text-black">What&apos;s the evidence behind this?</h3>
+              <p className="mt-2.5 text-[16px] leading-relaxed text-secondary">{evidence}</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -286,6 +417,7 @@ export default function Protocol() {
   const [mainTab, setMainTab] = useState("protocol"); // protocol | actionplan
   const [protoTab, setProtoTab] = useState("products"); // products | general
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const [openItem, setOpenItem] = useState(null);
 
   const [goals, setGoals] = useState([]);
   const [goalsStatus, setGoalsStatus] = useState(null);
@@ -423,6 +555,7 @@ export default function Protocol() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-pageBackground pb-24 font-inter lg:pb-16">
+      <ProtocolItemModal item={openItem} onClose={() => setOpenItem(null)} />
       <style jsx>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeIn 0.4s ease-out; }
@@ -489,21 +622,24 @@ export default function Protocol() {
 
                   {protoTab === "products" ? (
                     <>
-                      <h2 className="mt-7 font-inter text-xl font-semibold text-black lg:text-2xl">Your protocol items</h2>
+                      <h2 className="mt-7 font-inter text-xl font-semibold text-black lg:text-2xl">Today&apos;s plan</h2>
                       {protocolItems.length === 0 ? (
                         <div className="mt-4 rounded-3xl border border-borderColor bg-white p-10 text-center text-sm text-secondary">
                           Your protocol items will appear here once your results are reviewed.
                         </div>
                       ) : (
-                        <div className="mt-4 overflow-hidden rounded-3xl border border-borderColor bg-white">
-                          <div className="divide-y divide-borderColor">
-                            {protocolItems.map((item, index) => (
-                              <div key={item.productName + index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
-                                <ProtocolRow item={item} index={index} />
-                              </div>
-                            ))}
+                        <>
+                          <p className="mt-1 text-sm text-secondary">What to take today — tap any item for how &amp; why.</p>
+                          <div className="mt-4 overflow-hidden rounded-3xl border border-borderColor bg-white">
+                            <div className="divide-y divide-borderColor">
+                              {protocolItems.map((item, index) => (
+                                <div key={item.productName + index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
+                                  <ProtocolRow item={item} index={index} onOpen={setOpenItem} />
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        </>
                       )}
                     </>
                   ) : (

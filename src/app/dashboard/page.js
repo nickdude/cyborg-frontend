@@ -21,7 +21,9 @@ const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "fe
 // number, or null when it isn't available yet.
 const numOrNull = (v) => {
     const n = v && typeof v === "object" ? v.phenoAge : v;
-    return Number.isFinite(Number(n)) ? Number(n) : null;
+    if (n == null) return null; // guard: Number(null) is 0 — don't render a fake "0"
+    const num = Number(n);
+    return Number.isFinite(num) ? num : null;
 };
 
 // Format a date into { day: "22", mon: "MAR" } for the timeline rows.
