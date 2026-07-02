@@ -9,7 +9,6 @@ import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import GoalDetail from "@/components/GoalDetail";
 import ProtocolIntro from "@/components/protocol/ProtocolIntro";
 import ActionPlan from "@/components/protocol/ActionPlan";
-import { supplementImage } from "@/utils/supplementImage";
 import { supplementInfo } from "@/utils/supplementInfo";
 
 const TIMING_LABELS = {
@@ -60,26 +59,38 @@ function SupplementBottle({ index = 0 }) {
   );
 }
 
-function ProtocolRow({ item, index = 0, onOpen }) {
+// Single supplement-jar image used for every protocol item (drop the file here).
+const PROTOCOL_IMG = "/assets/protocol/pill-jar.jpg";
+
+function ProtocolRow({ item, index = 0, onOpen, taken, onToggle }) {
   const subtitle = buildSubtitle(item);
   const price = formatPrice(item.price);
-  const img = item.image || supplementImage(item.productName);
+  const [imgOk, setImgOk] = useState(true);
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={() => onOpen?.(item)}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen?.(item); } }}
-      className="flex cursor-pointer items-center gap-3 px-4 py-4 transition hover:bg-pageBackground/50 lg:gap-4 lg:px-5 lg:py-5"
+      className={`flex cursor-pointer items-center gap-3 px-4 py-4 transition hover:bg-pageBackground/50 lg:gap-4 lg:px-5 lg:py-5 ${taken ? "bg-emerald-50/40" : ""}`}
     >
-      {img ? (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onToggle?.(item); }}
+        aria-pressed={!!taken}
+        aria-label={taken ? "Mark as not taken today" : "Mark as taken today"}
+        className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 transition ${taken ? "border-emerald-500 bg-emerald-500 text-white" : "border-borderColor text-transparent hover:border-emerald-400"}`}
+      >
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      {imgOk ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={img} alt={item.productName} className="h-14 w-14 shrink-0 rounded-xl border border-borderColor bg-white object-contain p-1 lg:h-16 lg:w-16" />
+        <img src={PROTOCOL_IMG} alt={item.productName} onError={() => setImgOk(false)} className="h-14 w-14 shrink-0 rounded-xl border border-borderColor bg-white object-contain p-1 lg:h-16 lg:w-16" />
       ) : (
         <SupplementBottle index={index} />
       )}
       <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-medium text-black lg:text-base">{item.productName}</h3>
+        <h3 className={`truncate text-sm font-medium lg:text-base ${taken ? "text-secondary" : "text-black"}`}>{item.productName}</h3>
         <div className="mt-0.5 flex items-center gap-x-2 text-xs text-secondary lg:text-sm">
           {price && <span className="shrink-0 font-medium text-blue">{price}</span>}
           {price && subtitle && <span className="shrink-0 text-borderColor">·</span>}
@@ -418,6 +429,7 @@ export default function Protocol() {
   const [protoTab, setProtoTab] = useState("products"); // products | general
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [openItem, setOpenItem] = useState(null);
+  const [takenSet, setTakenSet] = useState(() => new Set());
 
   const [goals, setGoals] = useState([]);
   const [goalsStatus, setGoalsStatus] = useState(null);
@@ -441,6 +453,9 @@ export default function Protocol() {
   const protocolItems = plan?.deduplicatedProtocol || [];
   const monitoredIssues = plan?.monitoredIssues || [];
   const protocolData = plan?.protocol || null;
+  const totalItems = protocolItems.length;
+  const takenCount = protocolItems.reduce((n, it) => n + (takenSet.has(it.productName) ? 1 : 0), 0);
+  const takenPct = totalItems > 0 ? Math.round((takenCount / totalItems) * 100) : 0;
 
   const fetchPlan = useCallback(async ({ silent = false } = {}) => {
     try {
@@ -470,10 +485,47 @@ export default function Protocol() {
     }
   }, []);
 
+  const localToday = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const fetchAdherence = useCallback(async () => {
+    try {
+      const res = await actionPlanAPI.getAdherence(localToday());
+      const data = res?.data || res;
+      setTakenSet(new Set(Array.isArray(data?.taken) ? data.taken : []));
+    } catch {
+      /* keep current state */
+    }
+  }, []);
+
+  const flip = (key) =>
+    setTakenSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  const toggleItem = useCallback(async (item) => {
+    const key = item?.productName;
+    if (!key) return;
+    flip(key); // optimistic
+    try {
+      const res = await actionPlanAPI.toggleAdherence(key, localToday());
+      const data = res?.data || res;
+      if (Array.isArray(data?.taken)) setTakenSet(new Set(data.taken));
+    } catch {
+      flip(key); // revert on failure
+    }
+  }, []);
+
   useEffect(() => {
     fetchPlan();
     fetchGoals();
-  }, [fetchPlan, fetchGoals]);
+    fetchAdherence();
+  }, [fetchPlan, fetchGoals, fetchAdherence]);
 
   // Poll while the plan / goals are still generating.
   useEffect(() => {
@@ -663,12 +715,32 @@ export default function Protocol() {
                         </div>
                       ) : (
                         <>
-                          <p className="mt-1 text-sm text-secondary">What to take today — tap any item for how &amp; why.</p>
+                          <p className="mt-1 text-sm text-secondary">Check off each item as you take it — tap the row for how &amp; why.</p>
+
+                          {/* Daily progress */}
+                          <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-borderColor bg-white px-4 py-3.5 lg:px-5">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-black">
+                                {takenCount === totalItems ? "All done for today 🎉" : `${takenCount} of ${totalItems} taken today`}
+                              </p>
+                              <div className="mt-2 h-1.5 w-full max-w-[220px] overflow-hidden rounded-full bg-pageBackground">
+                                <div className="h-full rounded-full bg-emerald-500 transition-all duration-300" style={{ width: `${takenPct}%` }} />
+                              </div>
+                            </div>
+                            <span className="shrink-0 text-lg font-semibold text-emerald-600">{takenPct}%</span>
+                          </div>
+
                           <div className="mt-4 overflow-hidden rounded-3xl border border-borderColor bg-white">
                             <div className="divide-y divide-borderColor">
                               {protocolItems.map((item, index) => (
                                 <div key={item.productName + index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
-                                  <ProtocolRow item={item} index={index} onOpen={setOpenItem} />
+                                  <ProtocolRow
+                                    item={item}
+                                    index={index}
+                                    onOpen={setOpenItem}
+                                    taken={takenSet.has(item.productName)}
+                                    onToggle={toggleItem}
+                                  />
                                 </div>
                               ))}
                             </div>

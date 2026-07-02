@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * "Your past lab was uploaded" card (Superpower-style, green edition).
+ * "Your past lab was uploaded" card (Superpower-style, orange edition).
  * The line graph plots REAL report data — never fabricated points:
  *   • ≥2 reports of history → the user's health-profile score (share of biomarkers
  *     in optimal/reference range) at each real report date, labelled by date.
@@ -124,8 +124,8 @@ export default function LabUploadedCard({ biomarkers, onClose, onViewData }) {
   return (
     <div className="mx-auto w-full max-w-[440px] overflow-hidden rounded-[26px] bg-white shadow-[0_10px_40px_rgba(0,0,0,0.12)]">
       {/* Green graph */}
-      <div className="relative bg-gradient-to-br from-[#5fd08a] via-[#31b36a] to-[#1a7d46]">
-        <span className="absolute right-4 top-4 z-10 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#1a7d46] shadow-sm">
+      <div className="relative bg-gradient-to-br from-[#f2a355] via-[#e07b34] to-[#c1531a]">
+        <span className="absolute right-4 top-4 z-10 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#c1531a] shadow-sm">
           New data
         </span>
         <span className="absolute left-5 top-4 z-10 text-[11px] font-medium text-white/80">{caption}</span>
@@ -149,7 +149,7 @@ export default function LabUploadedCard({ biomarkers, onClose, onViewData }) {
           <path d={area} fill="url(#labArea)" />
           <polyline points={line} fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
           {pts.map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 5 : 3.5} fill="#ffffff" stroke="#1a7d46" strokeWidth={i === pts.length - 1 ? 2 : 0} />
+            <circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 5 : 3.5} fill="#ffffff" stroke="#c1531a" strokeWidth={i === pts.length - 1 ? 2 : 0} />
           ))}
           {/* x-axis labels — real report dates (time) or category names */}
           {pts.map(([x], i) =>

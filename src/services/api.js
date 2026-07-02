@@ -148,6 +148,8 @@ export const actionPlanAPI = {
   exportPDF: (planId) => API.get(`/api/action-plans/${planId}/pdf`, {
     responseType: "blob",
   }),
+  getAdherence: (date) => API.get(`/api/action-plans/adherence${date ? `?date=${date}` : ""}`),
+  toggleAdherence: (itemKey, date) => API.post(`/api/action-plans/adherence/toggle`, { itemKey, date }),
 };
 
 // Goals endpoints

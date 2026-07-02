@@ -11,8 +11,8 @@ import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { transformPanel, computeSummary, extractScores, humanizeCategory } from "@/utils/biomarkerAdapter";
-import { biomarkerAPI, userAPI, actionPlanAPI } from "@/services/api";
-import { ArrowUpRight, ChevronRight, X, Lock, ClipboardList, Check, Droplet, FileText, Stethoscope, FlaskConical, RefreshCw } from "lucide-react";
+import { biomarkerAPI, userAPI, actionPlanAPI, goalsAPI } from "@/services/api";
+import { ArrowUpRight, ChevronRight, X, Lock, ClipboardList, Check, Droplet, FileText, Stethoscope, FlaskConical, RefreshCw, HeartPulse } from "lucide-react";
 
 // Normalize any stored value ("Male"/"Female"/"female"/…) to the 3D model key.
 const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");
@@ -85,7 +85,17 @@ export default function Dashboard() {
     // ── Latest action plan → scores for the home header cards ─────────────────
     const [plan, setPlan] = useState(null);
     const [planLoading, setPlanLoading] = useState(true);
-    const [homeTab, setHomeTab] = useState("timeline"); // timeline | twin
+    const [homeTab, setHomeTab] = useState("twin"); // twin | timeline
+    const [goals, setGoals] = useState([]);
+
+    useEffect(() => {
+        let active = true;
+        goalsAPI
+            .list()
+            .then((res) => { if (active) setGoals(res?.data || res || []); })
+            .catch(() => {});
+        return () => { active = false; };
+    }, []);
 
     // Time-based greeting depends on the client clock, so computing it during
     // render would differ between server and browser. Defer it to after mount
@@ -201,10 +211,8 @@ export default function Dashboard() {
     }, []);
 
     useEffect(() => {
-        if (showInsightsDashboard) {
-            fetchInsightsData();
-        }
-    }, [showInsightsDashboard, fetchInsightsData]);
+        fetchInsightsData();
+    }, [fetchInsightsData]);
 
     if (showInsightsDashboard) {
         if (insightsLoading) {
@@ -238,6 +246,39 @@ export default function Dashboard() {
     const bioAge = numOrNull(plan?.healthReport?.bioAge);
     const planReady = plan?.status === "ready" || plan?.status === "approved";
     const initials = (userName || "U").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+
+    // Chronological age from DOB — used for the "younger than your actual age"
+    // line. Never fabricated: null when there's no DOB on file.
+    const chronoAge = (() => {
+        const dob = user?.dateOfBirth || user?.birthDate || user?.dob;
+        if (!dob) return null;
+        const d = new Date(dob);
+        if (isNaN(d.getTime())) return null;
+        const now = new Date();
+        let a = now.getFullYear() - d.getFullYear();
+        const m = now.getMonth() - d.getMonth();
+        if (m < 0 || (m === 0 && now.getDate() < d.getDate())) a--;
+        return a > 0 && a < 130 ? a : null;
+    })();
+
+    // Latest report date → "Last updated" on the digital-twin card.
+    const latestReport = [...reports].sort(
+        (a, b) => new Date(b.reportDate || b.createdAt || 0) - new Date(a.reportDate || a.createdAt || 0)
+    )[0];
+    const lastUpdated = latestReport?.reportDate || latestReport?.createdAt || plan?.updatedAt || null;
+    const actionPlanUpdated = plan?.updatedAt || plan?.generatedAt || plan?.createdAt || null;
+
+    // Top health priority (highest-priority goal) → Key Insights.
+    const topGoal = (() => {
+        if (!Array.isArray(goals) || goals.length === 0) return null;
+        const rank = { High: 0, high: 0, Medium: 1, medium: 1, Low: 2, low: 2 };
+        return [...goals].sort((a, b) => (rank[a.priority] ?? 1) - (rank[b.priority] ?? 1))[0] || null;
+    })();
+
+    // Biomarker summary + score (from the panel) and protocol preview for the home.
+    const homeScore = insightsData?.scores?.cyborgScore ?? cyborgScore;
+    const biomarkerSummary = insightsData?.summary || null;
+    const protocolItems = plan?.deduplicatedProtocol || [];
 
     // ── Member health journey (drives the home Timeline) ─────────────────────
     // Statuses come from REAL state; the sequence mirrors the product logic:
@@ -275,7 +316,7 @@ export default function Dashboard() {
     //    original dashboard) ─────────────────────────────────────────────────
     if (homeTab === "twin") {
         return (
-            <div className="min-h-screen bg-pageBackground font-inter pb-36 lg:pb-16">
+            <div className="min-h-screen overflow-x-hidden bg-pageBackground font-inter pb-36 lg:pb-16">
                 <div className="mx-auto w-full max-w-[1180px] px-4 pt-4 lg:px-8 lg:pt-6">
                     <HomeTabs active={homeTab} onChange={setHomeTab} />
 
@@ -286,20 +327,20 @@ export default function Dashboard() {
                         </h1>
                     </div>
 
-                    <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                         <div className="hidden lg:block">
                             <WelcomeTwinCard firstName={userName} sex={sex} router={router} />
                         </div>
-                        <div className="flex flex-col gap-4">
-                            <BloodReportCard
-                                loading={reportsLoading}
-                                hasAnyReport={hasAnyReport}
-                                processingReport={processingReport}
-                                readyReport={readyReport}
-                            />
-                            <TestsRecordsCard />
+                        <div className="flex min-w-0 flex-col gap-4">
                             <AppPromoCard />
                             <ActionItemsCard />
+                            <div className="grid grid-cols-2 gap-4">
+                                <CyborgScoreCard score={homeScore} />
+                                <BioAgeCard bioAge={bioAge} chronoAge={chronoAge} />
+                            </div>
+                            <YourBiomarkersCard summary={biomarkerSummary} />
+                            <KeyInsightsCard topGoal={topGoal} summary={biomarkerSummary} biomarkers={insightsData?.biomarkers} />
+                            <YourProtocolItemsCard items={protocolItems} planReady={planReady} />
                             <LiveBetterCard />
                         </div>
                     </div>
@@ -670,15 +711,15 @@ function WelcomeTwinCard({ firstName, sex, router }) {
     };
 
     return (
-        <div className={`relative flex flex-col overflow-hidden ${CARD} min-h-[460px] lg:min-h-[560px]`}>
+        <div className="relative flex min-h-[460px] flex-col overflow-hidden rounded-3xl bg-[#ececef] lg:min-h-[560px]">
             <div className="flex items-start justify-between px-6 pt-6 lg:px-8 lg:pt-8">
-                <h1 className="text-2xl font-semibold tracking-tight text-blue/30 lg:text-[28px]">
+                <h1 className="text-2xl font-semibold tracking-tight text-blue/40 lg:text-[28px]">
                     Welcome, {firstName}
                 </h1>
                 <Link
                     href="/data"
                     aria-label="Open your data"
-                    className="rounded-full p-1.5 text-secondary transition hover:bg-pageBackground hover:text-blue"
+                    className="rounded-full p-1.5 text-secondary transition hover:bg-white hover:text-blue"
                 >
                     <ArrowUpRight className="h-5 w-5" />
                 </Link>
@@ -709,6 +750,267 @@ function WelcomeTwinCard({ firstName, sex, router }) {
                     </button>
                 </div>
             </form>
+        </div>
+    );
+}
+
+// Cyborg score card — purple photo + score slider (matches the /data card).
+function CyborgScoreCard({ score }) {
+    const val = score != null ? Math.round(score) : null;
+    const sPos = Math.min(100, Math.max(0, val ?? 0));
+    const status = val == null ? "Awaiting lab results" : val >= 60 ? "On Track" : "Needs attention";
+    return (
+        <Link
+            href="/data"
+            className="group relative flex min-h-[200px] min-w-0 flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-[#7b3ff2] via-[#6a27d8] to-[#3f1585] p-5 text-left text-white shadow-sm transition hover:brightness-105"
+        >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/data/score.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" onError={(e) => e.currentTarget.remove()} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/5" />
+            <div className="relative z-10 flex items-start justify-between">
+                <span className="text-[13px] font-medium text-white/85">Cyborg score</span>
+                <svg className="h-4 w-4 text-white/70" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
+            <div className="relative z-10 mt-auto">
+                {val != null ? (
+                    <>
+                        <div className="flex items-end justify-end text-right">
+                            <div>
+                                <p className="text-[34px] font-semibold leading-none">{val}</p>
+                                <p className="mt-1 text-[13px] text-white/85">{status}</p>
+                            </div>
+                        </div>
+                        <div className="relative mt-4">
+                            <div className="h-1 rounded-full bg-white/30"><div className="h-full rounded-full bg-white" style={{ width: `${sPos}%` }} /></div>
+                            <div className="absolute -top-[7px]" style={{ left: `${sPos}%`, transform: "translateX(-50%)" }}>
+                                <div className="h-0 w-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-white" />
+                            </div>
+                            <div className="relative mt-1.5 h-3 text-[10px] text-white/70">
+                                <span className="absolute left-0">0</span>
+                                <span className="absolute" style={{ left: "60%", transform: "translateX(-50%)" }}>60</span>
+                                <span className="absolute" style={{ left: "80%", transform: "translateX(-50%)" }}>80</span>
+                                <span className="absolute right-0">100</span>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <p className="max-w-[22ch] text-[13px] font-medium leading-snug text-white/95">Upload a lab report to see your Cyborg score.</p>
+                )}
+            </div>
+        </Link>
+    );
+}
+
+// Biological age card — green photo (matches the /data card).
+function BioAgeCard({ bioAge, chronoAge }) {
+    const hasBio = bioAge != null;
+    const delta = hasBio && chronoAge != null ? bioAge - chronoAge : 0; // negative = younger
+    const bPos = Math.min(100, Math.max(0, ((delta + 5) / 10) * 100));
+    const diffText = chronoAge != null
+        ? (chronoAge - bioAge >= 0
+            ? `${(chronoAge - bioAge).toFixed(1)} years younger`
+            : `${Math.abs(chronoAge - bioAge).toFixed(1)} years older`)
+        : "PhenoAge estimate";
+    return (
+        <Link
+            href="/data"
+            className="group relative flex min-h-[200px] w-full min-w-0 flex-col overflow-hidden rounded-2xl bg-gradient-to-br from-[#5fd08a] via-[#31b36a] to-[#1a7d46] p-5 text-left text-white shadow-sm transition hover:brightness-105"
+        >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/data/bioage.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" onError={(e) => e.currentTarget.remove()} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-black/5" />
+            <div className="relative z-10 flex items-start justify-between">
+                <span className="text-[13px] font-medium text-white/90">Biological age</span>
+                <svg className="h-4 w-4 text-white/70" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
+            <div className="relative z-10 mt-auto">
+                {hasBio ? (
+                    <>
+                        <div className="flex items-end justify-end text-right">
+                            <div>
+                                <p className="text-[34px] font-semibold leading-none"><span className="mr-1 align-top text-[14px] font-normal text-white/80">Age</span>{Math.round(bioAge)}</p>
+                                <p className="mt-1 text-[13px] text-white/90">{diffText}</p>
+                            </div>
+                        </div>
+                        <div className="relative mt-4">
+                            <div className="h-1 rounded-full bg-white/30"><div className="h-full rounded-full bg-white" style={{ width: `${bPos}%` }} /></div>
+                            <div className="absolute -top-[7px]" style={{ left: `${bPos}%`, transform: "translateX(-50%)" }}>
+                                <div className="h-0 w-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-white" />
+                            </div>
+                            <div className="relative mt-1.5 h-3 text-[10px] text-white/75">
+                                <span className="absolute left-0">-5</span>
+                                <span className="absolute" style={{ left: `${bPos}%`, transform: "translateX(-50%)" }}>Current</span>
+                                <span className="absolute right-0">5</span>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <p className="max-w-[22ch] text-[13px] font-medium leading-snug text-white/95">Add your date of birth in Settings to see your biological age.</p>
+                )}
+            </div>
+        </Link>
+    );
+}
+
+// Your biomarkers — totals + a status distribution bar.
+function YourBiomarkersCard({ summary }) {
+    const s = summary || { total: 0, optimal: 0, normal: 0, outOfRange: 0 };
+    const total = s.total || 0;
+    const seg = (n) => (total > 0 ? `${(n / total) * 100}%` : "0%");
+    const Stat = ({ n, label, dot }) => (
+        <div>
+            <p className="text-[22px] font-semibold leading-none text-blue">{n ?? 0}</p>
+            <p className="mt-1.5 flex items-center gap-1 text-[12px] text-secondary">
+                {dot && <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />}
+                {label}
+            </p>
+        </div>
+    );
+    return (
+        <div className={`${CARD} p-5 lg:p-6`}>
+            <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold tracking-tight text-blue">Your biomarkers</h3>
+                <Link href="/data" className="inline-flex items-center gap-1 text-sm font-medium text-secondary transition hover:text-blue">
+                    Explore more <ChevronRight className="h-4 w-4" />
+                </Link>
+            </div>
+            <div className="mt-4 grid grid-cols-4 gap-2">
+                <Stat n={total} label="Total" />
+                <Stat n={s.optimal} label="Optimal" dot="bg-emerald-500" />
+                <Stat n={s.normal} label="Normal" dot="bg-yellow-400" />
+                <Stat n={s.outOfRange} label="Out of Range" dot="bg-pink-400" />
+            </div>
+            <div className="mt-4 flex h-2 w-full overflow-hidden rounded-full bg-pageBackground">
+                <div className="h-full bg-emerald-500" style={{ width: seg(s.optimal) }} />
+                <div className="h-full bg-yellow-400" style={{ width: seg(s.normal) }} />
+                <div className="h-full bg-pink-400" style={{ width: seg(s.outOfRange) }} />
+            </div>
+        </div>
+    );
+}
+
+// Your protocol items — preview of the current supplement protocol.
+function YourProtocolItemsCard({ items, planReady }) {
+    const list = Array.isArray(items) ? items.slice(0, 3) : [];
+    return (
+        <div className={`${CARD} p-5 lg:p-6`}>
+            <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold tracking-tight text-blue">Your protocol items</h3>
+                <Link href="/protocol" className="inline-flex items-center gap-1 text-sm font-medium text-secondary transition hover:text-blue">
+                    Explore more <ChevronRight className="h-4 w-4" />
+                </Link>
+            </div>
+            {list.length > 0 ? (
+                <div className="mt-4 flex flex-col divide-y divide-borderColor">
+                    {list.map((it, i) => (
+                        <Link key={(it.productName || "") + i} href="/protocol" className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-pageBackground text-secondary">
+                                <FlaskConical className="h-4 w-4" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-blue">{it.productName}</p>
+                                {it.dosing && <p className="truncate text-xs text-secondary">{it.dosing}</p>}
+                            </div>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-secondary transition group-hover:translate-x-0.5 group-hover:text-blue" />
+                        </Link>
+                    ))}
+                </div>
+            ) : (
+                <p className="mt-4 text-sm leading-relaxed text-secondary">
+                    {planReady ? "Your protocol is ready — open it to see your items." : "Your protocol items will appear here once your plan is ready."}
+                </p>
+            )}
+        </div>
+    );
+}
+
+// One contributing-biomarker row: name · value · range · mini position bar.
+function ContribRow({ b }) {
+    const oLo = b.optimalRange?.min ?? null;
+    const oHi = b.optimalRange?.max ?? null;
+    const rLo = b.referenceMin ?? oLo;
+    const rHi = b.referenceMax ?? oHi;
+    const v = parseFloat(b.value);
+    let pos = 50;
+    if (!isNaN(v) && rLo != null && rHi != null && rHi > rLo) {
+        pos = Math.min(100, Math.max(0, ((v - rLo) / (rHi - rLo)) * 100));
+    }
+    const rangeText = oLo != null && oHi != null ? `${oLo} - ${oHi}` : rLo != null && rHi != null ? `${rLo} - ${rHi}` : "";
+    const s = String(b.status || "").toLowerCase();
+    const dot = s === "optimal" ? "bg-emerald-500" : s === "normal" ? "bg-yellow-400" : "bg-pink-400";
+    return (
+        <div className="flex items-center gap-3 rounded-xl border border-borderColor px-3 py-2.5">
+            <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-medium text-black">{b.name}</p>
+                <p className="text-[11px] text-secondary">{b.value} {b.unit}</p>
+            </div>
+            {rangeText && <span className="shrink-0 text-[11px] text-secondary">{rangeText}</span>}
+            <div className="relative h-1.5 w-16 shrink-0 rounded-full bg-pageBackground">
+                <span className={`absolute top-1/2 h-2.5 w-2.5 rounded-full ${dot}`} style={{ left: `${pos}%`, transform: "translate(-50%, -50%)" }} />
+            </div>
+        </div>
+    );
+}
+
+// Key Insights — top health priority + biomarker summary + contributing markers.
+function KeyInsightsCard({ topGoal, summary, biomarkers }) {
+    const priority = topGoal?.title || null;
+    const s = summary || { total: 0, optimal: 0, normal: 0, outOfRange: 0 };
+    const total = s.total || 0;
+    const seg = (n) => (total > 0 ? `${(n / total) * 100}%` : "0%");
+    const rank = { out_of_range: 0, high: 0, low: 0, normal: 1 };
+    const contributing = (Array.isArray(biomarkers) ? biomarkers : [])
+        .filter((b) => String(b.status || "").toLowerCase() !== "optimal")
+        .sort((a, b) => (rank[String(a.status).toLowerCase()] ?? 2) - (rank[String(b.status).toLowerCase()] ?? 2))
+        .slice(0, 3);
+    const Stat = ({ n, label, dot }) => (
+        <div>
+            <p className="text-[20px] font-semibold leading-none text-blue">{n ?? 0}</p>
+            <p className="mt-1.5 flex items-center gap-1 text-[12px] text-secondary">
+                {dot && <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />}
+                {label}
+            </p>
+        </div>
+    );
+    return (
+        <div className={`${CARD} p-5 lg:p-6`}>
+            <h3 className="text-base font-semibold tracking-tight text-blue">Key Insights</h3>
+
+            {priority && (
+                <div className="mt-3">
+                    <p className="flex items-center gap-1.5 text-sm font-medium text-rose-500">
+                        <HeartPulse className="h-4 w-4" />
+                        Top health priority
+                    </p>
+                    <p className="mt-0.5 text-[15px] font-medium text-blue">{priority}</p>
+                </div>
+            )}
+
+            <div className="mt-5">
+                <p className="text-sm font-medium text-secondary">Summary</p>
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                    <Stat n={total} label="Total" />
+                    <Stat n={s.optimal} label="Optimal" dot="bg-emerald-500" />
+                    <Stat n={s.normal} label="Normal" dot="bg-yellow-400" />
+                    <Stat n={s.outOfRange} label="Out of Range" dot="bg-pink-400" />
+                </div>
+                <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-pageBackground">
+                    <div className="h-full bg-emerald-500" style={{ width: seg(s.optimal) }} />
+                    <div className="h-full bg-yellow-400" style={{ width: seg(s.normal) }} />
+                    <div className="h-full bg-pink-400" style={{ width: seg(s.outOfRange) }} />
+                </div>
+            </div>
+
+            {contributing.length > 0 && (
+                <div className="mt-6">
+                    <p className="text-sm font-medium text-secondary">Contributing Biomarkers</p>
+                    <div className="mt-3 space-y-2.5">
+                        {contributing.map((b, i) => (
+                            <ContribRow key={(b.id || b.name || "") + i} b={b} />
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -818,13 +1120,11 @@ function ActionItemsCard() {
                 href="/settings?tab=integrations"
                 className="group mt-4 flex items-center gap-4 border-t border-borderColor pt-4"
             >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-pageBackground text-base">
-                    ⌚
-                </span>
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-pageBackground text-base">⌚</span>
                 <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-blue">Connect your wearables</p>
                     <p className="mt-1 text-sm leading-relaxed text-secondary">
-                        Connect Apple Health, Oura, Fitbit &amp; more to get personalized insights from your wearable data.
+                        Download our app to connect &amp; get personalized insights from your wearable data.
                     </p>
                 </div>
                 <ChevronRight className="h-5 w-5 shrink-0 text-secondary transition group-hover:translate-x-0.5 group-hover:text-blue" />
@@ -848,7 +1148,7 @@ function LiveBetterCard() {
 
     return (
         <div className={`${CARD} p-5 lg:p-6`}>
-            <h3 className="text-base font-semibold tracking-tight text-blue">Live better, together</h3>
+            <h3 className="text-base font-semibold tracking-tight text-blue">Live better, longer together</h3>
             <div className="mt-4 flex flex-col gap-3">
                 {cards.map((c, i) => (
                     <Link
