@@ -117,6 +117,7 @@ export const purchaseHistoryAPI = {
 export const userAPI = {
   getProfile: (userId) => API.get(`/api/users/${userId}/profile`),
   updateProfile: (userId, data) => API.put(`/api/users/${userId}/profile`, data),
+  linkDoctor: (referralCode) => API.post(`/api/users/link-doctor`, { referralCode }),
   getOnboarding: (userId) => API.get(`/api/users/${userId}/onboarding`),
   saveOnboarding: (userId, data) => API.post(`/api/users/${userId}/onboarding`, data),
   getHearAboutUs: (userId) => API.get(`/api/users/${userId}/hear-about-us`),

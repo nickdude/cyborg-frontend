@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { goalsAPI, actionPlanAPI } from "@/services/api";
+import { goalsAPI, actionPlanAPI, userAPI } from "@/services/api";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import GoalDetail from "@/components/GoalDetail";
 import ProtocolIntro from "@/components/protocol/ProtocolIntro";
@@ -421,6 +421,19 @@ export default function Protocol() {
 
   const [goals, setGoals] = useState([]);
   const [goalsStatus, setGoalsStatus] = useState(null);
+  const [linkedDoctor, setLinkedDoctor] = useState(undefined); // undefined=unknown, null=none, {name}=linked
+
+  // Whether this patient has a doctor linked (drives the review-state CTA).
+  useEffect(() => {
+    const uid = user?.id || user?._id;
+    if (!uid) return;
+    let cancelled = false;
+    userAPI
+      .getProfile(uid)
+      .then((res) => { if (!cancelled) setLinkedDoctor(res?.data?.linkedDoctor || null); })
+      .catch(() => { if (!cancelled) setLinkedDoctor(null); });
+    return () => { cancelled = true; };
+  }, [user]);
 
   const planId = plan?._id || null;
   const healthReport = plan?.healthReport || null;
@@ -571,13 +584,34 @@ export default function Protocol() {
         ) : status === "failed" ? (
           <FailedState attempts={plan?.generationAttempts} onRetry={handleRetry} retrying={retrying} />
         ) : status === "awaiting_review" ? (
-          <div className="mx-auto max-w-md py-20 text-center">
-            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-amber-50">
-              <svg className="h-6 w-6 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+          linkedDoctor === null ? (
+            <div className="mx-auto max-w-md py-20 text-center">
+              <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-amber-50">
+                <svg className="h-6 w-6 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              </div>
+              <h2 className="text-2xl font-bold text-black">Add your doctor to review your plan</h2>
+              <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-secondary">
+                Your plan is ready for review. Add your doctor&apos;s referral code in Settings — they&apos;ll review it and you&apos;ll appear on their dashboard right away.
+              </p>
+              <Link href="/settings?tab=profile" className="mt-6 inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-900">
+                Add doctor code in Settings
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </Link>
             </div>
-            <h2 className="text-2xl font-bold text-black">Your doctor is reviewing your plan</h2>
-            <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-secondary">You&apos;ll be notified the moment your action plan is ready.</p>
-          </div>
+          ) : (
+            <div className="mx-auto max-w-md py-20 text-center">
+              <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-amber-50">
+                <svg className="h-6 w-6 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              </div>
+              <h2 className="text-2xl font-bold text-black">Your doctor is reviewing your plan</h2>
+              <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-secondary">
+                {linkedDoctor?.name ? `Connected to ${linkedDoctor.name}. ` : ""}You&apos;ll be notified the moment your action plan is ready.
+              </p>
+              <Link href="/settings?tab=profile" className="mt-5 inline-block text-sm font-medium text-primary hover:underline">
+                Change doctor code in Settings
+              </Link>
+            </div>
+          )
         ) : (
           <>
             {/* Top tabs: Protocol (products/goals) · Action Plan (full report) */}

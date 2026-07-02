@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Lock, MoreHorizontal, Plus } from "lucide-react";
+import { Lock, MoreHorizontal, Plus, Check, Stethoscope } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI, addressAPI } from "@/services/api";
 
@@ -38,6 +38,30 @@ export default function ProfileSection() {
   const [error, setError] = useState("");
   const [menuFor, setMenuFor] = useState(null); // address id whose ⋯ menu is open
   const [addrBusy, setAddrBusy] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [docBusy, setDocBusy] = useState(false);
+  const [docMsg, setDocMsg] = useState(null); // { type: "ok" | "err", text }
+
+  const submitDoctor = async (code) => {
+    if (docBusy) return;
+    setDocBusy(true);
+    setDocMsg(null);
+    try {
+      const res = await userAPI.linkDoctor(code);
+      const linked = res?.data?.linkedDoctor;
+      setDocMsg({ type: "ok", text: linked ? `Connected to ${linked.name}.` : "Doctor removed." });
+      setCodeInput("");
+      await load();
+    } catch (err) {
+      setDocMsg({ type: "err", text: err.message || "Couldn't save that code." });
+    } finally {
+      setDocBusy(false);
+    }
+  };
+  const handleLinkDoctor = (e) => {
+    e?.preventDefault?.();
+    submitDoctor(codeInput.trim());
+  };
 
   const load = useCallback(async () => {
     if (!userId) {
@@ -225,6 +249,67 @@ export default function ProfileSection() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Your Doctor (optional referral-code linking) */}
+      <section id="doctor-code" className="rounded-3xl bg-white px-5 py-6 shadow-sm lg:px-10 lg:py-9">
+        <div className="flex items-center gap-2.5">
+          <Stethoscope className="h-6 w-6 text-primary" />
+          <h2 className="text-2xl font-semibold text-black lg:text-3xl">Your Doctor</h2>
+          <span className="ml-1 rounded-full bg-pageBackground px-2.5 py-1 text-xs font-medium text-secondary">Optional</span>
+        </div>
+        <p className="mt-2 max-w-xl text-sm text-secondary">
+          Enter your doctor&apos;s referral code to connect with them. Once saved, they can review your action plan and you&apos;ll appear on their dashboard automatically.
+        </p>
+
+        {p.linkedDoctor && (
+          <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+            <div>
+              <p className="font-medium text-black">Connected to {p.linkedDoctor.name}</p>
+              {p.linkedDoctor.code && <p className="mt-0.5 text-sm text-secondary">Code: {p.linkedDoctor.code}</p>}
+            </div>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700">
+              <Check className="h-5 w-5" />
+            </span>
+          </div>
+        )}
+
+        <form onSubmit={handleLinkDoctor} className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label className="mb-2 block text-sm font-medium text-secondary">
+              Doctor referral code{p.linkedDoctor && <span className="ml-1 text-secondary/70">(enter a new code to switch)</span>}
+            </label>
+            <input
+              type="text"
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+              placeholder="DR-XXXXXX"
+              className="w-full rounded-xl border border-borderColor bg-pageBackground/60 px-4 py-3.5 uppercase tracking-wide text-black outline-none transition focus:border-black"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={docBusy || !codeInput.trim()}
+            className="rounded-xl bg-black px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-gray-900 disabled:opacity-50"
+          >
+            {docBusy ? "Saving…" : p.linkedDoctor ? "Update" : "Connect"}
+          </button>
+        </form>
+
+        {docMsg && (
+          <p className={`mt-3 text-sm ${docMsg.type === "ok" ? "text-emerald-600" : "text-red-600"}`}>{docMsg.text}</p>
+        )}
+
+        {p.linkedDoctor && (
+          <button
+            type="button"
+            onClick={() => submitDoctor("")}
+            disabled={docBusy}
+            className="mt-3 text-sm font-medium text-red-600 transition hover:underline disabled:opacity-50"
+          >
+            Remove doctor
+          </button>
+        )}
       </section>
 
       {/* Edit / Password */}
