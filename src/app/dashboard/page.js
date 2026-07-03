@@ -371,7 +371,9 @@ export default function Dashboard() {
                                 <BioAgeCard bioAge={bioAge} chronoAge={chronoAge} />
                             </div>
                             <YourBiomarkersCard summary={biomarkerSummary} />
-                            <KeyInsightsCard topGoal={topGoal} summary={biomarkerSummary} biomarkers={insightsData?.biomarkers} />
+                            <ReviewActionPlanCard planReady={planReady} actionPlanUpdated={actionPlanUpdated} />
+                            <HealthBreakdownCard categoryGrades={insightsData?.scores?.categoryGrades} biomarkers={insightsData?.biomarkers} />
+                            <HighPriorityCard topGoal={topGoal} biomarkers={insightsData?.biomarkers} />
                             <YourProtocolItemsCard items={protocolItems} planReady={planReady} />
                             <LiveBetterCard />
                         </div>
@@ -688,12 +690,8 @@ function MilestoneCard({ m }) {
 }
 
 function JourneySection({ journey, done }) {
-    const [filter, setFilter] = useState("all"); // all | upcoming | completed
     const total = journey.length;
     const pct = total ? Math.round((done / total) * 100) : 0;
-    const shown = journey.filter((m) =>
-        filter === "completed" ? m.status === "complete" : filter === "upcoming" ? m.status !== "complete" : true
-    );
 
     return (
         <div>
@@ -705,26 +703,11 @@ function JourneySection({ journey, done }) {
                 <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
 
-            <div className="mt-4 flex gap-2">
-                {[["all", "All"], ["upcoming", "Upcoming"], ["completed", "Completed"]].map(([k, l]) => (
-                    <button
-                        key={k}
-                        type="button"
-                        onClick={() => setFilter(k)}
-                        className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                            filter === k ? "bg-black text-white" : "border border-borderColor bg-white text-secondary hover:text-blue"
-                        }`}
-                    >
-                        {l}
-                    </button>
-                ))}
-            </div>
-
             <div className="mt-4 flex flex-col gap-3">
-                {shown.length === 0 ? (
+                {journey.length === 0 ? (
                     <p className="py-8 text-center text-sm text-secondary">Nothing here yet.</p>
                 ) : (
-                    shown.map((m) => <MilestoneCard key={m.key} m={m} />)
+                    journey.map((m) => <MilestoneCard key={m.key} m={m} />)
                 )}
             </div>
         </div>
@@ -755,7 +738,7 @@ function WelcomeTwinCard({ firstName, sex, router, highlights }) {
     };
 
     return (
-        <div className="relative flex min-h-[460px] flex-col overflow-hidden rounded-3xl bg-[#ececef] lg:min-h-[560px]">
+        <div className="relative flex min-h-[600px] flex-col overflow-hidden rounded-3xl bg-[#ececef] lg:min-h-[760px]">
             <div className="flex items-start justify-between px-6 pt-6 lg:px-8 lg:pt-8">
                 <h1 className="text-2xl font-semibold tracking-tight text-blue/40 lg:text-[28px]">
                     Welcome, {firstName}
@@ -771,7 +754,7 @@ function WelcomeTwinCard({ firstName, sex, router, highlights }) {
 
             <div className="relative flex-1">
                 <div className="pointer-events-none absolute inset-0">
-                    <BodyModelClient sex={sex} highlight={active.organ} status={active.status} className="h-full w-full" />
+                    <BodyModelClient sex={sex} highlight={active.organ} status={active.status} zoom={1.15} className="h-full w-full" />
                 </div>
             </div>
 
@@ -968,92 +951,177 @@ function YourProtocolItemsCard({ items, planReady }) {
     );
 }
 
-// One contributing-biomarker row: name · value · range · mini position bar.
-function ContribRow({ b }) {
-    const oLo = b.optimalRange?.min ?? null;
-    const oHi = b.optimalRange?.max ?? null;
-    const rLo = b.referenceMin ?? oLo;
-    const rHi = b.referenceMax ?? oHi;
-    const v = parseFloat(b.value);
-    let pos = 50;
-    if (!isNaN(v) && rLo != null && rHi != null && rHi > rLo) {
-        pos = Math.min(100, Math.max(0, ((v - rLo) / (rHi - rLo)) * 100));
-    }
-    const rangeText = oLo != null && oHi != null ? `${oLo} - ${oHi}` : rLo != null && rHi != null ? `${rLo} - ${rHi}` : "";
-    const s = String(b.status || "").toLowerCase();
-    const dot = s === "optimal" ? "bg-emerald-500" : s === "normal" ? "bg-yellow-400" : "bg-pink-400";
+// "Review your action plan" row with the orange booklet.
+function ReviewActionPlanCard({ planReady, actionPlanUpdated }) {
+    if (!planReady) return null;
+    const fmt = (d) => {
+        if (!d) return null;
+        const dt = new Date(d);
+        return isNaN(dt.getTime()) ? null : dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    };
+    const updated = fmt(actionPlanUpdated);
     return (
-        <div className="flex items-center gap-3 rounded-xl border border-borderColor px-3 py-2.5">
+        <Link href="/protocol" className={`group flex items-center gap-4 overflow-hidden ${CARD} p-5 transition hover:border-blue/20 lg:p-6`}>
             <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-medium text-black">{b.name}</p>
-                <p className="text-[11px] text-secondary">{b.value} {b.unit}</p>
+                <p className="flex items-center gap-1 text-sm font-semibold text-blue">
+                    Review your action plan
+                    <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                </p>
+                {updated && <p className="mt-0.5 text-[13px] text-secondary">Updated {updated}</p>}
             </div>
-            {rangeText && <span className="shrink-0 text-[11px] text-secondary">{rangeText}</span>}
-            <div className="relative h-1.5 w-16 shrink-0 rounded-full bg-pageBackground">
-                <span className={`absolute top-1/2 h-2.5 w-2.5 rounded-full ${dot}`} style={{ left: `${pos}%`, transform: "translate(-50%, -50%)" }} />
-            </div>
+            <Image src="/assets/book.png" alt="" width={84} height={72} className="h-16 w-[84px] shrink-0 object-contain" />
+        </Link>
+    );
+}
+
+// grade letter → badge colours
+function gradeColor(g) {
+    const G = String(g || "").toUpperCase();
+    if (G === "A") return { ring: "border-emerald-500", text: "text-emerald-600" };
+    if (G === "B") return { ring: "border-lime-500", text: "text-lime-600" };
+    if (G === "C") return { ring: "border-amber-500", text: "text-amber-600" };
+    return { ring: "border-rose-500", text: "text-rose-600" };
+}
+
+// Mini trend sparkline for a biomarker, coloured by status.
+function Sparkline({ trend, status }) {
+    const pts = (Array.isArray(trend) ? trend : []).map(Number).filter((v) => !isNaN(v));
+    const color = status === "optimal" ? "#11c182" : status === "normal" ? "#f5c518" : "#ff5d8f";
+    if (pts.length < 2) {
+        return (
+            <svg viewBox="0 0 72 28" className="h-7 w-[72px] shrink-0">
+                <circle cx="34" cy="14" r="3.5" fill="#fff" stroke={color} strokeWidth="2" />
+                <line x1="66" y1="5" x2="66" y2="23" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+        );
+    }
+    const min = Math.min(...pts);
+    const max = Math.max(...pts);
+    const range = max - min || 1;
+    const xy = pts.map((v, i) => [6 + (i / (pts.length - 1)) * 52, 5 + (1 - (v - min) / range) * 18]);
+    const line = xy.map(([x, y]) => `${x},${y}`).join(" ");
+    return (
+        <svg viewBox="0 0 72 28" className="h-7 w-[72px] shrink-0">
+            <polyline points={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+            {xy.map(([x, y], i) => (
+                <circle key={i} cx={x} cy={y} r={i === xy.length - 1 ? 3 : 2.2} fill="#fff" stroke={color} strokeWidth="1.8" />
+            ))}
+            <line x1="66" y1="5" x2="66" y2="23" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+    );
+}
+
+// One biomarker row (image-1 style): name · status · mini trend.
+function BiomarkerInsightRow({ b }) {
+    const s = String(b.status || "").toLowerCase();
+    const label = s === "optimal" ? "Optimal" : s === "normal" ? "Normal" : "Out of range";
+    const dot = s === "optimal" ? "bg-emerald-500" : s === "normal" ? "bg-yellow-400" : "bg-pink-400";
+    const txt = s === "optimal" ? "text-emerald-600" : s === "normal" ? "text-yellow-600" : "text-pink-600";
+    return (
+        <div className="flex items-center gap-3 rounded-xl bg-pageBackground px-3.5 py-3">
+            <p className="min-w-0 flex-1 truncate text-sm font-medium text-black">{b.name}</p>
+            <span className={`flex shrink-0 items-center gap-1.5 text-xs font-medium ${txt}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                {label}
+            </span>
+            <Sparkline trend={b.trend} status={s} />
         </div>
     );
 }
 
-// Key Insights — top health priority + biomarker summary + contributing markers.
-function KeyInsightsCard({ topGoal, summary, biomarkers }) {
-    const priority = topGoal?.title || null;
-    const s = summary || { total: 0, optimal: 0, normal: 0, outOfRange: 0 };
-    const total = s.total || 0;
-    const seg = (n) => (total > 0 ? `${(n / total) * 100}%` : "0%");
-    const rank = { out_of_range: 0, high: 0, low: 0, normal: 1 };
-    const contributing = (Array.isArray(biomarkers) ? biomarkers : [])
-        .filter((b) => String(b.status || "").toLowerCase() !== "optimal")
-        .sort((a, b) => (rank[String(a.status).toLowerCase()] ?? 2) - (rank[String(b.status).toLowerCase()] ?? 2))
-        .slice(0, 3);
-    const Stat = ({ n, label, dot }) => (
-        <div>
-            <p className="text-[20px] font-semibold leading-none text-blue">{n ?? 0}</p>
-            <p className="mt-1.5 flex items-center gap-1 text-[12px] text-secondary">
-                {dot && <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />}
-                {label}
-            </p>
-        </div>
-    );
+// Image-1 card: category grade chips + biomarker list with mini trends.
+function HealthBreakdownCard({ categoryGrades, biomarkers }) {
+    const grades = Object.entries(categoryGrades || {})
+        .map(([key, val]) => {
+            const hc = humanizeCategory(key);
+            return { label: /health$/i.test(hc) ? hc : `${hc} Health`, grade: (val && typeof val === "object" ? val.grade : val) || "—" };
+        })
+        .filter((g) => g.label);
+    const order = { out_of_range: 0, high: 0, low: 0, normal: 1, optimal: 2 };
+    const list = (Array.isArray(biomarkers) ? biomarkers : [])
+        .slice()
+        .sort((a, b) => (order[String(a.status).toLowerCase()] ?? 3) - (order[String(b.status).toLowerCase()] ?? 3))
+        .slice(0, 6);
+    if (!grades.length && !list.length) return null;
     return (
         <div className={`${CARD} p-5 lg:p-6`}>
-            <h3 className="text-base font-semibold tracking-tight text-blue">Key Insights</h3>
-
-            {priority && (
-                <div className="mt-3">
-                    <p className="flex items-center gap-1.5 text-sm font-medium text-rose-500">
-                        <HeartPulse className="h-4 w-4" />
-                        Top health priority
-                    </p>
-                    <p className="mt-0.5 text-[15px] font-medium text-blue">{priority}</p>
+            {grades.length > 0 && (
+                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {grades.map((g, i) => {
+                        const c = gradeColor(g.grade);
+                        return (
+                            <span key={i} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-borderColor bg-white py-1 pl-1 pr-3">
+                                <span className={`grid h-6 w-6 place-items-center rounded-full border-2 text-[11px] font-bold ${c.ring} ${c.text}`}>{g.grade}</span>
+                                <span className="text-[13px] font-medium text-blue">{g.label}</span>
+                            </span>
+                        );
+                    })}
                 </div>
             )}
+            {list.length > 0 && (
+                <div className="mt-4 space-y-2">
+                    {list.map((b, i) => (
+                        <BiomarkerInsightRow key={(b.id || b.name || "") + i} b={b} />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
-            <div className="mt-5">
-                <p className="text-sm font-medium text-secondary">Summary</p>
-                <div className="mt-3 grid grid-cols-4 gap-2">
-                    <Stat n={total} label="Total" />
-                    <Stat n={s.optimal} label="Optimal" dot="bg-emerald-500" />
-                    <Stat n={s.normal} label="Normal" dot="bg-yellow-400" />
-                    <Stat n={s.outOfRange} label="Out of Range" dot="bg-pink-400" />
-                </div>
-                <div className="mt-3 flex h-2 w-full overflow-hidden rounded-full bg-pageBackground">
-                    <div className="h-full bg-emerald-500" style={{ width: seg(s.optimal) }} />
-                    <div className="h-full bg-yellow-400" style={{ width: seg(s.normal) }} />
-                    <div className="h-full bg-pink-400" style={{ width: seg(s.outOfRange) }} />
-                </div>
+// Curated symptoms for "how you might be feeling", keyed by organ/category.
+const PRIORITY_SYMPTOMS = {
+    nutrients: ["Low energy", "Slower recovery after workout", "Weaker immunity"],
+    metabolic: ["Afternoon energy crashes", "Sugar cravings", "Stubborn weight"],
+    heart: ["Reduced stamina", "Fatigue"],
+    thyroid: ["Low energy", "Feeling cold", "Brain fog"],
+    liver: ["Sluggishness", "Poor detox"],
+    kidney: ["Fatigue", "Fluid retention"],
+    inflammation: ["Aches", "Slower recovery"],
+    sex: ["Low drive", "Low energy", "Mood dips"],
+    immune: ["Frequent colds", "Slow recovery"],
+    brain: ["Brain fog", "Low mood"],
+    gut: ["Bloating", "Irregular digestion"],
+    default: ["Low energy", "Slower recovery", "Off your best"],
+};
+
+// Image-2 card: the single highest-priority fix + affected biomarkers.
+function HighPriorityCard({ topGoal, biomarkers }) {
+    const order = { out_of_range: 0, high: 0, low: 0, normal: 1 };
+    const flagged = (Array.isArray(biomarkers) ? biomarkers : [])
+        .filter((b) => String(b.status || "").toLowerCase() !== "optimal")
+        .sort((a, b) => (order[String(a.status).toLowerCase()] ?? 2) - (order[String(b.status).toLowerCase()] ?? 2));
+    const feature = flagged[0];
+    const heading = topGoal?.title || (feature ? `Get your ${feature.name} into the optimal zone` : null);
+    if (!heading) return null;
+    const organ = feature ? organKeyForCategory(feature.category || "") : null;
+    const symptoms = PRIORITY_SYMPTOMS[organ] || PRIORITY_SYMPTOMS.default;
+    const affected = flagged.slice(0, 2);
+    return (
+        <div className={`${CARD} p-5 lg:p-6`}>
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-rose-500">
+                <span className="h-2 w-2 rounded-full bg-rose-500" />
+                High Priority
+            </p>
+            <h3 className="mt-2 text-lg font-semibold leading-snug text-blue lg:text-xl">{heading}</h3>
+            <p className="mt-1 text-[13px] text-secondary">8–12 weeks to optimal levels</p>
+
+            <p className="mt-5 text-sm font-medium text-secondary">How you might be feeling</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+                {symptoms.map((sx) => (
+                    <span key={sx} className="rounded-full bg-pageBackground px-3 py-1.5 text-[13px] font-medium text-blue">{sx}</span>
+                ))}
             </div>
 
-            {contributing.length > 0 && (
-                <div className="mt-6">
-                    <p className="text-sm font-medium text-secondary">Contributing Biomarkers</p>
-                    <div className="mt-3 space-y-2.5">
-                        {contributing.map((b, i) => (
-                            <ContribRow key={(b.id || b.name || "") + i} b={b} />
+            {affected.length > 0 && (
+                <>
+                    <p className="mt-5 text-sm font-medium text-secondary">Affected biomarkers</p>
+                    <div className="mt-2 space-y-2">
+                        {affected.map((b, i) => (
+                            <BiomarkerInsightRow key={(b.id || b.name || "") + i} b={b} />
                         ))}
                     </div>
-                </div>
+                </>
             )}
         </div>
     );
