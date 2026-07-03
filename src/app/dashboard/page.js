@@ -8,6 +8,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import InsightsDashboard from "@/components/home/InsightsDashboard";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
+import { organKeyForCategory, categoryStatus } from "@/components/data/organStatus";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { transformPanel, computeSummary, extractScores, humanizeCategory } from "@/utils/biomarkerAdapter";
@@ -34,6 +35,13 @@ const evDate = (d) => {
 };
 
 const CARD = "rounded-3xl border border-borderColor bg-white";
+
+// Every organ region the twin can paint (a texture exists for each). Used to
+// cycle through all systems on the twin before any report is uploaded.
+const ALL_ORGANS = [
+    "heart", "metabolic", "brain", "liver", "kidney", "thyroid", "immune",
+    "inflammation", "sex", "dna", "nutrients", "gut", "skin", "body",
+];
 
 export default function Dashboard() {
     const { user, token, loading: authLoading } = useAuth();
@@ -280,6 +288,30 @@ export default function Dashboard() {
     const biomarkerSummary = insightsData?.summary || null;
     const protocolItems = plan?.deduplicatedProtocol || [];
 
+    // The two organs to light up on the digital twin — the user's most-flagged
+    // biomarker systems (worst first), each in its status colour. Falls back to a
+    // sensible pair so the twin is never blank, even before any report.
+    const twinHighlights = (() => {
+        // No report yet → cycle through every organ system (all green).
+        const allOrgans = ALL_ORGANS.map((organ) => ({ organ, status: "good" }));
+        const bms = insightsData?.biomarkers || [];
+        if (!bms.length) return allOrgans;
+        // Report done → only the 2 most-flagged systems from the biomarkers.
+        const byOrgan = new Map();
+        for (const b of bms) {
+            const organ = organKeyForCategory(b.category || "");
+            if (!organ) continue;
+            if (!byOrgan.has(organ)) byOrgan.set(organ, []);
+            byOrgan.get(organ).push(b);
+        }
+        const sev = { bad: 0, neutral: 1, good: 2 };
+        const organs = [...byOrgan.entries()]
+            .map(([organ, items]) => ({ organ, status: categoryStatus(items) }))
+            .sort((a, b) => sev[a.status] - sev[b.status])
+            .slice(0, 2);
+        return organs.length ? organs : allOrgans;
+    })();
+
     // ── Member health journey (drives the home Timeline) ─────────────────────
     // Statuses come from REAL state; the sequence mirrors the product logic:
     // intake → blood panel → action plan → clinician review → follow-up → re-test.
@@ -329,7 +361,7 @@ export default function Dashboard() {
 
                     <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                         <div className="hidden lg:block">
-                            <WelcomeTwinCard firstName={userName} sex={sex} router={router} />
+                            <WelcomeTwinCard firstName={userName} sex={sex} router={router} highlights={twinHighlights} />
                         </div>
                         <div className="flex min-w-0 flex-col gap-4">
                             <AppPromoCard />
@@ -701,8 +733,20 @@ function JourneySection({ journey, done }) {
 
 /* ═══════════════════════ Digital Twin (3D body) home ═══════════════════════ */
 
-function WelcomeTwinCard({ firstName, sex, router }) {
+function WelcomeTwinCard({ firstName, sex, router, highlights }) {
     const [query, setQuery] = useState("");
+
+    // Alternate the twin between the (up to) two flagged organs, since the model
+    // paints one region at a time.
+    const list = Array.isArray(highlights) && highlights.length ? highlights : [{ organ: null, status: "good" }];
+    const [hi, setHi] = useState(0);
+    useEffect(() => {
+        setHi(0);
+        if (list.length < 2) return undefined;
+        const id = setInterval(() => setHi((i) => (i + 1) % list.length), 3500);
+        return () => clearInterval(id);
+    }, [list.length]);
+    const active = list[hi % list.length] || list[0];
 
     const goConcierge = (e) => {
         e.preventDefault();
@@ -727,7 +771,7 @@ function WelcomeTwinCard({ firstName, sex, router }) {
 
             <div className="relative flex-1">
                 <div className="pointer-events-none absolute inset-0">
-                    <BodyModelClient sex={sex} className="h-full w-full" />
+                    <BodyModelClient sex={sex} highlight={active.organ} status={active.status} className="h-full w-full" />
                 </div>
             </div>
 
@@ -1099,12 +1143,15 @@ function AppPromoCard() {
             </button>
             <div className="flex items-center justify-between gap-4">
                 <div className="max-w-[70%]">
-                    <h3 className="text-lg font-semibold tracking-tight lg:text-xl">Get the Cyborg app</h3>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+                        Coming soon
+                    </span>
+                    <h3 className="mt-2 text-lg font-semibold tracking-tight lg:text-xl">Get the Cyborg app</h3>
                     <p className="mt-1.5 text-sm leading-relaxed text-white/90">
                         All your data in your pocket, sync wearables and text Cyborg AI anytime.
                     </p>
                     <span className="mt-4 inline-flex items-center gap-2 rounded-lg bg-black px-3 py-1.5 text-xs font-medium text-white">
-                        App Store
+                        Launching in August
                     </span>
                 </div>
             </div>
