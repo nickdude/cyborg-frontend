@@ -58,14 +58,14 @@ export default function Home() {
           <Reveal><LabsByCyborg /></Reveal>
           <ChecklistStorySection />
 
-              <Reveal><MedicalProfessionalsSection /></Reveal>
+              {/* <Reveal><MedicalProfessionalsSection /></Reveal> */}
               <Reveal><MembershipPlanSection /></Reveal>
               <Reveal><VisualStorySection cards={VISUALISE_PART_ONE} /></Reveal>
               <Reveal><VisualStorySection cards={VISUALISE_PART_TWO} /></Reveal>
               <Reveal><TagOverlaySection image="/assets/testinomial/test1.png" /></Reveal>
               <Reveal><VsDifferenceSection /></Reveal>
-              <Reveal><CyborgLabsSection /></Reveal>
-              <Reveal><ChangeHealthSection /></Reveal>
+              {/* <Reveal><CyborgLabsSection /></Reveal>
+              <Reveal><ChangeHealthSection /></Reveal> */}
               <Reveal><FaqAccordion /></Reveal>
               <Reveal><TestCoverageTabs /></Reveal>
               <Footer />

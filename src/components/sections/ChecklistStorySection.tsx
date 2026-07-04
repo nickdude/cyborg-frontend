@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "motion/react";
+import { useRef } from "react";
+import { motion, useScroll, useTransform, type MotionValue } from "motion/react";
 
 type Tone = "dark" | "light";
 
@@ -85,65 +86,96 @@ function StepHeader({ activeIndex, tone }: { activeIndex: number; tone: Tone }) 
   );
 }
 
-function StoryCard({ card, index }: { card: StoryCardData; index: number }) {
+function StoryCard({
+  card,
+  index,
+  progress,
+  range,
+  targetScale,
+}: {
+  card: StoryCardData;
+  index: number;
+  progress: MotionValue<number>;
+  range: [number, number];
+  targetScale: number;
+}) {
   const t = TONE[card.tone];
+  // Card shrinks toward its stacked resting size as the next card scrolls over it.
+  const scale = useTransform(progress, range, [1, targetScale]);
 
   return (
-    <div className="relative h-full w-screen shrink-0 snap-start snap-always overflow-hidden">
-      <Image
-        src={card.image}
-        alt=""
-        fill
-        priority={index === 0}
-        sizes="100vw"
-        className="object-cover object-center"
-      />
+    <div className="sticky top-0 flex h-screen items-center justify-center">
+      <motion.div
+        style={{ scale, top: `calc(-6vh + ${index * 26}px)` }}
+        className="relative h-[86vh] w-[92vw] max-w-6xl origin-top overflow-hidden rounded-[28px] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)] md:h-[88vh] md:w-[90vw]"
+      >
+        <Image
+          src={card.image}
+          alt=""
+          fill
+          priority={index === 0}
+          sizes="92vw"
+          className="object-cover object-center"
+        />
 
-      {/* legibility scrim */}
-      <div
-        aria-hidden
-        className={`pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b ${t.scrim}`}
-      />
+        {/* legibility scrim */}
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b ${t.scrim}`}
+        />
 
-      {/* overlay content */}
-      <div className="absolute inset-0">
-        <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-6 pt-10 md:px-12 md:pt-16">
-          <StepHeader activeIndex={index} tone={card.tone} />
+        {/* overlay content */}
+        <div className="absolute inset-0">
+          <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-6 pt-8 md:px-12 md:pt-14">
+            <StepHeader activeIndex={index} tone={card.tone} />
 
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "0px -15% 0px -15%" }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-8 max-w-[340px] md:mt-12 md:max-w-[460px]"
-          >
-            <h2
-              className={`text-[28px] font-semibold leading-[1.08] tracking-[-0.02em] md:text-5xl ${t.title}`}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "0px -10% 0px -10%" }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-8 max-w-[340px] md:mt-12 md:max-w-[460px]"
             >
-              {card.title}
-            </h2>
-            <p className={`mt-4 text-[15px] leading-relaxed md:mt-6 md:text-lg ${t.body}`}>
-              {card.body}
-            </p>
-          </motion.div>
+              <h2
+                className={`text-[28px] font-semibold leading-[1.08] tracking-[-0.02em] md:text-5xl ${t.title}`}
+              >
+                {card.title}
+              </h2>
+              <p className={`mt-4 text-[15px] leading-relaxed md:mt-6 md:text-lg ${t.body}`}>
+                {card.body}
+              </p>
+            </motion.div>
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
 
 /**
- * ChecklistStorySection — a single full-viewport (100vh) section the user swipes
- * through horizontally. Native horizontal scroll with snap; each card is 100vw.
+ * ChecklistStorySection — scroll-stacked cards. The section is tall; each card
+ * pins to the top of the viewport (sticky) and, as the following card scrolls up
+ * over it, scales down and settles into a receding stack (Superpower/Apple-style).
  */
 export function ChecklistStorySection() {
+  const container = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: container,
+    offset: ["start start", "end end"],
+  });
+
   return (
-    <section className="h-screen w-full bg-white">
-      <div className="flex h-full w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide">
-        {CARDS.map((card, i) => (
-          <StoryCard key={card.id} card={card} index={i} />
-        ))}
-      </div>
+    <section ref={container} className="relative bg-white">
+      {CARDS.map((card, i) => (
+        <StoryCard
+          key={card.id}
+          card={card}
+          index={i}
+          progress={scrollYProgress}
+          range={[i / CARDS.length, 1]}
+          targetScale={1 - (CARDS.length - i) * 0.04}
+        />
+      ))}
     </section>
   );
 }
