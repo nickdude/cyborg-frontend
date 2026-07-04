@@ -238,18 +238,32 @@ const GOAL_GRADIENTS = [
 ];
 function GoalGradientCard({ goal, index, onClick }) {
   const grad = GOAL_GRADIENTS[index % GOAL_GRADIENTS.length];
+  const img = `/assets/goals/goal-${(index % 7) + 1}.png`;
+  const pr = String(goal.priority || "").toLowerCase();
+  const prLabel = pr === "high" ? "High priority" : pr === "medium" ? "Medium priority" : pr === "low" ? "Low priority" : null;
   return (
     <button
       type="button"
       onClick={onClick}
       style={{ backgroundImage: grad }}
-      className="group relative w-full overflow-hidden rounded-2xl p-5 text-left shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition hover:brightness-[1.08] active:scale-[0.99]"
+      className="group relative flex min-h-[150px] w-full flex-col justify-end overflow-hidden rounded-2xl p-5 text-left shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition hover:brightness-[1.08] active:scale-[0.99] lg:min-h-[136px] lg:p-6"
     >
-      <h3 className="text-[15px] font-semibold leading-snug text-white">{goal.title}</h3>
-      <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-white/75">
-        How to solve this
-        <svg className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      </span>
+      {/* Mobile-only image background; desktop keeps the gradient above. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover object-center lg:hidden" onError={(e) => e.currentTarget.remove()} />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/5 lg:hidden" />
+      {prLabel && (
+        <span className="absolute right-4 top-4 z-10 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-sm">
+          {prLabel}
+        </span>
+      )}
+      <div className="relative z-10">
+        <h3 className="max-w-[85%] text-[15px] font-semibold leading-snug text-white lg:text-[17px]">{goal.title}</h3>
+        <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-white/80">
+          How to solve this
+          <svg className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </span>
+      </div>
     </button>
   );
 }
@@ -453,9 +467,6 @@ export default function Protocol() {
   const protocolItems = plan?.deduplicatedProtocol || [];
   const monitoredIssues = plan?.monitoredIssues || [];
   const protocolData = plan?.protocol || null;
-  const totalItems = protocolItems.length;
-  const takenCount = protocolItems.reduce((n, it) => n + (takenSet.has(it.productName) ? 1 : 0), 0);
-  const takenPct = totalItems > 0 ? Math.round((takenCount / totalItems) * 100) : 0;
 
   const fetchPlan = useCallback(async ({ silent = false } = {}) => {
     try {
@@ -715,35 +726,36 @@ export default function Protocol() {
                         </div>
                       ) : (
                         <>
-                          <p className="mt-1 text-sm text-secondary">Check off each item as you take it — tap the row for how &amp; why.</p>
-
-                          {/* Daily progress */}
-                          <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-borderColor bg-white px-4 py-3.5 lg:px-5">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-black">
-                                {takenCount === totalItems ? "All done for today 🎉" : `${takenCount} of ${totalItems} taken today`}
-                              </p>
-                              <div className="mt-2 h-1.5 w-full max-w-[220px] overflow-hidden rounded-full bg-pageBackground">
-                                <div className="h-full rounded-full bg-emerald-500 transition-all duration-300" style={{ width: `${takenPct}%` }} />
-                              </div>
-                            </div>
-                            <span className="shrink-0 text-lg font-semibold text-emerald-600">{takenPct}%</span>
-                          </div>
+                          <p className="mt-1 text-sm text-secondary">Tap the circle as you take each one — tap the row for how &amp; why.</p>
 
                           <div className="mt-4 overflow-hidden rounded-3xl border border-borderColor bg-white">
-                            <div className="divide-y divide-borderColor">
-                              {protocolItems.map((item, index) => (
-                                <div key={item.productName + index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
-                                  <ProtocolRow
-                                    item={item}
-                                    index={index}
-                                    onOpen={setOpenItem}
-                                    taken={takenSet.has(item.productName)}
-                                    onToggle={toggleItem}
-                                  />
+                            {(() => {
+                              const remaining = protocolItems.filter((it) => !takenSet.has(it.productName));
+                              if (remaining.length === 0) {
+                                return (
+                                  <div className="p-10 text-center">
+                                    <p className="text-2xl">🎉</p>
+                                    <p className="mt-2 text-base font-semibold text-black">All done for today</p>
+                                    <p className="mt-1 text-sm text-secondary">Your plan refreshes tomorrow.</p>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div className="divide-y divide-borderColor">
+                                  {remaining.map((item, index) => (
+                                    <div key={item.productName + index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
+                                      <ProtocolRow
+                                        item={item}
+                                        index={index}
+                                        onOpen={setOpenItem}
+                                        taken={false}
+                                        onToggle={toggleItem}
+                                      />
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
-                            </div>
+                              );
+                            })()}
                           </div>
                         </>
                       )}

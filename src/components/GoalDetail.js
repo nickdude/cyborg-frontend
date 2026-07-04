@@ -69,122 +69,119 @@ export default function GoalDetail({ goal, onBack }) {
     optimalRange: { min: b.optimalMin ?? null, max: b.optimalMax ?? null },
   }));
 
+  const prColor =
+    details.priority === "High" ? "text-rose-600" : details.priority === "Medium" ? "text-amber-600" : "text-blue-600";
+  const prGrad =
+    details.priority === "High"
+      ? "linear-gradient(135deg,#8c3527,#48160e)"
+      : details.priority === "Low"
+        ? "linear-gradient(135deg,#52799f,#274c6f)"
+        : "linear-gradient(135deg,#7f2c3d,#46161f)";
+  const productCount = details.protocolItems?.length || 0;
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-pageBackground pb-24">
-      <div className="flex items-center gap-4 pt-6 px-4 pb-6 border-b border-borderColor">
-        <button onClick={onBack} className="text-2xl text-black hover:text-secondary transition-colors">&#8249;</button>
-        <h1 className="text-lg font-semibold font-inter text-black">Goals</h1>
+      <div className="border-b border-borderColor">
+        <div className="mx-auto flex w-full max-w-[760px] items-center gap-4 px-4 pb-5 pt-6 lg:px-6">
+          <button onClick={onBack} className="text-2xl text-black transition-colors hover:text-secondary">&#8249;</button>
+          <h1 className="font-inter text-lg font-semibold text-black">Goals</h1>
+        </div>
       </div>
 
-      <div className="px-4 pt-6 pb-6">
+      <div className="mx-auto w-full max-w-[760px] px-4 lg:px-6">
+        {/* Hero */}
         <div
-          className="w-full rounded-3xl p-6 relative overflow-hidden"
-          style={{
-            backgroundImage: `url(${bgImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
+          className="relative mt-6 overflow-hidden rounded-3xl p-6 lg:p-8"
+          style={{ backgroundImage: `url(${bgImage})`, backgroundSize: "cover", backgroundPosition: "center" }}
         >
-          <div className="absolute inset-0 bg-black/30 z-0" />
+          <div className="absolute inset-0" style={{ background: prGrad, opacity: 0.82 }} />
+          <div className="absolute inset-0 bg-black/25" />
           <div className="relative z-10">
-            <h2 className="text-xl font-bold font-inter text-white mb-2">{details.title}</h2>
-            <p className="text-sm font-inter text-white/80 leading-relaxed">{details.description}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/70">Goal</p>
+            <h2 className="mt-2 font-inter text-2xl font-bold leading-tight text-white lg:text-[32px]">{details.title}</h2>
+            {details.description && (
+              <p className="mt-3 max-w-[54ch] font-inter text-sm leading-relaxed text-white/85 lg:text-base">{details.description}</p>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="px-4 pb-6 grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl p-4">
-          <p className="text-xs text-secondary font-inter mb-2">Priority</p>
-          <p
-            className={`text-sm font-semibold font-inter ${
-              details.priority === "High"
-                ? "text-red-500"
-                : details.priority === "Medium"
-                ? "text-orange-500"
-                : "text-blue-500"
-            }`}
-          >
-            {details.priority || "—"}
-          </p>
-        </div>
-        <div className="bg-white rounded-2xl p-4">
-          <p className="text-xs text-secondary font-inter mb-2">Health Impact</p>
-          <p className="text-sm font-semibold font-inter text-black">{details.healthImpact || "—"}</p>
-        </div>
-        <div className="bg-white rounded-2xl p-4">
-          <p className="text-xs text-secondary font-inter mb-2">Recovery Time</p>
-          <p className="text-sm font-semibold font-inter text-black">
-            {Array.isArray(details.recoveryTimeWeeks) && details.recoveryTimeWeeks.length === 2
-              ? `${details.recoveryTimeWeeks[0]} - ${details.recoveryTimeWeeks[1]} weeks`
-              : Array.isArray(details.recoveryTimeWeeks) && details.recoveryTimeWeeks.length === 1
-              ? `${details.recoveryTimeWeeks[0]} weeks`
-              : "—"}
-          </p>
-        </div>
-      </div>
-
-      <div className="px-4 space-y-8">
-        {details.whatThisMeans && (
-          <div>
-            <h3 className="text-lg font-semibold font-inter text-black mb-3">What this means:</h3>
-            <p className="text-sm font-inter text-black leading-relaxed">{details.whatThisMeans}</p>
+        {/* Stats */}
+        <div className="mt-5 grid grid-cols-3 gap-3">
+          <div className="rounded-2xl border border-borderColor bg-white p-4">
+            <p className="font-inter text-xs text-secondary">Priority</p>
+            <p className={`mt-1.5 font-inter text-sm font-semibold ${prColor}`}>{details.priority || "—"}</p>
           </div>
-        )}
-
-        {details.potentialCauses && (
-          <div>
-            <h3 className="text-lg font-semibold font-inter text-black mb-3">Potential Causes:</h3>
-            <p className="text-sm font-inter text-black leading-relaxed">{details.potentialCauses}</p>
+          <div className="rounded-2xl border border-borderColor bg-white p-4">
+            <p className="font-inter text-xs text-secondary">Biomarkers</p>
+            <p className="mt-1.5 font-inter text-sm font-semibold text-black">{biomarkers.length}</p>
           </div>
-        )}
+          <div className="rounded-2xl border border-borderColor bg-white p-4">
+            <p className="font-inter text-xs text-secondary">Products</p>
+            <p className="mt-1.5 font-inter text-sm font-semibold text-black">{productCount}</p>
+          </div>
+        </div>
 
-        {biomarkers.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold font-inter text-black mb-4">Biomarkers to improve:</h3>
-            <div className="space-y-4">
-              {biomarkers.map((biomarker) => (
-                <BiomarkerCard key={biomarker.id} biomarker={biomarker} />
-              ))}
+        {/* Sections */}
+        <div className="mt-8 space-y-8">
+          {details.whatThisMeans && (
+            <div>
+              <h3 className="mb-3 font-inter text-lg font-semibold text-black">What this means:</h3>
+              <p className="font-inter text-sm leading-relaxed text-black">{details.whatThisMeans}</p>
             </div>
-          </div>
-        )}
+          )}
 
-        {details.recommendedActions?.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold font-inter text-black mb-4">Recommended Actions:</h3>
-            <div className="space-y-4">
-              {details.recommendedActions.map((action, index) => (
-                <div key={index}>
-                  <p className="text-sm font-semibold font-inter text-primary underline mb-2">
-                    {action.number || index + 1}. {action.label}
-                  </p>
-                  <p className="text-sm font-inter text-black leading-relaxed ml-6">{action.detail}</p>
-                </div>
-              ))}
+          {details.potentialCauses && (
+            <div>
+              <h3 className="mb-3 font-inter text-lg font-semibold text-black">Potential Causes:</h3>
+              <p className="font-inter text-sm leading-relaxed text-black">{details.potentialCauses}</p>
             </div>
-          </div>
-        )}
+          )}
 
-        {details.protocolItems?.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold font-inter text-black mb-4">Select your protocol items:</h3>
-            <div className="space-y-4">
-              {details.protocolItems.map((item, index) => (
-                <ProtocolItem
-                  key={index}
-                  item={{
-                    name: item.productName,
-                    description: item.dosing,
-                    instruction: item.triggerBiomarkers?.length
-                      ? `Targets: ${item.triggerBiomarkers.join(", ")}`
-                      : "",
-                  }}
-                />
-              ))}
+          {biomarkers.length > 0 && (
+            <div>
+              <h3 className="mb-4 font-inter text-lg font-semibold text-black">Biomarkers to improve:</h3>
+              <div className="space-y-4">
+                {biomarkers.map((biomarker) => (
+                  <BiomarkerCard key={biomarker.id} biomarker={biomarker} />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {details.recommendedActions?.length > 0 && (
+            <div>
+              <h3 className="mb-4 font-inter text-lg font-semibold text-black">Recommended Actions:</h3>
+              <div className="space-y-4">
+                {details.recommendedActions.map((action, index) => (
+                  <div key={index}>
+                    <p className="mb-2 font-inter text-sm font-semibold text-primary underline">
+                      {action.number || index + 1}. {action.label}
+                    </p>
+                    <p className="ml-6 font-inter text-sm leading-relaxed text-black">{action.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {details.protocolItems?.length > 0 && (
+            <div>
+              <h3 className="mb-4 font-inter text-lg font-semibold text-black">Select your protocol items:</h3>
+              <div className="space-y-4">
+                {details.protocolItems.map((item, index) => (
+                  <ProtocolItem
+                    key={index}
+                    item={{
+                      name: item.productName,
+                      description: item.dosing,
+                      instruction: item.triggerBiomarkers?.length ? `Targets: ${item.triggerBiomarkers.join(", ")}` : "",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

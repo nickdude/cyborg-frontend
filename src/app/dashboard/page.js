@@ -7,13 +7,16 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import InsightsDashboard from "@/components/home/InsightsDashboard";
+import ActionButtons from "@/components/home/ActionButtons";
+import TimelineMealCard from "@/components/home/TimelineMealCard";
+import TimelineActivityCard from "@/components/home/TimelineActivityCard";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory, categoryStatus } from "@/components/data/organStatus";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import { transformPanel, computeSummary, extractScores, humanizeCategory } from "@/utils/biomarkerAdapter";
-import { biomarkerAPI, userAPI, actionPlanAPI, goalsAPI } from "@/services/api";
-import { ArrowUpRight, ChevronRight, X, Lock, ClipboardList, Check, Droplet, FileText, Stethoscope, FlaskConical, RefreshCw, HeartPulse } from "lucide-react";
+import { biomarkerAPI, userAPI, actionPlanAPI, goalsAPI, mealAPI, timelineAPI } from "@/services/api";
+import { ArrowUpRight, ChevronRight, X, Lock, ClipboardList, Check, Droplet, FileText, Stethoscope, FlaskConical, RefreshCw, HeartPulse, Watch, Sparkles } from "lucide-react";
 
 // Normalize any stored value ("Male"/"Female"/"female"/…) to the 3D model key.
 const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");
@@ -375,6 +378,8 @@ export default function Dashboard() {
                             <HealthBreakdownCard categoryGrades={insightsData?.scores?.categoryGrades} biomarkers={insightsData?.biomarkers} />
                             <HighPriorityCard topGoal={topGoal} biomarkers={insightsData?.biomarkers} />
                             <YourProtocolItemsCard items={protocolItems} planReady={planReady} />
+                            <HelpUsKnowYouCard hasReports={hasAnyReport} />
+                            <TimelineCard userId={userId} router={router} />
                             <LiveBetterCard />
                         </div>
                     </div>
@@ -951,6 +956,115 @@ function YourProtocolItemsCard({ items, planReady }) {
     );
 }
 
+// Onboarding checklist — real completion (lab reports are the only one with a backend;
+// wearables & AI memory have no OAuth/import backend, so they stay honestly pending).
+function HelpUsKnowYouCard({ hasReports }) {
+    const items = [
+        { key: "wearables", title: "Connect your wearables", done: false, href: "/settings?tab=integrations", Icon: Watch, img: "/assets/wearables.jpg" },
+        { key: "labs", title: "Lab reports uploaded", done: !!hasReports, href: "/data?tab=records", Icon: FileText },
+        { key: "memory", title: "Import your AI memory", done: false, href: "/concierge", Icon: Sparkles },
+    ];
+    const completed = items.filter((i) => i.done).length;
+    return (
+        <div className={`${CARD} p-5 lg:p-6`}>
+            <div className="flex items-center justify-between gap-3">
+                <h3 className="text-base font-semibold tracking-tight text-blue">Help us know you better</h3>
+                <span className="shrink-0 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-medium text-orange-600">{completed}/3 completed</span>
+            </div>
+            <div className="mt-4 space-y-3">
+                {items.map(({ key, title, done, href, Icon, img }) => {
+                    const icon = img ? (
+                        <span className="grid h-10 w-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-white">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={img} alt="" className="h-9 w-12 object-contain" onError={(e) => e.currentTarget.remove()} />
+                        </span>
+                    ) : (
+                        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white ${done ? "text-emerald-600" : "text-secondary"}`}>
+                            <Icon className="h-4 w-4" />
+                        </span>
+                    );
+                    return done ? (
+                        <div key={key} className="flex items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-3">
+                            {icon}
+                            <p className="min-w-0 flex-1 text-sm font-medium text-emerald-700">{title}</p>
+                            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-600 text-white"><Check className="h-4 w-4" /></span>
+                        </div>
+                    ) : (
+                        <Link key={key} href={href} className="group flex items-center gap-3 rounded-2xl bg-pageBackground px-4 py-3 transition hover:brightness-[0.98]">
+                            {icon}
+                            <p className="min-w-0 flex-1 text-sm font-medium text-blue">{title}</p>
+                            <ChevronRight className="h-5 w-5 shrink-0 text-secondary transition group-hover:translate-x-0.5 group-hover:text-blue" />
+                        </Link>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+// Timeline — live meals/activities for today + macro split. Stays blank until something's logged.
+const TIMELINE_MACROS = [
+    { key: "calories", label: "Calories", unit: "", dot: "bg-orange-500" },
+    { key: "fiberG", label: "Fiber", unit: "g", dot: "bg-emerald-500" },
+    { key: "carbsG", label: "Carbs", unit: "g", dot: "bg-amber-500" },
+    { key: "proteinG", label: "Protein", unit: "g", dot: "bg-rose-500" },
+    { key: "fatG", label: "Fat", unit: "g", dot: "bg-yellow-400" },
+    { key: "sugarG", label: "Sugar", unit: "g", dot: "bg-pink-400" },
+];
+
+function TimelineCard({ userId, router }) {
+    const [entries, setEntries] = useState([]);
+    const [macros, setMacros] = useState(null);
+
+    useEffect(() => {
+        if (!userId) return;
+        const d = new Date();
+        const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        let active = true;
+        timelineAPI.get(userId, date).then((r) => { if (active) setEntries(r?.data?.entries || r?.data || []); }).catch(() => {});
+        mealAPI.summary(userId, date).then((r) => { if (active) setMacros(r?.data || null); }).catch(() => {});
+        return () => { active = false; };
+    }, [userId]);
+
+    const list = Array.isArray(entries) ? entries : [];
+    const hasMeals = list.some((e) => e.type === "meal");
+
+    return (
+        <div className={`${CARD} p-5 lg:p-6`}>
+            <h3 className="text-base font-semibold tracking-tight text-blue">Timeline</h3>
+            <ActionButtons actions={[{ label: "Log Food", href: "/meals/new" }, { label: "Add an activity", href: "/activities/new" }]} />
+
+            {list.length > 0 && (
+                <div className="mt-4 space-y-3">
+                    {list.map((entry) => {
+                        const id = entry.id || entry._id;
+                        if (entry.type === "meal") return <TimelineMealCard key={id} entry={entry} onClick={() => id && router.push(`/meals/${id}/score`)} />;
+                        if (entry.type === "activity") return <TimelineActivityCard key={id} entry={entry} onClick={() => id && router.push(`/activities/${id}`)} />;
+                        return null;
+                    })}
+                </div>
+            )}
+
+            {hasMeals && macros && (
+                <div className="mt-5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Macro Split</p>
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                        {TIMELINE_MACROS.map(({ key, label, unit, dot }) => (
+                            <div key={key} className="rounded-xl border border-borderColor p-3">
+                                <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-secondary">
+                                    <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                                    {label}
+                                </p>
+                                <p className="mt-1 text-lg font-semibold leading-none text-blue">{Math.round(macros[key] || 0)}{unit}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 // "Review your action plan" row with the orange booklet.
 function ReviewActionPlanCard({ planReady, actionPlanUpdated }) {
     if (!planReady) return null;
@@ -1201,15 +1315,18 @@ function AppPromoCard() {
     if (dismissed) return null;
     return (
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-400 via-orange-500 to-orange-700 p-5 text-white lg:p-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/mobileappgirl.png" alt="" className="pointer-events-none absolute right-0 top-0 h-full w-1/2 object-cover object-center" onError={(e) => e.currentTarget.remove()} />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-orange-500 via-orange-500/70 to-transparent" />
             <button
                 type="button"
                 onClick={() => setDismissed(true)}
                 aria-label="Dismiss"
-                className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full text-white/80 transition hover:bg-white/15 hover:text-white"
+                className="absolute right-3 top-3 z-10 grid h-7 w-7 place-items-center rounded-full bg-black/10 text-white/80 transition hover:bg-white/20 hover:text-white"
             >
                 <X className="h-4 w-4" />
             </button>
-            <div className="flex items-center justify-between gap-4">
+            <div className="relative z-10 flex items-center justify-between gap-4">
                 <div className="max-w-[70%]">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
                         Coming soon
