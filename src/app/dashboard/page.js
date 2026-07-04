@@ -1316,8 +1316,8 @@ function AppPromoCard() {
     return (
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-400 via-orange-500 to-orange-700 p-5 text-white lg:p-6">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/mobileappgirl.png" alt="" className="pointer-events-none absolute right-0 top-0 h-full w-1/2 object-cover object-center" onError={(e) => e.currentTarget.remove()} />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-orange-500 via-orange-500/70 to-transparent" />
+            <img src="/assets/mobileappgirl.png" alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-right" onError={(e) => e.currentTarget.remove()} />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/25 via-black/5 to-transparent" />
             <button
                 type="button"
                 onClick={() => setDismissed(true)}
