@@ -27,9 +27,9 @@ export const homeScheduledData = {
   onboarding: {
     title: "Finish onboarding to get most out of Cyborg",
     items: [
-      { key: "insurance", icon: "ShieldCheck", title: "Insurance", sub: "Get the most value from Cyborg", href: "/settings" },
-      { key: "wearable", icon: "Watch", title: "Wearable", sub: "Sync data from your health trackers", href: "/settings" },
-      { key: "identify", icon: "ScanFace", title: "Identify", sub: "Verify your identity to import past medical records", href: "/onboarding" },
+      { key: "insurance", icon: "ShieldCheck", image: "/assets/timeline/insurance.png", title: "Insurance", sub: "Get the most value from Cyborg", href: "/settings" },
+      { key: "wearable", icon: "Watch", image: "/assets/timeline/wearable.png", title: "Wearable", sub: "Sync data from your health trackers", href: "/settings" },
+      { key: "identify", icon: "ScanFace", image: "/assets/timeline/identify.png", title: "Identify", sub: "Verify your identity to import past medical records", href: "/onboarding" },
     ],
   },
   liveBetter: {

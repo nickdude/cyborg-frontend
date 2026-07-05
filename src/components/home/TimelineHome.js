@@ -126,11 +126,11 @@ function Hero({ greeting, name, initials, scoreCards }) {
   return (
     <section className="relative isolate overflow-hidden text-white">
       <Image
-        src="/assets/timeline/hero.jpg"
+        src="/assets/timeline/hero.png"
         alt=""
         fill
         priority
-        className="-z-20 object-cover object-[55%_22%]"
+        className="-z-20 object-cover object-[52%_18%]"
       />
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#3d1a6b]/50 via-[#3a1a75]/45 to-[#25105a]/72" />
       <div className="absolute inset-0 -z-10 bg-[#5b2487]/28 mix-blend-multiply" />
