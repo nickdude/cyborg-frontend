@@ -124,7 +124,7 @@ function ScoreCarousel({ cards }) {
 /* ═══════════════════════════════ Hero ═══════════════════════════════ */
 function Hero({ greeting, name, initials, scoreCards }) {
   return (
-    <section className="relative isolate overflow-hidden text-white">
+    <section className="relative isolate overflow-hidden bg-[#371A80] text-white">
       <Image
         src="/assets/timeline/hero.png"
         alt=""
@@ -132,8 +132,9 @@ function Hero({ greeting, name, initials, scoreCards }) {
         priority
         className="-z-20 object-cover object-[52%_18%]"
       />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#3d1a6b]/50 via-[#3a1a75]/45 to-[#25105a]/72" />
-      <div className="absolute inset-0 -z-10 bg-[#5b2487]/28 mix-blend-multiply" />
+      {/* Solid brand purple (#371A80) sits behind the photo (section bg); this overlay
+          tints the photo to the same hue and keeps the white text legible. */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#371A80]/40 via-[#371A80]/15 to-[#371A80]/65" />
 
       <div className="px-5 pb-14 pt-9">
         <div className="flex items-start justify-between gap-3">
