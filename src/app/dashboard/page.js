@@ -7,6 +7,9 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import InsightsDashboard from "@/components/home/InsightsDashboard";
+import TimelineHome from "@/components/home/TimelineHome";
+import { homeScheduledData } from "@/data/homeScheduledData";
+import UserActions from "@/components/UserActions";
 import ActionButtons from "@/components/home/ActionButtons";
 import TimelineMealCard from "@/components/home/TimelineMealCard";
 import TimelineActivityCard from "@/components/home/TimelineActivityCard";
@@ -352,6 +355,7 @@ export default function Dashboard() {
     if (homeTab === "twin") {
         return (
             <div className="min-h-screen overflow-x-hidden bg-pageBackground font-inter pb-36 lg:pb-16">
+                <div className="lg:hidden"><UserActions /></div>
                 <div className="mx-auto w-full max-w-[1180px] px-4 pt-4 lg:px-8 lg:pt-6">
                     <HomeTabs active={homeTab} onChange={setHomeTab} />
 
@@ -388,29 +392,17 @@ export default function Dashboard() {
         );
     }
 
-    // ── Default: Timeline home (purple header + swipeable score cards) ─────────
+    // ── Default: Timeline home (photo hero + blood-draw feed — matches Figma) ──
     return (
-        <div className="min-h-screen bg-pageBackground font-inter pb-36 lg:pb-16">
-            <div className="mx-auto w-full max-w-[680px] px-3 pt-3 sm:px-4 sm:pt-4 lg:px-6 lg:pt-6">
-                <PurpleHeader
-                    greeting={greeting}
-                    name={userName}
-                    initials={initials}
-                    cyborgScore={cyborgScore}
-                    bioAge={bioAge}
-                    planReady={planReady}
-                    loading={planLoading}
-                    actionPlanHref="/protocol"
-                />
-
-                <HomeTabs active={homeTab} onChange={setHomeTab} />
-
-                <TimelineContent
-                    processing={!!processingReport}
-                    journey={journey}
-                    journeyDone={journeyDone}
-                />
-            </div>
+        <div className="font-inter">
+            <TimelineHome
+                data={homeScheduledData}
+                greeting={greeting}
+                name={userName}
+                initials={initials}
+                activeTab={homeTab}
+                onTabChange={setHomeTab}
+            />
         </div>
     );
 }

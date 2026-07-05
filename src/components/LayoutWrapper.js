@@ -80,7 +80,8 @@ export default function LayoutWrapper({ children }) {
   const showBottomNavbar = showAppChrome || isConcierge;
 
   const showUserActions = [
-    "/dashboard",
+    // /dashboard is intentionally excluded — the dashboard renders its own
+    // top-right controls per home tab (the Timeline hero owns its avatar).
     "/market-place",
     "/data",
     "/protocol",
