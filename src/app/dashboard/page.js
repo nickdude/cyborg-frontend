@@ -402,6 +402,12 @@ export default function Dashboard() {
                 initials={initials}
                 activeTab={homeTab}
                 onTabChange={setHomeTab}
+                cyborgScore={cyborgScore}
+                bioAge={bioAge}
+                planReady={planReady}
+                actionPlanHref={actionPlanHref}
+                journey={journey}
+                processing={!!processingReport}
             />
         </div>
     );
