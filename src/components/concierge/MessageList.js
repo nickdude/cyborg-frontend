@@ -5,15 +5,37 @@ import { useConciergeStore } from "@/stores/concierge";
 import { useStickyScroll } from "@/hooks/useStickyScroll";
 import Message from "./Message";
 
-const QUICK_PROMPTS = [
-  "Summarize my latest lab report",
-  "How am I sleeping this week?",
-  "What does my ApoB mean?",
-];
-
 const EMPTY_MESSAGES = [];
 
-export default function MessageList({ chatId, firstName, onQuickPrompt }) {
+const MASK =
+  "linear-gradient(rgba(0,0,0,0) 0px, rgb(0,0,0) 32px, rgb(0,0,0) calc(100% - 32px), rgba(0,0,0,0) 100%)";
+
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function ordinal(n) {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+// "Today" / "Yesterday" / "Jun 23rd" — matches the reference date dividers.
+function dayLabel(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const today = startOfDay(new Date());
+  const day = startOfDay(d);
+  const diff = Math.round((today - day) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  const month = d.toLocaleDateString(undefined, { month: "short" });
+  return `${month} ${ordinal(d.getDate())}`;
+}
+
+export default function MessageList({ chatId, firstName }) {
   const rawMessages = useConciergeStore((s) =>
     chatId ? s.messages[chatId] : undefined
   );
@@ -33,59 +55,83 @@ export default function MessageList({ chatId, firstName, onQuickPrompt }) {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="relative flex-1 min-h-0">
+    <div className="relative flex min-h-0 flex-1 flex-col">
       <div
-        ref={containerRef}
-        className="h-full overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-6"
+        className="flex min-h-0 flex-1 flex-col"
+        style={{
+          maskImage: MASK,
+          WebkitMaskImage: MASK,
+          maskRepeat: "no-repeat",
+          maskSize: "100% 100%",
+        }}
       >
-        {isEmpty ? (
-          <div className="max-w-md mx-auto text-center mt-20">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-purple-400 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
-              <Sparkles className="w-6 h-6 text-white" />
+        <div
+          ref={containerRef}
+          className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 pb-4 pt-5 [overflow-anchor:none]"
+        >
+          <div aria-hidden="true" className="h-px w-full shrink-0" />
+
+          {isEmpty ? (
+            <div className="m-auto flex max-w-md flex-col items-center text-center">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-cyborg-purple-light shadow-lg shadow-primary/20">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="mb-1 text-xl font-semibold text-blue">
+                How can I help, {firstName || "there"}?
+              </h1>
+              <p className="text-sm text-secondary">
+                Ask about your labs, wearables, or anything health-related.
+              </p>
             </div>
-            <h1 className="text-xl font-semibold text-blue mb-1">
-              Hi {firstName || "there"}
-            </h1>
-            <p className="text-secondary text-sm mb-6">
-              Ask about your labs, wearables, or anything health-related.
-            </p>
-            <div className="flex flex-col gap-2">
-              {QUICK_PROMPTS.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => onQuickPrompt?.(p)}
-                  className="text-sm text-left bg-white border border-borderColor rounded-2xl px-4 py-3 hover:border-primary/30 hover:bg-primary/[0.02] transition-all duration-200 text-blue cursor-pointer"
-                >
-                  {p}
-                </button>
-              ))}
+          ) : (
+            <div className="mt-auto flex flex-col gap-6">
+              {messages.map((m, i) => {
+                const isLastAssistant =
+                  m.role === "assistant" &&
+                  m.id === messages[messages.length - 1]?.id;
+                const prev = messages[i - 1];
+                const showDivider =
+                  i === 0 ||
+                  (prev &&
+                    startOfDay(m.createdAt) !== startOfDay(prev.createdAt));
+                return (
+                  <div key={m.id} className="flex flex-col gap-6">
+                    {showDivider && (
+                      <div className="mx-auto w-full max-w-3xl px-0.5">
+                        <div className="flex w-full items-center gap-3 py-1 text-xs font-medium text-secondary">
+                          <div
+                            aria-hidden="true"
+                            className="h-px flex-1 bg-borderColor"
+                          />
+                          <time>{dayLabel(m.createdAt)}</time>
+                          <div
+                            aria-hidden="true"
+                            className="h-px flex-1 bg-borderColor"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <Message
+                      message={m}
+                      streaming={streaming && isLastAssistant}
+                    />
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        ) : (
-          <div className="max-w-3xl mx-auto w-full space-y-4">
-            {messages.map((m) => {
-              const isLastAssistant =
-                m.role === "assistant" &&
-                m.id === messages[messages.length - 1]?.id;
-              return (
-                <Message
-                  key={m.id}
-                  message={m}
-                  streaming={streaming && isLastAssistant}
-                />
-              );
-            })}
-          </div>
-        )}
+          )}
+
+          <div aria-hidden="true" className="min-h-[24px] shrink-0" />
+        </div>
       </div>
 
       {!isPinned && (
         <button
           onClick={jumpToBottom}
-          className="absolute bottom-4 right-4 bg-black text-white rounded-full w-9 h-9 min-h-[44px] min-w-[44px] shadow-lg shadow-[0_10px_30px_rgba(0,0,0,0.12)] hover:bg-black/85 active:scale-95 transition-all duration-150 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+          className="absolute bottom-4 left-1/2 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-borderColor bg-white text-secondary shadow-lg transition-all duration-150 hover:text-blue active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           aria-label="Jump to latest"
         >
-          <ArrowDown className="w-4 h-4" />
+          <ArrowDown className="h-4 w-4" />
         </button>
       )}
     </div>

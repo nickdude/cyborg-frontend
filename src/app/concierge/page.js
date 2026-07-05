@@ -4,12 +4,13 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Search, HeartPulse } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConciergeStore } from "@/stores/concierge";
 import ChatSidebar from "@/components/concierge/ChatSidebar";
 import MessageList from "@/components/concierge/MessageList";
 import Composer from "@/components/concierge/Composer";
+import { DEFAULT_PROMPTS } from "@/components/concierge/prompts";
 
 export default function ConciergePage() {
   const router = useRouter();
@@ -29,6 +30,12 @@ export default function ConciergePage() {
   const streamStatus = useConciergeStore((s) =>
     activeChatId ? s.streams[activeChatId]?.status : null
   );
+  // Suggested prompts only belong on a fresh, empty chat — once a message has
+  // been sent (or an old chat is continued) they disappear.
+  const isEmptyChat = useConciergeStore((s) => {
+    const list = activeChatId ? s.messages[activeChatId] : null;
+    return !Array.isArray(list) || list.length === 0;
+  });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -108,8 +115,10 @@ export default function ConciergePage() {
     sendMessage(activeChatId, p);
   };
 
+  const disabled = !activeChatId || streamStatus === "streaming";
+
   return (
-    <div className="h-dvh flex bg-pageBackground">
+    <div className="flex h-dvh flex-col bg-pageBackground">
       <ChatSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -118,40 +127,76 @@ export default function ConciergePage() {
         onNew={handleNew}
       />
 
-      {/* pb on mobile reserves room for the fixed BottomNavbar (lg:hidden) so it
-          doesn't overlap the Composer; removed at lg where the nav is hidden. */}
-      <div className="flex-1 flex flex-col min-w-0 pb-[calc(env(safe-area-inset-bottom)+4.75rem)] lg:pb-0">
-        <header className="flex items-center gap-2 px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] border-b border-borderColor bg-white">
+      {/* pb on mobile reserves room for the fixed floating BottomNavbar (lg:hidden). */}
+      <div className="flex min-h-0 flex-1 flex-col pb-[calc(env(safe-area-inset-bottom)+4.75rem)] lg:pb-0">
+        {/* Header: Care Team · Today · Search */}
+        <div className="relative mx-auto flex w-full max-w-3xl shrink-0 items-center justify-between px-4 py-2 lg:py-3">
           <button
+            type="button"
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 rounded-xl hover:bg-pageBackground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            aria-label="Open sidebar"
+            className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm text-secondary transition-colors hover:bg-pageBackground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
-            <Menu className="w-5 h-5 text-secondary" />
+            <span className="flex size-5 items-center justify-center rounded-full bg-gradient-to-br from-primary to-cyborg-purple-light">
+              <HeartPulse className="h-3 w-3 text-white" />
+            </span>
+            Cyborg Care Team
           </button>
-          <div className="font-semibold text-blue">Concierge</div>
-          <span className="text-[11px] tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-            BETA
-          </span>
-        </header>
 
-        <MessageList
-          chatId={activeChatId}
-          firstName={firstName}
-          onQuickPrompt={handleQuickPrompt}
-        />
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="flex h-7 items-center rounded-full border border-borderColor bg-white/90 px-3 py-1 text-xs font-medium text-secondary shadow-sm backdrop-blur">
+              <time>Today</time>
+            </div>
+          </div>
 
-        <Composer
-          value={input}
-          onChange={setInput}
-          onSubmit={handleSend}
-          disabled={!activeChatId || streamStatus === "streaming"}
-          placeholder={
-            streamStatus === "streaming"
-              ? "Wait for reply to finish…"
-              : "Message Cyborg…"
-          }
-        />
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm text-secondary transition-colors hover:bg-pageBackground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Search className="h-4 w-4" />
+            Search
+          </button>
+        </div>
+
+        <MessageList chatId={activeChatId} firstName={firstName} />
+
+        {/* Quick-prompt chips — only on a fresh, empty chat */}
+        {isEmptyChat && (
+          <div className="mx-auto w-full max-w-3xl shrink-0 px-4">
+            <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2 pt-1">
+              {DEFAULT_PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => handleQuickPrompt(p)}
+                  disabled={disabled}
+                  className="flex h-9 shrink-0 items-center whitespace-nowrap rounded-2xl border border-borderColor bg-white px-3.5 text-sm text-secondary shadow-lg shadow-black/5 transition-colors hover:bg-pageBackground hover:text-blue disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Composer + disclaimer */}
+        <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-2">
+          <Composer
+            value={input}
+            onChange={setInput}
+            onSubmit={handleSend}
+            disabled={disabled}
+            placeholder={
+              streamStatus === "streaming"
+                ? "Wait for reply to finish…"
+                : "Ask anything…"
+            }
+          />
+          <p className="mx-auto max-w-xl pt-2 text-center text-[10px] text-secondary">
+            Your Cyborg AI is not intended to replace medical advice. Speak to a
+            licensed provider or call 911 for emergencies.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -1,40 +1,45 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ArrowLeft, Search } from "lucide-react";
 import { activityAPI } from "@/services/api";
 
 export default function ActivitySearchSheet({ userId, onSelect, onClose }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [catalog, setCatalog] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchCatalog = useCallback(
-    async (q) => {
-      if (!userId) return;
-      setLoading(true);
-      try {
-        const resp = await activityAPI.catalog(userId, q);
-        setResults(resp?.data || resp || []);
-      } catch {
+  // The activity catalog is a small, static list (~57 items) that the API
+  // returns in full, so we fetch it ONCE when the sheet opens and filter it in
+  // memory. That removes the per-keystroke network request, the 300ms debounce,
+  // the duplicate open-time fetch, and the out-of-order-response race entirely.
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    setLoading(true);
+    activityAPI
+      .catalog(userId, "")
+      .then((resp) => {
+        if (active) setCatalog(resp?.data || resp || []);
+      })
+      .catch(() => {
         // Non-blocking — show empty list on error.
-      } finally {
-        setLoading(false);
-      }
-    },
-    [userId]
-  );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
 
-  // Initial load.
-  useEffect(() => {
-    fetchCatalog("");
-  }, [fetchCatalog]);
-
-  // Debounced search.
-  useEffect(() => {
-    const timer = setTimeout(() => fetchCatalog(query), 300);
-    return () => clearTimeout(timer);
-  }, [query, fetchCatalog]);
+  // Client-side search mirrors the backend filter exactly: a case-insensitive
+  // substring match on the activity name. Instant, no network.
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return catalog;
+    return catalog.filter((a) => a.name.toLowerCase().includes(q));
+  }, [query, catalog]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
@@ -67,8 +72,8 @@ export default function ActivitySearchSheet({ userId, onSelect, onClose }) {
 
       {/* Results list */}
       <div className="flex-1 overflow-y-auto px-4 pb-6">
-        {loading && results.length === 0 && (
-          <p className="mt-6 text-center text-sm text-[#6d6f7b]">Searching...</p>
+        {loading && (
+          <p className="mt-6 text-center text-sm text-[#6d6f7b]">Loading...</p>
         )}
 
         {!loading && results.length === 0 && (
@@ -79,7 +84,7 @@ export default function ActivitySearchSheet({ userId, onSelect, onClose }) {
 
         <ul className="space-y-1">
           {results.map((activity) => (
-            <li key={activity.name || activity._id}>
+            <li key={activity.id || activity.name || activity._id}>
               <button
                 type="button"
                 onClick={() => onSelect(activity)}

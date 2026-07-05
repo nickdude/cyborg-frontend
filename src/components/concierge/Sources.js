@@ -59,8 +59,10 @@ function extractCitationsFromResult(result) {
   });
 }
 
-export default function Sources({ content }) {
-  if (!Array.isArray(content)) return null;
+// Pull the deduped citation list out of a message's content blocks. Exported so
+// the assistant action bar can show an "N Sources" toggle without re-deriving.
+export function getCitations(content) {
+  if (!Array.isArray(content)) return [];
   const all = [];
   for (const block of content) {
     if (block?.type !== "tool" && block?.type !== "step") continue;
@@ -68,14 +70,17 @@ export default function Sources({ content }) {
     if (block.status !== "done") continue;
     all.push(...extractCitationsFromResult(block.result));
   }
-  if (!all.length) return null;
-
   const seen = new Set();
-  const dedup = all.filter((c) => {
+  return all.filter((c) => {
     if (seen.has(c.url)) return false;
     seen.add(c.url);
     return true;
   });
+}
+
+export default function Sources({ content }) {
+  const dedup = getCitations(content);
+  if (!dedup.length) return null;
 
   return (
     <div className="mt-3">

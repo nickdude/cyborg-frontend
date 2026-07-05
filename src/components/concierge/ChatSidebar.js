@@ -36,29 +36,11 @@ export default function ChatSidebar({
   const chats = useConciergeStore((s) => s.chats);
   const [query, setQuery] = useState("");
 
-  // Track the lg breakpoint. The drawer is an off-canvas overlay on small
-  // screens (translated off-screen when closed) but static/visible on desktop
-  // (lg:static lg:translate-x-0). We only want to hide it from the tab order /
-  // AT when it is closed AND on a small screen.
-  // Initialize to false (the SSR value) so the server-rendered HTML and the
-  // first client render agree. Reading matchMedia during render (e.g. in a lazy
-  // useState initializer) returns the real breakpoint on the client's initial
-  // hydration render while the server saw `false`, which diverges the
-  // offscreen-derived aria-hidden/inert attributes (hydration mismatch). The
-  // effect below reads the real breakpoint right after mount.
-  const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mql = window.matchMedia("(min-width: 1024px)");
-    const update = () => setIsDesktop(mql.matches);
-    update();
-    mql.addEventListener("change", update);
-    return () => mql.removeEventListener("change", update);
-  }, []);
-
-  // When closed on a small screen the panel is translated off-screen but its
-  // controls remain focusable — pull them out of the tab order and hide from AT.
-  const offscreen = !open && !isDesktop;
+  // The sidebar is an off-canvas drawer at every breakpoint (the concierge keeps
+  // its multi-chat list underneath, reachable from the header). When closed it is
+  // translated off-screen but its controls stay focusable — pull them out of the
+  // tab order and hide from AT.
+  const offscreen = !open;
 
   // Escape-to-close while the drawer is open (mobile)
   useEffect(() => {
@@ -92,7 +74,7 @@ export default function ChatSidebar({
     <>
       {open && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-200"
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-200"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -100,9 +82,9 @@ export default function ChatSidebar({
       <aside
         aria-hidden={offscreen || undefined}
         inert={offscreen ? "" : undefined}
-        className={`fixed z-50 top-0 left-0 h-full w-72 bg-white/95 backdrop-blur-xl border-r border-borderColor flex flex-col transform transition-transform duration-300 ease-out ${
+        className={`fixed left-0 top-0 z-50 flex h-full w-72 transform flex-col border-r border-borderColor bg-white/95 backdrop-blur-xl transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
-        } lg:static lg:translate-x-0`}
+        }`}
       >
         <div className="flex items-center justify-between px-3 py-3">
           <div className="flex items-center gap-1">
@@ -117,7 +99,7 @@ export default function ChatSidebar({
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden p-2 rounded-xl hover:bg-pageBackground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="rounded-xl p-2 transition-colors hover:bg-pageBackground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             aria-label="Close sidebar"
           >
             <X className="w-4 h-4 text-secondary" />

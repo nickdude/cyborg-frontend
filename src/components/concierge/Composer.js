@@ -1,7 +1,10 @@
 "use client";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Plus, Mic } from "lucide-react";
 import { useEffect, useRef } from "react";
 
+// Superpower-style composer: a rounded card with a "+" attach affordance on the
+// left, the growing textarea in the middle, and a mic (when empty) / send arrow
+// (when there's text) on the right.
 export default function Composer({
   value,
   onChange,
@@ -25,30 +28,55 @@ export default function Composer({
     }
   };
 
+  const hasText = Boolean(value.trim());
+
   return (
-    <div className="border-t border-borderColor bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
-      <div className="max-w-3xl mx-auto flex items-end gap-2">
-        <div className="flex-1 border border-borderColor rounded-2xl bg-pageBackground px-4 py-2.5 focus-within:bg-white focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200">
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder={placeholder || "Message Cyborg…"}
-            aria-label="Message"
-            className="w-full resize-none outline-none text-base sm:text-sm bg-transparent placeholder:text-secondary"
-          />
-        </div>
+    <div className="relative flex min-h-[56px] flex-col justify-center rounded-2xl border border-borderColor bg-white py-4 shadow-lg shadow-black/5 transition-all focus-within:border-primary/40">
+      <textarea
+        ref={textareaRef}
+        rows={1}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKey}
+        placeholder={placeholder || "Ask anything…"}
+        aria-label="Message"
+        className="w-full resize-none border-none bg-transparent p-1 pl-14 pr-14 text-base outline-none placeholder:text-secondary sm:text-sm"
+      />
+
+      {/* Left: attach */}
+      <div className="absolute bottom-[13px] left-4 flex items-end">
         <button
           type="button"
-          onClick={onSubmit}
-          disabled={disabled || !value.trim()}
-          className="w-9 h-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-full bg-black text-white flex items-center justify-center disabled:opacity-30 hover:bg-black/85 active:scale-95 transition-all duration-150 shrink-0 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
-          aria-label="Send"
+          onClick={() => textareaRef.current?.focus()}
+          aria-label="Add attachment"
+          className="rounded-full bg-pageBackground p-1.5 text-secondary transition-colors hover:bg-primary hover:text-white"
         >
-          <ArrowUp className="w-4 h-4" />
+          <Plus className="h-4 w-4" />
         </button>
+      </div>
+
+      {/* Right: mic when empty, send when there's text */}
+      <div className="absolute bottom-[13px] right-4 flex items-end">
+        {hasText ? (
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={disabled}
+            aria-label="Send"
+            className="rounded-full bg-primary p-1.5 text-white transition-all hover:bg-primary/90 active:scale-95 disabled:opacity-40"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label="Voice input"
+            title="Voice input"
+            className="rounded-full bg-pageBackground p-1.5 text-secondary transition-colors hover:bg-primary hover:text-white"
+          >
+            <Mic className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useId, useState } from "react";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -46,8 +46,9 @@ export const thinkingMarkdownComponents = {
 };
 
 export default function ThinkingBlock({ thinking, displaySegments, streaming, hasText }) {
-  // Default to expanded so the "Thought for Xs" reasoning shows without a click.
-  const [expanded, setExpanded] = useState(true);
+  // Collapsed by default: the resting state shows just the "Thought for Xs" row
+  // (matches the reference); the reasoning expands on click.
+  const [expanded, setExpanded] = useState(false);
   const [now, setNow] = useState(Date.now());
   const panelId = useId();
 
@@ -98,21 +99,23 @@ export default function ThinkingBlock({ thinking, displaySegments, streaming, ha
         onClick={() => hasBody && setExpanded((v) => !v)}
         aria-expanded={hasBody ? expanded : undefined}
         aria-controls={hasBody ? panelId : undefined}
-        className={`inline-flex items-center gap-1.5 text-xs text-secondary hover:text-blue transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${hasBody ? "cursor-pointer" : "cursor-default"}`}
+        className={`inline-flex items-center gap-1 rounded py-1 text-sm text-secondary transition-colors hover:text-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 ${hasBody ? "cursor-pointer" : "cursor-default"}`}
       >
-        {hasBody && (
-          <ChevronRight
-            aria-hidden="true"
-            className={`w-3 h-3 transition-transform duration-200 ${
-              expanded ? "rotate-90" : ""
-            }`}
-          />
-        )}
-        <Sparkles aria-hidden="true" className="w-3 h-3" />
-        <span>
+        <span className="mr-1 inline-flex h-6 w-6 items-center justify-center">
+          <Sparkles aria-hidden="true" className="h-4 w-4 text-secondary" />
+        </span>
+        <span className="truncate font-medium leading-none">
           {elapsedKnown ? `Thought for ${seconds}s` : "Thought"}
           {!hasBody && totalSteps > 1 ? ` · reasoned across ${totalSteps} steps` : ""}
         </span>
+        {hasBody && (
+          <ChevronDown
+            aria-hidden="true"
+            className={`size-4 transition-transform duration-300 ${
+              expanded ? "rotate-180" : ""
+            }`}
+          />
+        )}
       </button>
       {expanded && hasBody && (
         <div
