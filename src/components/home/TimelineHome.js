@@ -120,7 +120,7 @@ function ScoreCarousel({ cards }) {
     };
   }, [cards.length]);
   return (
-    <div className="mt-5">
+    <div className="mt-5 lg:max-w-[460px]">
       <div
         ref={ref}
         onScroll={onScroll}
@@ -439,25 +439,35 @@ export default function TimelineHome({
   ];
 
   return (
-    <div className="min-h-screen bg-white pb-32 lg:pb-16">
-      <div className="mx-auto w-full max-w-[520px]">
-        <Hero greeting={greeting} name={name} initials={safeInitials} scoreCards={scoreCards} />
+    <div className="min-h-screen bg-white pb-32 lg:bg-pageBackground lg:pb-16">
+      <div className="mx-auto w-full max-w-[520px] lg:max-w-[1040px] lg:px-6 lg:pt-6">
+        {/* Hero — full-bleed on mobile, a contained rounded banner on desktop. */}
+        <div className="lg:overflow-hidden lg:rounded-3xl lg:shadow-sm">
+          <Hero greeting={greeting} name={name} initials={safeInitials} scoreCards={scoreCards} />
+        </div>
 
-        <div className="relative z-10 -mt-6 rounded-t-[28px] bg-white px-4 pt-5">
+        {/* Sheet — overlaps the hero on mobile; a separate card on desktop. */}
+        <div className="relative z-10 -mt-6 rounded-t-[28px] bg-white px-4 pt-5 lg:mt-6 lg:rounded-[28px] lg:px-8 lg:pt-7 lg:shadow-sm">
           <Tabs active={activeTab} onChange={onTabChange} />
 
-          <div className="mt-5 flex flex-col gap-6">
-            <UpcomingCard upcoming={data.timeline.upcoming} processing={processing} />
+          {/* Feed — single column on mobile, primary + promo columns on desktop. */}
+          <div className="mt-5 lg:grid lg:grid-cols-12 lg:gap-8">
+            <div className="flex flex-col gap-6 lg:col-span-7">
+              <UpcomingCard upcoming={data.timeline.upcoming} processing={processing} />
 
-            {journey?.length > 0 && (
-              <div className="space-y-3">
-                {journey.map((m) => <MilestoneRow key={m.key} m={m} />)}
-              </div>
-            )}
+              {journey?.length > 0 && (
+                <div className="space-y-3">
+                  {journey.map((m) => <MilestoneRow key={m.key} m={m} />)}
+                </div>
+              )}
 
-            {data.onboarding && <OnboardingSection data={data.onboarding} />}
-            <LiveBetter data={data.liveBetter} />
-            <RxCard data={data.rx} />
+              {data.onboarding && <OnboardingSection data={data.onboarding} />}
+            </div>
+
+            <div className="mt-6 flex flex-col gap-6 lg:col-span-5 lg:mt-0">
+              <LiveBetter data={data.liveBetter} />
+              <RxCard data={data.rx} />
+            </div>
           </div>
         </div>
       </div>
