@@ -42,9 +42,10 @@ export const homeScheduledData = {
       },
       {
         image: "/assets/timeline/live-refer.png",
-        textLines: ["Refer your friends and", "earn $50"],
-        subtext: "Get $50 each",
-        action: { type: "button", label: "Earn $50" },
+        href: "/invite",
+        textLines: ["Refer your friends and", "earn ₹299"],
+        subtext: "Get ₹299 each",
+        action: { type: "button", label: "Earn ₹299" },
       },
     ],
   },

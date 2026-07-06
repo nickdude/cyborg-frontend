@@ -359,36 +359,41 @@ function LiveBetter({ data }) {
     <div>
       <h3 className="mb-4 text-[18px] font-semibold text-black">{data.title}</h3>
       <div className="space-y-4">
-        {data.cards.map((card, i) => (
-          <div key={i} className="relative h-[120px] overflow-hidden rounded-2xl">
-            <Image src={card.image} alt="" fill className="object-cover" />
-            <div className={`absolute inset-0 ${i === 0 ? "bg-black/30" : "bg-black/45"}`} />
-            <div
-              className={`relative z-10 flex h-full items-center gap-3 px-5 text-white ${
-                i === 0 ? "justify-end" : "justify-between"
-              }`}
-            >
-              <div className="min-w-0">
-                {card.text && (
-                  <p className="max-w-[62%] text-[15px] font-semibold leading-snug">{card.text}</p>
+        {data.cards.map((card, i) => {
+          const inner = (
+            <>
+              <Image src={card.image} alt="" fill className="object-cover" />
+              <div className={`absolute inset-0 ${i === 0 ? "bg-black/30" : "bg-black/45"}`} />
+              <div
+                className={`relative z-10 flex h-full items-center gap-3 px-5 text-white ${
+                  i === 0 ? "justify-end" : "justify-between"
+                }`}
+              >
+                <div className="min-w-0">
+                  {card.text && (
+                    <p className="max-w-[62%] text-[15px] font-semibold leading-snug">{card.text}</p>
+                  )}
+                  {card.textLines?.map((line) => (
+                    <p key={line} className="text-[15px] font-semibold leading-snug">{line}</p>
+                  ))}
+                  {card.subtext && <p className="mt-1 text-[12px] text-white/90">{card.subtext}</p>}
+                </div>
+                {card.action?.type === "chevron" && <ChevronRight className="h-6 w-6 shrink-0 text-white/85" />}
+                {card.action?.type === "button" && (
+                  <span className="shrink-0 rounded-lg bg-white px-4 py-2 text-[14px] font-semibold text-black">
+                    {card.action.label}
+                  </span>
                 )}
-                {card.textLines?.map((line) => (
-                  <p key={line} className="text-[15px] font-semibold leading-snug">{line}</p>
-                ))}
-                {card.subtext && <p className="mt-1 text-[12px] text-white/90">{card.subtext}</p>}
               </div>
-              {card.action?.type === "chevron" && <ChevronRight className="h-6 w-6 shrink-0 text-white/85" />}
-              {card.action?.type === "button" && (
-                <button
-                  type="button"
-                  className="shrink-0 rounded-lg bg-white px-4 py-2 text-[14px] font-semibold text-black transition hover:bg-white/90"
-                >
-                  {card.action.label}
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+            </>
+          );
+          const cls = "relative block h-[120px] overflow-hidden rounded-2xl transition hover:brightness-105";
+          return card.href ? (
+            <Link key={i} href={card.href} className={cls}>{inner}</Link>
+          ) : (
+            <div key={i} className={cls}>{inner}</div>
+          );
+        })}
       </div>
     </div>
   );

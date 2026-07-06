@@ -328,23 +328,23 @@ export default function Dashboard() {
     const planDate = plan?.generatedAt || plan?.createdAt || null;
 
     const journey = [
-        { key: "intake", tone: "purple", Icon: ClipboardList, title: "Health intake",
+        { key: "intake", tone: "purple", Icon: ClipboardList, title: "Health intake", img: "/assets/timeline/intake.jpg",
           date: user?.createdAt || null, href: "/onboarding",
           status: user?.onboardingCompleted ? "complete" : "active",
           note: user?.onboardingCompleted ? "Complete" : "Answer a few questions" },
-        { key: "blood", tone: "red", Icon: Droplet, title: "Blood Panel",
+        { key: "blood", tone: "red", Icon: Droplet, title: "Blood Panel", img: "/assets/timeline/custom-panel.png",
           date: firstReportDate, href: "/data?tab=records",
           status: hasAnyReport ? "complete" : "active",
           note: hasAnyReport ? "Complete" : "Upload your first panel" },
-        { key: "plan", tone: "purple", Icon: FileText, title: "Your Action Plan",
+        { key: "plan", tone: "purple", Icon: FileText, title: "Your Action Plan", img: "/assets/timeline/roadmap.png",
           date: planDate, href: "/protocol",
           status: planReady ? "active" : "locked",
           note: planReady ? "Tap to open" : "Unlocks after your labs" },
-        { key: "review", tone: "blue", Icon: Stethoscope, title: "1-1 Advisory call",
+        { key: "review", tone: "blue", Icon: Stethoscope, title: "1-1 Advisory call", img: "/assets/timeline/advisory.png",
           date: planReady && planDate ? addDaysISO(planDate, 7) : null, href: "/consults",
           status: planReady ? "upcoming" : "locked",
           note: "Review your results with a clinician" },
-        { key: "retest", tone: "green", Icon: RefreshCw, title: "90-day re-test",
+        { key: "retest", tone: "green", Icon: RefreshCw, title: "90-day re-test", img: "/assets/timeline/retest.jpg",
           date: lastReportDate ? addDaysISO(lastReportDate, 90) : null, href: "/data",
           status: "locked", note: "Track your progress" },
     ];
