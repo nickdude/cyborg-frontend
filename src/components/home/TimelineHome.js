@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Lock, ChevronRight, Check, DollarSign, CreditCard, Activity,
   ShieldCheck, Watch, ScanFace, ClipboardList,
@@ -41,7 +41,7 @@ function Dashes() {
 function ScoreCard({ card }) {
   const awaiting = !card.ready;
   return (
-    <div className="relative flex min-h-[168px] flex-col rounded-2xl bg-white/12 p-4 ring-1 ring-white/15 backdrop-blur-md">
+    <div className="relative flex min-h-[192px] flex-col rounded-lg bg-white/25 p-4">
       <div className="flex items-start justify-between">
         <p className="text-[14px] font-medium text-white/90">{card.title}</p>
         {awaiting && <Lock className="h-4 w-4 text-white/70" />}
@@ -93,6 +93,32 @@ function ScoreCarousel({ cards }) {
     const el = ref.current;
     if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
   };
+
+  // Auto-advance: gently swipe to the next card on a timer (looping). Reads the
+  // current index from scroll position so a manual swipe isn't fought. Honors
+  // reduced-motion and pauses while the user is touching the strip.
+  useEffect(() => {
+    if (cards.length < 2) return undefined;
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return undefined;
+    const el = ref.current;
+    let paused = false;
+    const pause = () => { paused = true; };
+    const resume = () => { paused = false; };
+    el?.addEventListener("pointerdown", pause);
+    el?.addEventListener("pointerup", resume);
+    el?.addEventListener("pointercancel", resume);
+    const id = setInterval(() => {
+      if (paused || !el) return;
+      const cur = Math.round(el.scrollLeft / el.clientWidth);
+      el.scrollTo({ left: ((cur + 1) % cards.length) * el.clientWidth, behavior: "smooth" });
+    }, 4500);
+    return () => {
+      clearInterval(id);
+      el?.removeEventListener("pointerdown", pause);
+      el?.removeEventListener("pointerup", resume);
+      el?.removeEventListener("pointercancel", resume);
+    };
+  }, [cards.length]);
   return (
     <div className="mt-5">
       <div
