@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import Cookie from "js-cookie";
 import {
-    ArrowUpRight, ChevronRight, Check, Lock, FileText, Watch, Sparkles, Apple,
+    ArrowUpRight, ChevronRight, Check, Lock, FileText, Watch, Sparkles,
     Flame, Leaf, Wheat, Beef, Droplet, Candy, CircleCheck, MessageSquareWarning,
 } from "lucide-react";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
@@ -218,6 +218,8 @@ export default function DigitalTwinHome(props) {
     const contributing = [...bms]
         .sort((a, b) => bandPosition(b) - bandPosition(a))
         .slice(0, 3);
+    // Report-dependent sections stay graceful until real results exist.
+    const hasResults = (biomarkerSummary?.total || 0) > 0 || bms.length > 0;
 
     return (
         <div className="min-h-screen overflow-x-hidden bg-pageBackground font-inter pb-36 lg:pb-16">
@@ -245,15 +247,15 @@ export default function DigitalTwinHome(props) {
                         <AppPromoCard />
                         <ActionItemsCard />
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-5">
                             <GaugeCard
-                                href="/data" title="Score" bg="/assets/data/score.jpg"
+                                href="/data" title="Score" bg="/assets/twin/score-bg.webp"
                                 fraction={score != null ? Math.min(1, score / 100) : 0}
                                 ready={score != null} big={score != null ? Math.round(score) : "—"} sub="out of 100"
-                                footnote={score != null ? "Last test was 1 month ago" : "Awaiting lab results"}
+                                footnote={score != null ? "Last test was 1 month ago" : "Upload a report to see your score"}
                             />
                             <GaugeCard
-                                href="/data" title="Biological age" bg="/assets/data/bioage.jpg"
+                                href="/data" title="Biological age" bg="/assets/twin/bioage-bg.webp"
                                 fraction={bioAgeFraction(bioAge, chronoAge)}
                                 ready={bioAge != null} big={bioAge != null ? bioAge.toFixed(1) : "—"} sub="years old"
                                 footnote={bioAgeFootnote(bioAge, chronoAge)}
@@ -262,7 +264,7 @@ export default function DigitalTwinHome(props) {
 
                         <ResultsReadyCard loading={reportsLoading} readyReport={readyReport} processingReport={processingReport} hasAnyReport={hasAnyReport} />
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-5">
                             <ActionPlanCard planReady={planReady} />
                             <TestRecordCard hasAnyReport={hasAnyReport} />
                         </div>
@@ -272,7 +274,7 @@ export default function DigitalTwinHome(props) {
                         {/* Twin inline on mobile only (single WebGL instance) */}
                         {!isDesktop && hero}
 
-                        <SummaryCard userName={userName} reportDate={reportDate} processing={processing} plan={plan} />
+                        <SummaryCard userName={userName} reportDate={reportDate} processing={processing} plan={plan} hasResults={hasResults} />
                         <BiomarkersCard summary={biomarkerSummary} />
 
                         {/* Notable shifts — no delta backend yet → honest empty state */}
@@ -322,7 +324,7 @@ function bioAgeFraction(bioAge, chronoAge) {
     return Math.max(0.06, Math.min(0.94, (delta + 5) / 10));
 }
 function bioAgeFootnote(bioAge, chronoAge) {
-    if (bioAge == null) return "Awaiting lab results";
+    if (bioAge == null) return "Upload a report to see your biological age";
     if (chronoAge == null) return "PhenoAge estimate";
     const d = chronoAge - bioAge;
     return d >= 0 ? `You're ${d.toFixed(1)} years younger` : `You're ${Math.abs(d).toFixed(1)} years older`;
@@ -404,20 +406,17 @@ function TwinHero({ firstName, sex, router, highlights }) {
 
 function AppPromoCard() {
     return (
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-400 via-orange-500 to-orange-700 p-6 text-white">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/mobileappgirl.png" alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-right" onError={(e) => e.currentTarget.remove()} />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
-            <div className="relative z-10 max-w-[65%]">
-                <h3 className="text-[22px] font-semibold leading-tight tracking-tight">Launching early August</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/90">All your data in your pocket, sync wearables and text Cyborg AI anytime.</p>
-                <span className="mt-4 inline-flex items-center gap-2 rounded-lg bg-black px-3.5 py-2 text-white">
-                    <Apple className="h-5 w-5" />
-                    <span className="text-left leading-none">
-                        <span className="block text-[9px] text-white/70">Download on the</span>
-                        <span className="block text-[13px] font-semibold">App Store</span>
-                    </span>
-                </span>
+        <div className="relative overflow-hidden rounded-3xl bg-[#d9541a] text-white">
+            {/* Pin to the artwork's aspect ratio so the phone shows fully (no zoom crop). */}
+            <div className="relative aspect-[326/150] w-full lg:aspect-[16/5]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/assets/twin/promo-bg.webp" alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-left" onError={(e) => e.currentTarget.remove()} />
+                <div className="absolute inset-y-0 right-0 flex w-[56%] flex-col justify-center px-4 lg:w-[52%] lg:px-6">
+                    <h3 className="text-[18px] font-semibold leading-tight tracking-tight lg:text-[26px]">Launching early August</h3>
+                    <p className="mt-1.5 text-right text-[12px] leading-snug text-white/90 lg:text-[14px]">All your data in your pocket, sync wearables and text Cyborg AI anytime.</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/assets/twin/app-store.webp" alt="Download on the App Store" className="mt-3 h-9 w-auto self-center lg:mt-4 lg:h-11" onError={(e) => e.currentTarget.remove()} />
+                </div>
             </div>
         </div>
     );
@@ -432,7 +431,7 @@ function ActionItemsCard() {
             <Link href="/settings?tab=integrations" className="group mt-4 flex items-center gap-4 border-t border-borderColor pt-4">
                 <span className="grid h-10 w-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-pageBackground">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/assets/wearables.jpg" alt="" className="h-9 w-11 object-contain" onError={(e) => { e.currentTarget.replaceWith(Object.assign(document.createElement("span"), { textContent: "⌚" })); }} />
+                    <img src="/assets/wearables.webp" alt="" className="h-9 w-11 object-contain" onError={(e) => { e.currentTarget.replaceWith(Object.assign(document.createElement("span"), { textContent: "⌚" })); }} />
                 </span>
                 <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-blue">Connect your wearables</p>
@@ -454,8 +453,9 @@ function ResultsReadyCard({ loading, readyReport, processingReport, hasAnyReport
     else { title = "Upload your lab report"; sub = "Unlock your biomarker breakdown"; }
     return (
         <Link href="/data" className={`group flex items-center gap-4 rounded-3xl border-2 bg-white p-4 transition hover:brightness-[0.99] ${ring}`}>
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-orange-50">
-                <Image src="/assets/black-icons/vial.svg" alt="" width={22} height={22} className="opacity-80" />
+            <span className="grid h-12 w-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-orange-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/assets/twin/vials.webp" alt="" className="h-10 w-12 object-contain" onError={(e) => e.currentTarget.remove()} />
             </span>
             <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-semibold text-blue">{title}</p>
@@ -470,11 +470,17 @@ function ResultsReadyCard({ loading, readyReport, processingReport, hasAnyReport
 
 function ActionPlanCard({ planReady }) {
     return (
-        <Link href="/protocol" className={`group relative flex min-h-[190px] flex-col overflow-hidden ${CARD} p-5 transition hover:border-blue/20`}>
-            <p className="text-[16px] font-semibold text-blue">Action plan</p>
-            {!planReady && <p className="mt-1 text-[12px] text-secondary">Unlocks after your labs</p>}
-            <div className="relative mt-auto h-[110px] w-full">
-                <Image src="/assets/goal-theme-1.png" alt="" fill className="object-contain object-bottom" />
+        <Link href="/protocol" className="group relative flex min-h-[196px] flex-col overflow-hidden rounded-3xl border border-borderColor bg-white transition hover:border-blue/20">
+            <div className="p-5">
+                <p className="text-[16px] font-semibold text-blue">Action plan</p>
+                {!planReady && <p className="mt-1 text-[12px] text-secondary">Unlocks after your labs</p>}
+            </div>
+            {/* fanned cards pinned to the card's bottom edge */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[132px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/assets/twin/action-plan-1.webp" alt="" className="absolute bottom-3 left-1/2 h-[104px] w-[104px] -translate-x-[74%] -rotate-[10deg] rounded-2xl object-cover shadow-md" onError={(e) => e.currentTarget.remove()} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/assets/twin/action-plan-2.webp" alt="" className="absolute bottom-1 left-1/2 h-[112px] w-[112px] -translate-x-[26%] rotate-[4deg] rounded-2xl object-cover shadow-lg" onError={(e) => e.currentTarget.remove()} />
             </div>
         </Link>
     );
@@ -482,10 +488,14 @@ function ActionPlanCard({ planReady }) {
 
 function TestRecordCard() {
     return (
-        <Link href="/data?tab=records" className={`group relative flex min-h-[190px] flex-col overflow-hidden ${CARD} p-5 transition hover:border-blue/20`}>
-            <p className="text-[16px] font-semibold text-blue">Test record</p>
-            <div className="relative mt-auto h-[110px] w-full">
-                <Image src="/assets/preview/mobile-image-2.png" alt="" fill className="object-contain object-bottom" />
+        <Link href="/data?tab=records" className="group relative flex min-h-[196px] flex-col overflow-hidden rounded-3xl border border-borderColor bg-white transition hover:border-blue/20">
+            <div className="p-5">
+                <p className="text-[16px] font-semibold text-blue">Test record</p>
+            </div>
+            {/* lab papers centered, pinned to the card's bottom edge */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[132px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/assets/twin/test-record.webp" alt="" className="absolute bottom-0 left-1/2 h-[120px] w-auto max-w-[86%] -translate-x-1/2 object-contain" onError={(e) => e.currentTarget.remove()} />
             </div>
         </Link>
     );
@@ -495,8 +505,8 @@ function TestRecordCard() {
 
 function HelpUsKnowYouCard({ hasReports }) {
     const items = [
-        { key: "wearables", title: "Connect your wearables", done: false, href: "/settings?tab=integrations", Icon: Watch, img: "/assets/wearables.jpg" },
-        { key: "labs", title: "Lab reports uploaded", done: !!hasReports, href: "/data?tab=records", Icon: FileText },
+        { key: "wearables", title: "Connect your wearables", done: false, href: "/settings?tab=integrations", Icon: Watch, img: "/assets/wearables.webp" },
+        { key: "labs", title: "Lab reports uploaded", done: !!hasReports, href: "/data?tab=records", Icon: FileText, img: "/assets/twin/test-record.webp" },
         { key: "memory", title: "Import your AI memory", done: false, href: "/concierge", ai: true },
     ];
     const completed = items.filter((i) => i.done).length;
@@ -545,11 +555,13 @@ function HelpUsKnowYouCard({ hasReports }) {
 
 /* ── summary ────────────────────────────────────────────────────────────── */
 
-function SummaryCard({ userName, reportDate, processing, plan }) {
+function SummaryCard({ userName, reportDate, processing, plan, hasResults }) {
     const d = reportDate || plan?.updatedAt || null;
-    const updated = d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
-    const body = processing
-        ? `${userName}, we're still processing your data, but can already take a look into your first results.`
+    const updated = hasResults && d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null;
+    const body = !hasResults
+        ? (processing
+            ? `${userName}, we're still processing your data — your first results will appear here shortly.`
+            : "Upload a lab report to see your personalised health summary.")
         : `${userName}, here's a look at where your health stands today based on your latest results.`;
     return (
         <div className={`${CARD} p-5 lg:p-6`}>
@@ -568,6 +580,17 @@ function BiomarkersCard({ summary }) {
     const s = summary || { total: 0, optimal: 0, normal: 0, outOfRange: 0 };
     const total = s.total || 0;
     const seg = (n) => (total > 0 ? `${(n / total) * 100}%` : "0%");
+    if (!total) {
+        return (
+            <div className={`${CARD} p-5 lg:p-6`}>
+                <h3 className="text-base font-semibold tracking-tight text-blue">Biomarkers</h3>
+                <p className="mt-3 text-[14px] leading-relaxed text-secondary">Upload a lab report to unlock your biomarker breakdown.</p>
+                <Link href="/data?tab=records" className="mt-4 inline-flex items-center justify-center rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-900">
+                    Upload a report
+                </Link>
+            </div>
+        );
+    }
     const Stat = ({ n, label }) => (
         <div>
             <p className="text-[26px] font-semibold leading-none text-blue">{n ?? 0}</p>
@@ -637,11 +660,13 @@ function HigherPriorityGoalCard({ topGoal, biomarkers }) {
     const symptoms = PRIORITY_SYMPTOMS[organ] || PRIORITY_SYMPTOMS.default;
     const affected = flagged.slice(0, 2);
     return (
-        <div className="relative overflow-hidden rounded-3xl p-6 text-white">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#c0341f] via-[#a52d1c] to-[#6f1a10]" />
+        <div className="relative overflow-hidden rounded-3xl bg-orange-700 p-6 text-white">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/assets/data/score.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" onError={(e) => e.currentTarget.remove()} />
-            <div className="absolute inset-0 bg-black/25" />
+            <img src="/assets/twin/goal-bg.webp" alt="" className="absolute inset-0 h-full w-full object-cover brightness-[1.45] saturate-[1.15]" onError={(e) => e.currentTarget.remove()} />
+            {/* Keep the photo visible but brightened; a warm orange tint + a soft
+                warm-dark bottom scrim add the orange lift and keep text legible. */}
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-400/30 to-orange-600/45" />
+            <div className="absolute inset-0 bg-gradient-to-t from-orange-950/55 via-orange-950/10 to-transparent" />
             <div className="relative z-10">
                 <p className="text-[12px] text-white/75">Higher priority goals</p>
                 <h3 className="mt-1 text-[26px] font-semibold leading-[1.15] tracking-tight">{heading}</h3>
@@ -689,11 +714,40 @@ function localToday() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function protocolThumb(item) {
-    const name = String(item?.productName || "").toLowerCase();
-    if (/meal|eat|food|diet/.test(name)) return "/assets/product-2.png";
-    if (/routine|sleep|movement|stress/.test(name)) return "/assets/profile1.png";
-    return "/assets/sample-medicine.png";
+/* Match the /protocol page's item icon exactly: a pill-jar photo with a clean
+   supplement-bottle SVG fallback (same asset + look as ProtocolRow there). */
+const PILL_JAR_IMG = "/assets/protocol/pill-jar.jpg";
+const BOTTLE_ACCENTS = ["#3b82f6", "#14b8a6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6"];
+
+function SupplementBottle({ index = 0 }) {
+    const c = BOTTLE_ACCENTS[index % BOTTLE_ACCENTS.length];
+    return (
+        <svg viewBox="0 0 56 72" width="34" height="44" aria-hidden="true">
+            <rect x="18" y="3" width="20" height="11" rx="2.5" fill={c} />
+            <rect x="18" y="9.5" width="20" height="4" rx="1.5" fill="rgba(0,0,0,0.14)" />
+            <rect x="20.5" y="13" width="15" height="5" fill="#e6e6ea" />
+            <rect x="10" y="17" width="36" height="50" rx="7" fill="#f3f3f5" stroke="#e3e3e7" />
+            <rect x="13.5" y="21" width="5" height="42" rx="2.5" fill="#ffffff" fillOpacity="0.75" />
+            <rect x="14" y="31" width="28" height="27" rx="3" fill="#ffffff" stroke="#ededf1" />
+            <rect x="18" y="36" width="20" height="3" rx="1.5" fill={c} fillOpacity="0.85" />
+            <rect x="18" y="43" width="16" height="2.4" rx="1.2" fill="#cccccf" />
+            <rect x="18" y="48" width="18" height="2.4" rx="1.2" fill="#cccccf" />
+        </svg>
+    );
+}
+
+function ProtocolThumb({ item, index = 0 }) {
+    const [imgOk, setImgOk] = useState(true);
+    return (
+        <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-borderColor bg-white">
+            {imgOk ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={PILL_JAR_IMG} alt={item?.productName || ""} onError={() => setImgOk(false)} className="h-full w-full object-contain p-1" />
+            ) : (
+                <SupplementBottle index={index} />
+            )}
+        </span>
+    );
 }
 
 function ProtocolChecklist({ items, planReady }) {
@@ -745,9 +799,7 @@ function ProtocolChecklist({ items, planReady }) {
                                     <Check className="h-3.5 w-3.5" strokeWidth={3} />
                                 </button>
                                 <Link href="/protocol" className="group flex flex-1 items-center gap-3 rounded-2xl border border-borderColor bg-white p-2.5 transition hover:border-blue/20">
-                                    <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-pageBackground">
-                                        <Image src={protocolThumb(it)} alt="" fill className="object-contain p-1" />
-                                    </span>
+                                    <ProtocolThumb item={it} index={i} />
                                     <div className="min-w-0 flex-1">
                                         <p className="text-sm font-medium leading-snug text-blue">{it.productName}</p>
                                         {it.dosing && <p className="mt-0.5 truncate text-xs text-secondary">{it.dosing}</p>}
@@ -837,7 +889,7 @@ function LiveBetterCard() {
         <div className="flex flex-col gap-3">
             <h3 className="px-1 text-[17px] font-semibold tracking-tight text-blue">Live better, longer together</h3>
             <Link href="/invite" className="group relative flex min-h-[120px] items-center overflow-hidden rounded-3xl p-5 text-white">
-                <Image src="/assets/refer.png" alt="" fill className="absolute inset-0 object-cover" />
+                <Image src="/assets/family-insights.webp" alt="" fill className="absolute inset-0 object-cover" />
                 <div className="absolute inset-0 bg-black/40" />
                 <div className="relative z-10 flex w-full items-center justify-between gap-3">
                     <p className="max-w-[75%] text-[18px] font-semibold leading-snug">Review family health insights from your intake</p>
@@ -845,7 +897,7 @@ function LiveBetterCard() {
                 </div>
             </Link>
             <Link href="/invite" className="group relative flex min-h-[120px] items-center overflow-hidden rounded-3xl p-5 text-white">
-                <Image src="/assets/refer-friend.png" alt="" fill className="absolute inset-0 object-cover" />
+                <Image src="/assets/refer-earn.webp" alt="" fill className="absolute inset-0 object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-600/80 to-orange-500/40" />
                 <div className="relative z-10 flex w-full items-center justify-between gap-3">
                     <div>

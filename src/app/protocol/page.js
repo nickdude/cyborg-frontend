@@ -6,9 +6,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { goalsAPI, actionPlanAPI, userAPI } from "@/services/api";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
-import GoalDetail from "@/components/GoalDetail";
 import ProtocolIntro from "@/components/protocol/ProtocolIntro";
 import ActionPlan from "@/components/protocol/ActionPlan";
+import GoalStepCard from "@/components/protocol/GoalStepCard";
+import ConsiderAdding from "@/components/protocol/ConsiderAdding";
 import { supplementInfo } from "@/utils/supplementInfo";
 
 const TIMING_LABELS = {
@@ -229,80 +230,6 @@ function ProtocolItemModal({ item, onClose }) {
   );
 }
 
-/* Colored gradient goal card (superpower-style) for the Goals column. */
-const GOAL_GRADIENTS = [
-  "radial-gradient(125% 125% at 80% 12%, #8a5a2e 0%, #4a2c14 48%, #2a1709 100%)",
-  "radial-gradient(125% 125% at 80% 12%, #8c3527 0%, #48160e 48%, #280c07 100%)",
-  "radial-gradient(125% 125% at 75% 18%, #52799f 0%, #274c6f 48%, #102942 100%)",
-  "radial-gradient(125% 125% at 80% 12%, #7f2c3d 0%, #46161f 48%, #260c13 100%)",
-];
-function GoalGradientCard({ goal, index, onClick }) {
-  const grad = GOAL_GRADIENTS[index % GOAL_GRADIENTS.length];
-  const img = `/assets/goals/goal-${(index % 7) + 1}.png`;
-  const pr = String(goal.priority || "").toLowerCase();
-  const prLabel = pr === "high" ? "High priority" : pr === "medium" ? "Medium priority" : pr === "low" ? "Low priority" : null;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{ backgroundImage: grad }}
-      className="group relative flex min-h-[150px] w-full flex-col justify-end overflow-hidden rounded-2xl p-5 text-left shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition hover:brightness-[1.08] active:scale-[0.99] lg:min-h-[136px] lg:p-6"
-    >
-      {/* Mobile-only image background; desktop keeps the gradient above. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={img} alt="" className="absolute inset-0 h-full w-full object-cover object-center lg:hidden" onError={(e) => e.currentTarget.remove()} />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/5 lg:hidden" />
-      {prLabel && (
-        <span className="absolute right-4 top-4 z-10 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white/90 backdrop-blur-sm">
-          {prLabel}
-        </span>
-      )}
-      <div className="relative z-10">
-        <h3 className="max-w-[85%] text-[15px] font-semibold leading-snug text-white lg:text-[17px]">{goal.title}</h3>
-        <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-white/80">
-          How to solve this
-          <svg className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </span>
-      </div>
-    </button>
-  );
-}
-
-/* "General" tab — lifestyle / nutrition recommendations from the plan. */
-function GeneralRecommendations({ protocol }) {
-  const ls = protocol?.lifestyle || {};
-  const sections = [];
-  if (ls.sleep?.length) sections.push({ title: "Sleep", items: ls.sleep });
-  if (ls.exercise?.length) sections.push({ title: "Exercise", items: ls.exercise });
-  if (ls.stress?.length) sections.push({ title: "Stress", items: ls.stress });
-  if (protocol?.nutrition?.length) sections.push({ title: "Nutrition", items: protocol.nutrition });
-
-  if (!sections.length) {
-    return (
-      <div className="mt-7 rounded-3xl border border-borderColor bg-white p-10 text-center text-sm text-secondary">
-        General lifestyle recommendations will appear here once your plan is ready.
-      </div>
-    );
-  }
-  return (
-    <div className="mt-7 flex flex-col gap-4">
-      {sections.map((s) => (
-        <div key={s.title} className="rounded-2xl border border-borderColor bg-white p-5">
-          <h3 className="text-base font-semibold text-black">{s.title}</h3>
-          <ul className="mt-3 flex flex-col gap-2">
-            {s.items.map((it, i) => (
-              <li key={i} className="flex gap-2.5 text-sm leading-relaxed text-secondary">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
-                {it.text || it}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /* ── empty: no report uploaded yet — locked "awaiting results" layout ── */
 function NoActionPlan({ onUpload }) {
   return (
@@ -438,10 +365,9 @@ export default function Protocol() {
   const [noActionPlan, setNoActionPlan] = useState(false);
   const [introState, setIntroState] = useState("idle"); // idle | show | done
   const [retrying, setRetrying] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   const [mainTab, setMainTab] = useState("protocol"); // protocol | actionplan
-  const [protoTab, setProtoTab] = useState("products"); // products | general
-  const [selectedGoal, setSelectedGoal] = useState(null);
   const [openItem, setOpenItem] = useState(null);
   const [takenSet, setTakenSet] = useState(() => new Set());
 
@@ -466,7 +392,6 @@ export default function Protocol() {
   const status = plan?.status;
   const protocolItems = plan?.deduplicatedProtocol || [];
   const monitoredIssues = plan?.monitoredIssues || [];
-  const protocolData = plan?.protocol || null;
 
   const fetchPlan = useCallback(async ({ silent = false } = {}) => {
     try {
@@ -475,10 +400,16 @@ export default function Protocol() {
       const data = res?.data || res;
       setPlan(data || null);
       setNoActionPlan(false);
+      setLoadError(false);
     } catch (err) {
       if (err?.statusCode === 404 || err?.message?.includes("No action plan")) {
         setPlan(null);
         setNoActionPlan(true);
+        setLoadError(false);
+      } else if (!silent) {
+        // Transient error (500 / network / timeout) on a foreground load — show a
+        // retry state instead of a misleading "no protocol yet" empty dashboard.
+        setLoadError(true);
       }
     } finally {
       if (!silent) setLoading(false);
@@ -612,11 +543,6 @@ export default function Protocol() {
     );
   }
 
-  // Goal detail (from a Goals card)
-  if (selectedGoal) {
-    return <GoalDetail goal={selectedGoal} onBack={() => setSelectedGoal(null)} />;
-  }
-
   const handleRetry = async () => {
     setRetrying(true);
     try {
@@ -640,6 +566,23 @@ export default function Protocol() {
       <div className="mx-auto w-full max-w-[1240px] px-4 pt-6 lg:px-8 lg:pt-10">
         {loading && !plan && !noActionPlan ? (
           <div className="py-20 text-center text-sm text-secondary">Loading your protocol…</div>
+        ) : loadError && !plan ? (
+          <div className="mx-auto max-w-md py-20 text-center">
+            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-rose-50">
+              <svg className="h-6 w-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4M12 17h.01" /><circle cx="12" cy="12" r="9" /></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-black">Couldn&apos;t load your protocol</h2>
+            <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-secondary">
+              Something went wrong reaching our servers. Your data is safe — please try again.
+            </p>
+            <button
+              type="button"
+              onClick={() => { fetchPlan(); fetchGoals(); }}
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition hover:bg-gray-900"
+            >
+              Try again
+            </button>
+          </div>
         ) : noActionPlan ? (
           <NoActionPlan onUpload={() => router.push("/data?tab=records")} />
         ) : status === "generating" || status === "pending" ? (
@@ -698,91 +641,78 @@ export default function Protocol() {
                 <ActionPlan plan={plan} userName={firstName} />
               </div>
             ) : (
-              <div className="animate-fade-in grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-12">
-                {/* LEFT — Protocol (Products / General) */}
-                <div>
-                  <h1 className="font-inter text-3xl font-semibold text-black lg:text-4xl">Protocol</h1>
-                  <div className="mt-5 flex gap-2">
-                    {["products", "general"].map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setProtoTab(t)}
-                        className={`rounded-full px-4 py-1.5 text-sm font-medium capitalize transition ${
-                          protoTab === t ? "bg-black text-white" : "border border-borderColor bg-white text-secondary hover:text-black"
-                        }`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
+              <div className="animate-fade-in mx-auto w-full max-w-[760px]">
+                <section className="mb-stack-lg">
+                  <h1 className="font-headline-lg text-headline-lg text-on-surface">Protocol</h1>
+                </section>
 
-                  {protoTab === "products" ? (
-                    <>
-                      <h2 className="mt-7 font-inter text-xl font-semibold text-black lg:text-2xl">Today&apos;s plan</h2>
-                      {protocolItems.length === 0 ? (
-                        <div className="mt-4 rounded-3xl border border-borderColor bg-white p-10 text-center text-sm text-secondary">
-                          Your protocol items will appear here once your results are reviewed.
-                        </div>
-                      ) : (
-                        <>
-                          <p className="mt-1 text-sm text-secondary">Tap the circle as you take each one — tap the row for how &amp; why.</p>
-
-                          <div className="mt-4 overflow-hidden rounded-3xl border border-borderColor bg-white">
-                            {(() => {
-                              const remaining = protocolItems.filter((it) => !takenSet.has(it.productName));
-                              if (remaining.length === 0) {
-                                return (
-                                  <div className="p-10 text-center">
-                                    <p className="text-2xl">🎉</p>
-                                    <p className="mt-2 text-base font-semibold text-black">All done for today</p>
-                                    <p className="mt-1 text-sm text-secondary">Your plan refreshes tomorrow.</p>
-                                  </div>
-                                );
-                              }
-                              return (
-                                <div className="divide-y divide-borderColor">
-                                  {remaining.map((item, index) => (
-                                    <div key={item.productName + index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
-                                      <ProtocolRow
-                                        item={item}
-                                        index={index}
-                                        onOpen={setOpenItem}
-                                        taken={false}
-                                        onToggle={toggleItem}
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        </>
-                      )}
-                    </>
+                {/* (a) Today's actions — daily checklist (kept as-is) */}
+                <section className="mb-section-gap">
+                  <h2 className="mb-stack-md font-title-md text-title-md text-on-surface">Today&apos;s actions</h2>
+                  {protocolItems.length === 0 ? (
+                    <div className="rounded-xl bg-surface-container-lowest p-10 text-center font-body-md text-body-md text-on-surface-variant custom-shadow">
+                      Your protocol items will appear here once your results are reviewed.
+                    </div>
                   ) : (
-                    <GeneralRecommendations protocol={protocolData} />
+                    <>
+                      <p className="mb-stack-md font-body-md text-body-md text-on-surface-variant">Tap the circle as you take each one — tap the row for how &amp; why.</p>
+                      <div className="overflow-hidden rounded-xl bg-surface-container-lowest custom-shadow">
+                        {(() => {
+                          const remaining = protocolItems.filter((it) => !takenSet.has(it.productName));
+                          if (remaining.length === 0) {
+                            return (
+                              <div className="p-10 text-center">
+                                <p className="text-2xl">🎉</p>
+                                <p className="mt-2 font-title-md text-title-md text-on-surface">All done for today</p>
+                                <p className="mt-1 font-body-md text-body-md text-on-surface-variant">Your plan refreshes tomorrow.</p>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="divide-y divide-surface-container">
+                              {remaining.map((item, index) => (
+                                <div key={item.productName} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
+                                  <ProtocolRow
+                                    item={item}
+                                    index={index}
+                                    onOpen={setOpenItem}
+                                    taken={false}
+                                    onToggle={toggleItem}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </>
                   )}
-                </div>
+                </section>
 
-                {/* RIGHT — Goals (gradient cards) */}
-                <div>
-                  <h1 className="font-inter text-3xl font-semibold text-black lg:text-4xl">Goals</h1>
-                  <div className="mt-5 flex flex-col gap-3">
+                {/* (b) What we are working on — goals as numbered step cards */}
+                <section className="mb-section-gap">
+                  <h2 className="mb-stack-md font-title-md text-title-md text-on-surface">What we are working on</h2>
+                  <div className="space-y-gutter">
                     {goals.length === 0 ? (
-                      <div className="rounded-2xl border border-borderColor bg-white p-6 text-center">
-                        <h3 className="text-sm font-semibold text-black">No health goals yet</h3>
-                        <p className="mt-1 text-xs text-secondary">They unlock once your results are processed.</p>
+                      <div className="rounded-xl bg-surface-container-lowest p-8 text-center custom-shadow">
+                        <h3 className="font-title-md text-title-md text-on-surface">No health goals yet</h3>
+                        <p className="mt-1 font-body-md text-body-md text-on-surface-variant">They unlock once your results are processed.</p>
                       </div>
                     ) : (
-                      goals.map((goal, index) => (
-                        <div key={goal.goalId || index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.08}s both` }}>
-                          <GoalGradientCard goal={goal} index={index} onClick={() => setSelectedGoal(goal)} />
-                        </div>
-                      ))
+                      // Order highest-priority first so the numbered steps (1,2,3…) match priority.
+                      [...goals]
+                        .sort((a, b) => ({ High: 0, Medium: 1, Low: 2 }[a.priority] ?? 3) - ({ High: 0, Medium: 1, Low: 2 }[b.priority] ?? 3))
+                        .map((goal, index) => (
+                          <div key={goal.goalId || index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.06}s both` }}>
+                            <GoalStepCard goal={goal} index={index} onOpen={() => router.push(`/protocol/goals/${encodeURIComponent(goal.goalId)}`)} />
+                          </div>
+                        ))
                     )}
                   </div>
-                </div>
+                </section>
+
+                {/* (c) Consider adding — resolved add-to-cart recommendations */}
+                <ConsiderAdding plan={plan} />
               </div>
             )}
           </>

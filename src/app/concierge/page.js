@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, HeartPulse } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +39,8 @@ export default function ConciergePage() {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState("");
+  // Guards against re-seeding the same "Ask anything" query (effect re-runs / strict mode).
+  const seededQueryRef = useRef(null);
 
   useEffect(() => {
     loadChats();
@@ -48,8 +50,25 @@ export default function ConciergePage() {
     if (!chatsLoaded) return;
 
     const urlId = searchParams.get("id");
+    const seed = searchParams.get("q");
 
     const pickOrCreate = async () => {
+      // Seeded from the dashboard "Ask anything" box → always start a fresh chat
+      // and send the typed text as its first message.
+      if (seed && seed.trim()) {
+        if (seededQueryRef.current === seed) return;
+        seededQueryRef.current = seed;
+        try {
+          const id = await createChat();
+          setActive(id);
+          router.replace(`/concierge?id=${id}`);
+          sendMessage(id, seed.trim());
+        } catch (err) {
+          console.error("[concierge] failed to seed chat from query", err);
+        }
+        return;
+      }
+
       if (urlId && chats[urlId]) {
         if (activeChatId !== urlId) setActive(urlId);
         loadChat(urlId);
@@ -81,6 +100,7 @@ export default function ConciergePage() {
     setActive,
     loadChat,
     createChat,
+    sendMessage,
     router,
   ]);
 

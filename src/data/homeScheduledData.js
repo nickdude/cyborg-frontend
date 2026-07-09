@@ -29,19 +29,19 @@ export const homeScheduledData = {
     items: [
       { key: "insurance", icon: "ShieldCheck", image: "/assets/timeline/insurance.png", title: "Insurance", sub: "Get the most value from Cyborg", href: "/settings" },
       { key: "wearable", icon: "Watch", image: "/assets/timeline/wearable.png", title: "Wearable", sub: "Sync data from your health trackers", href: "/settings" },
-      { key: "identify", icon: "ScanFace", image: "/assets/timeline/identify.png", title: "Identify", sub: "Verify your identity to import past medical records", href: "/onboarding" },
+      { key: "identify", icon: "ScanFace", image: "/assets/timeline/identify.webp", title: "Identify", sub: "Verify your identity to import past medical records", href: "/onboarding" },
     ],
   },
   liveBetter: {
     title: "Live better, longer together",
     cards: [
       {
-        image: "/assets/timeline/live-family.png",
+        image: "/assets/family-insights.webp",
         text: "Review family health insights from your intake",
         action: { type: "chevron" },
       },
       {
-        image: "/assets/timeline/live-refer.png",
+        image: "/assets/refer-earn.webp",
         href: "/invite",
         textLines: ["Refer your friends and", "earn ₹299"],
         subtext: "Get ₹299 each",

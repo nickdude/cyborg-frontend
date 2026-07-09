@@ -3,10 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
+import { motion, useScroll, useTransform } from "motion/react";
 import {
   Lock, ChevronRight, Check, DollarSign, CreditCard, Activity,
   ShieldCheck, Watch, ScanFace, ClipboardList,
 } from "lucide-react";
+
+/* ─────────────────────── Upcoming-card scroll-collapse knobs ───────────────────────
+   As you scroll, the dark "Upcoming" card pins to the top of the screen, shrinks from
+   EXPANDED_H down to COLLAPSED_H over SHRINK_PX of scroll, holds briefly, then scrolls
+   up out of view — and every step reverses as you scroll back up. Tune to taste. */
+const EXPANDED_H = 260;   // full card height (px)
+const COLLAPSED_H = 64;   // collapsed notification-banner height (px)
+const SHRINK_PX = 150;    // scroll distance over which the card shrinks
+const LINGER_PX = 24;     // extra scroll it stays pinned + collapsed before leaving
+const clamp01 = (n) => (n < 0 ? 0 : n > 1 ? 1 : n);
 
 /* ─────────────────────────── Blood-draw vials icon ─────────────────────────── */
 function BloodVialsIcon({ className = "h-5 w-5" }) {
@@ -41,7 +52,7 @@ function Dashes() {
 function ScoreCard({ card }) {
   const awaiting = !card.ready;
   return (
-    <div className="relative flex min-h-[192px] flex-col rounded-lg bg-white/25 p-4">
+    <div className="relative flex min-h-[224px] flex-col rounded-lg bg-white/25 p-4">
       <div className="flex items-start justify-between">
         <p className="text-[14px] font-medium text-white/90">{card.title}</p>
         {awaiting && <Lock className="h-4 w-4 text-white/70" />}
@@ -152,7 +163,7 @@ function Hero({ greeting, name, initials, scoreCards }) {
   return (
     <section className="relative isolate overflow-hidden bg-[#371A80] text-white">
       <Image
-        src="/assets/timeline/hero.png"
+        src="/assets/timeline/hero.webp"
         alt=""
         fill
         priority
@@ -162,7 +173,7 @@ function Hero({ greeting, name, initials, scoreCards }) {
           tints the photo to the same hue and keeps the white text legible. */}
       <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#371A80]/40 via-[#371A80]/15 to-[#371A80]/65" />
 
-      <div className="px-5 pb-14 pt-9">
+      <div className="px-5 pb-20 pt-14">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[24px] font-bold leading-tight tracking-tight">
@@ -212,9 +223,10 @@ function Tabs({ active, onChange }) {
 }
 
 /* ═════════════════════════════ Upcoming ═════════════════════════════ */
-function UpcomingCard({ upcoming, processing }) {
+// Expanded state — the original "Upcoming" title + 2-week calendar dot grid (look unchanged).
+function UpcomingExpanded({ upcoming, processing }) {
   return (
-    <div className="flex min-h-[260px] flex-col rounded-[20px] bg-[#1b1b1d] p-5 text-white">
+    <div className="flex min-h-[260px] flex-col p-5">
       <h3 className="text-[20px] font-bold">{upcoming.title}</h3>
       <p className="mt-0.5 text-[14px] text-white/45">
         {processing ? "Results processing — check back soon" : upcoming.subtitle}
@@ -244,6 +256,114 @@ function UpcomingCard({ upcoming, processing }) {
         ))}
       </div>
     </div>
+  );
+}
+
+// Collapsed state — a slim black notification banner summarising the next upcoming event.
+function UpcomingCompact({ upcoming, processing, nextEvent }) {
+  const Icon = nextEvent?.Icon || ClipboardList;
+  const d = nextEvent?.date ? fmtDate(nextEvent.date) : null;
+  const line1 = `${upcoming.title}${d ? ` • ${d.mon} ${d.day}` : ""}`;
+  const line2 = processing ? "Results processing" : nextEvent?.title || upcoming.subtitle;
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-white">
+        {nextEvent?.img ? (
+          <img src={nextEvent.img} alt="" className="h-full w-full object-cover" onError={(e) => { e.currentTarget.remove(); }} />
+        ) : (
+          <Icon className="h-[18px] w-[18px] text-[#1b1b1d]" />
+        )}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-white/50">{line1}</p>
+        <p className="truncate text-[15px] font-semibold text-white">{line2}</p>
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-white/40" />
+    </div>
+  );
+}
+
+// The scroll-collapsing card. It's `position: sticky` so it pins to the top of the
+// screen; as you scroll past its pin point the height springs from EXPANDED_H → COLLAPSED_H
+// (expanded content cross-fades out, the compact banner cross-fades in), then a raw-scroll
+// `y` slides the collapsed banner up out of view. Everything reverses on scroll-up.
+// Enabled on mobile only — desktop keeps a plain static card. Must sit as a direct child
+// of a `relative` column so the absolute sentinel measures its true top.
+function UpcomingCard({ upcoming, processing, nextEvent }) {
+  const sentinelRef = useRef(null);
+  const [enabled, setEnabled] = useState(false);
+  const [pinTop, setPinTop] = useState(Infinity); // scrollY at which the card pins (Infinity = no collapse yet)
+
+  // Scope the effect to mobile widths (< lg / 1100px). Desktop renders the static card.
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1099px)");
+    const sync = () => setEnabled(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  // Measure the card's natural document-top = the scrollY at which its top hits the viewport top.
+  useEffect(() => {
+    if (!enabled) { setPinTop(Infinity); return undefined; }
+    const measure = () => {
+      const el = sentinelRef.current;
+      if (el) setPinTop(el.getBoundingClientRect().top + window.scrollY);
+    };
+    measure();
+    const raf = requestAnimationFrame(measure);
+    window.addEventListener("resize", measure);
+    window.addEventListener("load", measure);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("load", measure);
+    };
+  }, [enabled]);
+
+  const { scrollY } = useScroll();
+
+  // Height + content cross-fade map 1:1 to scroll, so the card shrinks exactly under your
+  // finger (no lag). The cross-fade swaps expanded content out and the banner in mid-shrink.
+  const height = useTransform(scrollY, (v) => EXPANDED_H - (EXPANDED_H - COLLAPSED_H) * clamp01((v - pinTop) / SHRINK_PX));
+  const expandedOpacity = useTransform(scrollY, (v) => 1 - clamp01((v - pinTop) / (SHRINK_PX * 0.5)));
+  const compactOpacity = useTransform(scrollY, (v) => clamp01((v - (pinTop + SHRINK_PX * 0.45)) / (SHRINK_PX * 0.55)));
+  // Once collapsed, slide the banner up out of view (also 1:1 with scroll).
+  const y = useTransform(scrollY, (v) => {
+    const over = v - (pinTop + SHRINK_PX + LINGER_PX);
+    return over > 0 ? -Math.min(over, COLLAPSED_H + 24) : 0;
+  });
+
+  // Desktop: plain static card, no scroll behaviour.
+  if (!enabled) {
+    return (
+      <div className="overflow-hidden rounded-[20px] bg-[#1b1b1d] text-white">
+        <UpcomingExpanded upcoming={upcoming} processing={processing} />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Out-of-flow marker: measures the card's true top without adding layout height. */}
+      <div ref={sentinelRef} aria-hidden className="pointer-events-none absolute left-0 top-0 h-0 w-0" />
+      <motion.div
+        style={{ height, y }}
+        className="sticky top-0 z-20 overflow-hidden rounded-[20px] bg-[#1b1b1d] text-white shadow-lg shadow-black/10"
+      >
+        <motion.div style={{ opacity: expandedOpacity }}>
+          <UpcomingExpanded upcoming={upcoming} processing={processing} />
+        </motion.div>
+        <motion.div
+          style={{ opacity: compactOpacity }}
+          className="pointer-events-none absolute inset-0 flex items-center"
+        >
+          <div className="w-full">
+            <UpcomingCompact upcoming={upcoming} processing={processing} nextEvent={nextEvent} />
+          </div>
+        </motion.div>
+      </motion.div>
+    </>
   );
 }
 
@@ -443,8 +563,19 @@ export default function TimelineHome({
     { key: "plan", type: "plan", title: "Your Action Plan", ready: !!planReady, href: actionPlanHref },
   ];
 
+  // The next actionable milestone → summarised in the collapsed banner.
+  const nextEvent =
+    journey?.find((m) => m.status === "active" || m.status === "upcoming") ||
+    journey?.find((m) => m.status && m.status !== "complete" && m.status !== "locked") ||
+    journey?.find((m) => m.status !== "complete") ||
+    journey?.[0] ||
+    null;
+
   return (
-    <div className="min-h-screen bg-white pb-32 lg:bg-pageBackground lg:pb-16">
+    // overflow-anchor:none — the Upcoming card animates its layout height on scroll;
+    // without this the browser's scroll-anchoring readjusts scrollY every frame and the
+    // collapse fights the scroll (feedback loop / jump).
+    <div className="min-h-screen bg-white pb-32 [overflow-anchor:none] lg:bg-pageBackground lg:pb-16">
       <div className="mx-auto w-full max-w-[520px] lg:max-w-[1040px] lg:px-6 lg:pt-6">
         {/* Hero — full-bleed on mobile, a contained rounded banner on desktop. */}
         <div className="lg:overflow-hidden lg:rounded-3xl lg:shadow-sm">
@@ -455,10 +586,15 @@ export default function TimelineHome({
         <div className="relative z-10 -mt-6 rounded-t-[28px] bg-white px-4 pt-5 lg:mt-6 lg:rounded-[28px] lg:px-8 lg:pt-7 lg:shadow-sm">
           <Tabs active={activeTab} onChange={onTabChange} />
 
-          {/* Feed — single column on mobile, primary + promo columns on desktop. */}
+          {/* Feed — single column on mobile, primary + promo columns on desktop.
+              `relative` anchors the Upcoming card's measurement sentinel. */}
           <div className="mt-5 lg:grid lg:grid-cols-12 lg:gap-8">
-            <div className="flex flex-col gap-6 lg:col-span-7">
-              <UpcomingCard upcoming={data.timeline.upcoming} processing={processing} />
+            <div className="relative flex flex-col gap-6 lg:col-span-7">
+              <UpcomingCard
+                upcoming={data.timeline.upcoming}
+                processing={processing}
+                nextEvent={nextEvent}
+              />
 
               {journey?.length > 0 && (
                 <div className="space-y-3">

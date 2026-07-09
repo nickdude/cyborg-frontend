@@ -78,17 +78,20 @@ export function getCitations(content) {
   });
 }
 
-export default function Sources({ content }) {
-  const dedup = getCitations(content);
-  if (!dedup.length) return null;
-
+// Presentational citation-chip row. Reused by the concierge message action bar
+// (default Sources below) and by the Protocol goal-detail "Sources" card.
+// `sources` = [{ url, title }].
+export function SourceChips({ sources, label = "Sources" }) {
+  if (!Array.isArray(sources) || !sources.length) return null;
   return (
     <div className="mt-3">
-      <div className="text-[11px] uppercase tracking-wide text-secondary font-semibold mb-1.5">
-        Sources
-      </div>
+      {label && (
+        <div className="text-[11px] uppercase tracking-wide text-secondary font-semibold mb-1.5">
+          {label}
+        </div>
+      )}
       <div className="flex flex-wrap gap-1.5">
-        {dedup.map((c, i) => (
+        {sources.map((c, i) => (
           <a
             key={i}
             href={c.url}
@@ -104,4 +107,8 @@ export default function Sources({ content }) {
       </div>
     </div>
   );
+}
+
+export default function Sources({ content }) {
+  return <SourceChips sources={getCitations(content)} />;
 }
