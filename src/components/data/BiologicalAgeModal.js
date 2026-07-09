@@ -32,7 +32,7 @@ function TrendView({ bioAge }) {
 function ScoreCardView({ bioAge, chronoAge, delta }) {
   return (
     <div className="mt-5 grid place-items-center rounded-2xl border border-borderColor bg-pageBackground/40 p-7 text-center">
-      <p className="text-[46px] font-semibold leading-none text-blue">{bioAge != null ? Number(bioAge).toFixed(1) : "—"}</p>
+      <p className="text-[46px] font-semibold leading-none text-blue">{bioAge != null ? Math.round(bioAge) : "—"}</p>
       <p className="mt-2 text-sm text-secondary">biological age{chronoAge != null ? ` · vs ${chronoAge} actual` : ""}</p>
       {delta != null && (
         <p className={`mt-2 text-sm font-medium ${delta >= 0 ? "text-biomarkerOptimal" : "text-biomarkerOutOfRange"}`}>

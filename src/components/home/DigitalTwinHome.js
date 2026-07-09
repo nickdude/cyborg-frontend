@@ -257,7 +257,7 @@ export default function DigitalTwinHome(props) {
                             <GaugeCard
                                 href="/data" title="Biological age" bg="/assets/twin/bioage-bg.webp"
                                 fraction={bioAgeFraction(bioAge, chronoAge)}
-                                ready={bioAge != null} big={bioAge != null ? bioAge.toFixed(1) : "—"} sub="years old"
+                                ready={bioAge != null} big={bioAge != null ? String(Math.round(bioAge)) : "—"} sub="years old"
                                 footnote={bioAgeFootnote(bioAge, chronoAge)}
                             />
                         </div>

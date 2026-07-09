@@ -117,7 +117,7 @@ export default function ScoreDetailModal({ open, initialTab = "score", onClose, 
             <BigCard
               variant="bioage"
               title="Biological Age"
-              value={bioAgeVal != null ? Number(bioAgeVal).toFixed(1) : null}
+              value={bioAgeVal != null ? Math.round(bioAgeVal) : null}
               name={name}
               desc={
                 bioAgeVal != null ? (
