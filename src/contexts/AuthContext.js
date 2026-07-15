@@ -2,6 +2,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from "react";
 import Cookie from "js-cookie";
+import { useConciergeStore } from "@/stores/concierge";
 
 const AuthContext = createContext();
 
@@ -39,6 +40,13 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     Cookie.remove("authToken");
     localStorage.removeItem("user");
+    // Wipe in-memory AI chat state so the next user can't see the previous
+    // user's private conversations on a shared device.
+    try {
+      useConciergeStore.getState().reset();
+    } catch {
+      /* store may not be initialised (e.g. logout before any chat use) */
+    }
   };
 
   const updateUser = (userData) => {
