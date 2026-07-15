@@ -108,10 +108,15 @@ function Register() {
   const searchParams = useSearchParams();
   const { login, user, token } = useAuth();
 
-  // Read referral code from URL (?ref=DR-XXXXXX)
+  // Read a DOCTOR referral code from the URL (?ref=DR-XXXXXX). Friend-invite
+  // links use ?ref=<userId> (a Mongo id, not a doctor code) — treating those as
+  // a doctor code made the backend reject the signup with "Invalid doctor
+  // referral code". Only accept the DR- format here; a friend referral is
+  // ignored (there is no user-referral credit program on the backend yet) so it
+  // never blocks registration.
   useEffect(() => {
     const ref = searchParams.get("ref");
-    if (ref) setReferralCode(ref.toUpperCase());
+    if (ref && /^DR-/i.test(ref)) setReferralCode(ref.toUpperCase());
   }, [searchParams]);
 
   // A referral code means the user is being onboarded as a patient of that

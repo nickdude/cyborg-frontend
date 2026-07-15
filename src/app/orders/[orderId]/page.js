@@ -67,6 +67,13 @@ export default function OrderDetailPage() {
     setError("");
     try {
       const res = await checkoutAPI.retry(orderId);
+      // The backend may detect the earlier attempt was actually paid (money taken
+      // but our first verify failed) and reconcile it — no re-charge needed.
+      if (res.data?.alreadyPaid || res.data?.order?.paymentStatus === "success") {
+        await load();
+        setBusy(false);
+        return;
+      }
       const p = res.data.payment;
       const ok = await loadRazorpay();
       if (!ok || !window.Razorpay) { setError("Payment gateway failed to load."); setBusy(false); return; }

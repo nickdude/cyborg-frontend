@@ -175,19 +175,19 @@ function HeroSection({ userName, plan, healthReport }) {
             {bioAge?.delta != null && (
               <span
                 className={`text-xs font-semibold px-2 py-0.5 rounded-full mb-1 ${
-                  bioAge.delta <= 0
+                  bioAge.delta >= 0
                     ? "bg-emerald-100 text-emerald-700"
                     : "bg-red-100 text-red-700"
                 }`}
               >
-                {bioAge.delta <= 0 ? "-" : "+"}
+                {bioAge.delta >= 0 ? "-" : "+"}
                 {Math.abs(bioAge.delta).toFixed(1)}y
               </span>
             )}
           </div>
           {bioAge?.delta != null && (
             <p className="text-xs text-gray-500 mt-1.5">
-              {bioAge.delta <= 0 ? "Younger than actual" : "Older than actual"}
+              {bioAge.delta >= 0 ? "Younger than actual" : "Older than actual"}
             </p>
           )}
         </div>
