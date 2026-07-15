@@ -1,3 +1,5 @@
+const defaultColors = require("tailwindcss/colors");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -23,10 +25,14 @@ module.exports = {
         primary: "#541D7A",
         secondary: "#71717B",
         tertiary: "#D8E0EE",
-        blue: "#1F2937",
+        // Keep the app's custom `blue`/`gray` shades as the bare token (DEFAULT)
+        // while RESTORING Tailwind's full numbered scales. Flattening these to a
+        // single string previously deleted the default blue-*/gray-* scales, so
+        // ~600 `gray-500`/`blue-600`-style classes across the app produced no CSS.
+        blue: { ...defaultColors.blue, DEFAULT: "#1F2937" },
         ink: "#1F2937",
         lightGray: "#D8D8D8",
-        gray: "#7D7D7D",
+        gray: { ...defaultColors.gray, DEFAULT: "#7D7D7D" },
         brandGray: "#7D7D7D",
         pageBackground: "#F2F2F2",
         borderColor: "#E6E6E8",
