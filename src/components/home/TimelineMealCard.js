@@ -40,6 +40,11 @@ export default function TimelineMealCard({ entry, onClick }) {
               <polyline points="12 6 12 12 16 14" />
             </svg>
             <span className="text-[14px] font-medium leading-5 text-black">{time}</span>
+            {entry.data?.mealType && (
+              <span className="rounded-full bg-pageBackground px-2 py-0.5 text-[10px] font-medium capitalize text-secondary">
+                {entry.data.mealType}
+              </span>
+            )}
           </div>
           <Info size={16} className="text-[#717178]" />
         </div>

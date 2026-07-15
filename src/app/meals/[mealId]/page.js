@@ -79,6 +79,7 @@ export default function SavedMealPage() {
       const resp = await mealAPI.update(userId, mealId, {
         title: payload.title,
         consumedAt: payload.consumedAt,
+        mealType: payload.mealType,
       });
       if (resp?.data) setMeal(resp.data);
     } catch (err) {
@@ -131,6 +132,7 @@ export default function SavedMealPage() {
   const initialData = {
     title: meal.title || "",
     consumedAt: meal.consumedAt,
+    mealType: meal.mealType || null,
     totals: meal.totals,
     items: meal.items,
     imageKeys: meal.imageKeys,

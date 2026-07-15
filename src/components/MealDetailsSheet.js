@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { mealAPI } from "@/services/api";
+import { mergeAnalysis } from "@/utils/mealDraft";
 
 const MAX_FILES = 5;
 
@@ -123,22 +124,10 @@ export default function MealDetailsSheet({ open, initialFiles, onClose }) {
       // Pre-encode previews as data URLs for the review route.
       const dataUrls = await Promise.all(files.map((f) => fileToDataUrl(f)));
 
-      const draft = {
-        estimate: data.estimate,
-        imageKeys: data.imageKeys || [],
-        imagePreviews: dataUrls,
-        pickedAt: new Date().toISOString(),
-      };
-      try {
-        sessionStorage.setItem("cyborg.mealDraft", JSON.stringify(draft));
-      } catch (storageErr) {
-        // Quota exceeded or private-mode fallback: still navigate but without previews.
-        console.warn("[MealDetails] sessionStorage write failed:", storageErr?.message);
-        const lite = { ...draft, imagePreviews: [] };
-        sessionStorage.setItem("cyborg.mealDraft", JSON.stringify(lite));
-      }
+      // Merge-or-create: keeps items already picked in the Log Food hub
+      // (search/recents/quick-add) instead of clobbering them.
+      mergeAnalysis(data.estimate, data.imageKeys || [], dataUrls);
 
-      // Navigate to the review route (Task 5 will build that page).
       onClose?.();
       router.push("/meals/new");
     } catch (err) {
