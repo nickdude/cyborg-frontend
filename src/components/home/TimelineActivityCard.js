@@ -10,6 +10,7 @@ function formatTime(iso) {
 export default function TimelineActivityCard({ entry, onClick }) {
   const time = formatTime(entry.time);
   const duration = entry.data?.durationMinutes;
+  const kcal = entry.data?.caloriesBurned;
 
   return (
     <button
@@ -27,7 +28,9 @@ export default function TimelineActivityCard({ entry, onClick }) {
               <polyline points="12 6 12 12 16 14" />
             </svg>
             <span className="text-[14px] font-medium leading-5 text-black">
-              {time}{duration != null ? ` · ${duration} min` : ""}
+              {time}
+              {duration != null ? ` · ${duration} min` : ""}
+              {kcal != null && kcal > 0 ? ` · ~${Math.round(kcal)} kcal` : ""}
             </span>
           </div>
           <Info size={16} className="text-[#717178]" />
