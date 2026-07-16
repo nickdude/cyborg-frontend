@@ -190,6 +190,8 @@ export const mealAPI = {
     API.patch(`/api/users/${userId}/meals/${mealId}`, body),
   delete: (userId, mealId) =>
     API.delete(`/api/users/${userId}/meals/${mealId}`),
+  insights: (userId, mealId) =>
+    API.get(`/api/users/${userId}/meals/${mealId}/insights`),
 };
 
 // Notification endpoints
