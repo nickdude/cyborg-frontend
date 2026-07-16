@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import { ChevronLeft, Pencil, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -12,6 +13,10 @@ import {
   ReferenceLine,
   Tooltip,
 } from "recharts";
+import { mealAPI, foodScoreAPI } from "@/services/api";
+import { computeTotals } from "@/utils/mealDraft";
+import { MACRO_META } from "@/components/food/macros";
+import MealItemRow from "@/components/MealItemRow";
 
 function formatMealDateTime(iso) {
   const d = new Date(iso);
@@ -38,18 +43,15 @@ function buildGlucoseCurve(predictedPeakDelta = 26) {
   return { points, baseline, peak: baseline + predictedPeakDelta };
 }
 
-const MACROS = [
-  { key: "calories", label: "CALORIES", color: "#EF1360", unit: "" },
-  { key: "fiberG", label: "FIBER", color: "#34C759", unit: "g" },
-  { key: "carbsG", label: "CARBS", color: "#DE8E4E", unit: "g" },
-  { key: "proteinG", label: "PROTEIN", color: "#DD5F5F", unit: "g" },
-  { key: "fatG", label: "FAT", color: "#548ADE", unit: "g" },
-  { key: "sugarG", label: "SUGAR", color: "#4F378B", unit: "g" },
-];
-
-export default function FoodScoreScreen({ meal, score, userId, onBack }) {
+export default function FoodScoreScreen({ meal: initialMeal, score: initialScore, userId, onBack }) {
+  const router = useRouter();
   const [tab, setTab] = useState(0);
+  const [meal, setMeal] = useState(initialMeal);
+  const [score, setScore] = useState(initialScore);
+  const [removing, setRemoving] = useState(false);
+  const [error, setError] = useState("");
 
+  const mealId = meal?._id || meal?.id;
   const scoreVal = score?.score ?? score?.foodScore ?? null;
   const predicted = score?.predictedGlucosePeak;
   const predictedDelta = predicted?.deltaMgDl ?? 26;
@@ -61,8 +63,53 @@ export default function FoodScoreScreen({ meal, score, userId, onBack }) {
 
   const glucoseCurve = useMemo(() => buildGlucoseCurve(predictedDelta), [predictedDelta]);
 
+  /* Persist an items change, then re-score in the background. */
+  const applyItems = async (nextItems) => {
+    const prev = meal;
+    const nextTotals = computeTotals(nextItems);
+    setMeal({ ...meal, items: nextItems, totals: nextTotals }); // optimistic
+    setError("");
+    try {
+      await mealAPI.update(userId, mealId, { items: nextItems, totals: nextTotals });
+      foodScoreAPI
+        .compute(userId, mealId)
+        .then(() => foodScoreAPI.get(userId, mealId))
+        .then((r) => setScore(r?.data || r))
+        .catch(() => {}); // stale score is acceptable; totals are saved
+    } catch (err) {
+      setMeal(prev);
+      setError(err?.message || "Couldn't update the meal. Try again.");
+    }
+  };
+
+  const handleRemoveMeal = async () => {
+    if (removing) return;
+    if (!window.confirm("Remove this meal from your log?")) return;
+    setRemoving(true);
+    setError("");
+    try {
+      await mealAPI.delete(userId, mealId);
+      router.replace("/dashboard");
+    } catch (err) {
+      setError(err?.message || "Couldn't remove the meal. Try again.");
+      setRemoving(false);
+    }
+  };
+
+  const updateItem = (idx, next) =>
+    applyItems(items.map((it, i) => (i === idx ? next : it)));
+  const removeItem = (idx) => {
+    // A meal can't be empty — removing the last item removes the meal.
+    if (items.length <= 1) return handleRemoveMeal();
+    return applyItems(items.filter((_, i) => i !== idx));
+  };
+
+  const handleEditMeal = () => router.push(`/meals/${mealId}`);
+
+  const shared = { items, totals, consumedAt, mealTitle, updateItem, removeItem };
+
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md bg-[#F2F2F2] pb-20" style={{ fontFamily: "Inter, sans-serif" }}>
+    <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground pb-20 font-sans">
       {/* Back arrow */}
       <div className="px-5 pt-4 pb-2">
         <button type="button" onClick={onBack} aria-label="Go back">
@@ -72,115 +119,52 @@ export default function FoodScoreScreen({ meal, score, userId, onBack }) {
 
       {/* Tab bar */}
       <div className="flex items-center gap-6 px-5">
-        <button
-          type="button"
-          onClick={() => setTab(0)}
-          className={`text-[14px] leading-5 ${tab === 0 ? "font-semibold text-black" : "font-medium text-[#717178]"}`}
-        >
-          Food Score
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab(1)}
-          className={`text-[14px] leading-5 ${tab === 1 ? "font-semibold text-black" : "font-medium text-[#717178]"}`}
-        >
-          Predicted Glucose Peak
-        </button>
-      </div>
-
-      {tab === 0 ? (
-        <FoodScoreTab scoreVal={scoreVal} predictedDelta={predictedDelta} items={items} totals={totals} consumedAt={consumedAt} mealTitle={mealTitle} />
-      ) : (
-        <PredictedGlucoseTab scoreVal={scoreVal} predictedDelta={predictedDelta} glucoseCurve={glucoseCurve} items={items} totals={totals} consumedAt={consumedAt} mealTitle={mealTitle} />
-      )}
-    </div>
-  );
-}
-
-function FoodScoreTab({ scoreVal, predictedDelta, items, totals, consumedAt, mealTitle }) {
-  return (
-    <div className="px-5">
-      {/* Score hero with background image */}
-      <div className="relative mt-4 overflow-hidden rounded-lg" style={{ height: 160 }}>
-        <Image
-          src="/images/food-score/score-hero-bg.png"
-          alt=""
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <p className="text-white" style={{ fontFamily: "var(--font-arimo), Inter, sans-serif", fontWeight: 700, fontSize: 55 }}>
-            {scoreVal ?? "--"}
-          </p>
-          <p className="text-[15px] font-medium text-white">
-            +{Math.round(predictedDelta)} mg/dL
-          </p>
-        </div>
-      </div>
-
-      {/* Tab indicator dots */}
-      <div className="mt-3 flex items-center justify-center gap-2">
-        <div className="h-1 w-4 rounded-full bg-black" />
-        <div className="h-1 w-2 rounded-full bg-[#D9D9D9]" />
-      </div>
-
-      {/* Meal title + date */}
-      <p className="mt-3 text-center text-[16px] font-medium leading-6 text-black">
-        {mealTitle}
-      </p>
-      {consumedAt && (
-        <p className="mt-1 text-center text-[12px] font-medium leading-4 text-[#717178]">
-          {formatMealDateTime(consumedAt)}
-        </p>
-      )}
-
-      {/* YOUR MEAL */}
-      <p className="mt-5 text-[12px] font-semibold uppercase text-black">
-        Your Meal
-      </p>
-
-      {/* Food items */}
-      <div className="mt-2 space-y-2">
-        {items.map((item, idx) => (
-          <FoodItemCard key={idx} item={item} />
+        {["Food Score", "Predicted Glucose Peak"].map((label, idx) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => setTab(idx)}
+            className={`text-[14px] leading-5 ${tab === idx ? "font-semibold text-black" : "font-medium text-secondary"}`}
+          >
+            {label}
+          </button>
         ))}
       </div>
 
-      {/* MACRO SPLIT */}
-      <p className="mt-5 text-[12px] font-semibold uppercase text-black">
-        MACRO SPLIT
-      </p>
-      <MacroGrid totals={totals} />
+      <ScoreHero scoreVal={scoreVal} predictedDelta={predictedDelta} variant={tab} onSwitch={setTab} />
 
-      {/* Action links */}
-      <p className="mt-8 text-[16px] font-semibold leading-6 text-black">
-        Edit Meal
-      </p>
-      <p className="mt-3 text-[16px] font-semibold leading-6 text-[#FB2C36]">
-        Remove the Meal
-      </p>
+      {tab === 0 ? (
+        <FoodScoreTab
+          {...shared}
+          removing={removing}
+          onEditMeal={handleEditMeal}
+          onRemoveMeal={handleRemoveMeal}
+        />
+      ) : (
+        <PredictedGlucoseTab {...shared} glucoseCurve={glucoseCurve} />
+      )}
+
+      {error && <p className="mt-3 px-5 text-sm text-biomarkerOutOfRange">{error}</p>}
     </div>
   );
 }
 
-function PredictedGlucoseTab({ scoreVal, predictedDelta, glucoseCurve, items, totals, consumedAt, mealTitle }) {
+/* Score hero + pagination dots (tap a dot to switch page). */
+function ScoreHero({ scoreVal, predictedDelta, variant, onSwitch }) {
   return (
     <div className="px-5">
-      {/* Score hero */}
       <div className="relative mt-4 overflow-hidden rounded-lg" style={{ height: 160 }}>
         <Image
           src="/images/food-score/score-hero-bg.png"
           alt=""
           fill
           className="object-cover"
-          style={{ filter: "hue-rotate(200deg) saturate(1.3)" }}
+          style={variant === 1 ? { filter: "hue-rotate(200deg) saturate(1.3)" } : undefined}
           priority
         />
-        <div className="absolute inset-0 bg-indigo-900/40" />
+        <div className={`absolute inset-0 ${variant === 1 ? "bg-indigo-900/40" : "bg-black/20"}`} />
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <p className="text-white" style={{ fontFamily: "var(--font-arimo), Inter, sans-serif", fontWeight: 700, fontSize: 55 }}>
+          <p className="text-[55px] font-bold text-white" style={{ fontFamily: "var(--font-arimo), Inter, sans-serif" }}>
             {scoreVal ?? "--"}
           </p>
           <p className="text-[15px] font-medium text-white">
@@ -189,49 +173,111 @@ function PredictedGlucoseTab({ scoreVal, predictedDelta, glucoseCurve, items, to
         </div>
       </div>
 
-      {/* Tab indicator dots */}
       <div className="mt-3 flex items-center justify-center gap-2">
-        <div className="h-1 w-2 rounded-full bg-[#D9D9D9]" />
-        <div className="h-1 w-4 rounded-full bg-black" />
+        {[0, 1].map((idx) => (
+          <button
+            key={idx}
+            type="button"
+            aria-label={idx === 0 ? "Food score" : "Predicted glucose"}
+            onClick={() => onSwitch(idx)}
+            className={`h-1 rounded-full transition-all ${variant === idx ? "w-4 bg-black" : "w-2 bg-borderColor"}`}
+          />
+        ))}
       </div>
+    </div>
+  );
+}
 
+function MealInfo({ mealTitle, consumedAt }) {
+  return (
+    <>
+      <p className="mt-3 text-center text-[16px] font-medium leading-6 text-black">{mealTitle}</p>
+      {consumedAt && (
+        <p className="mt-1 text-center text-[12px] font-medium leading-4 text-secondary">
+          {formatMealDateTime(consumedAt)}
+        </p>
+      )}
+    </>
+  );
+}
+
+function ItemList({ items, updateItem, removeItem }) {
+  return (
+    <div className="mt-2 space-y-2">
+      {items.map((item, idx) => (
+        <MealItemRow
+          key={`${item.name}-${idx}`}
+          item={item}
+          onUpdate={(next) => updateItem(idx, next)}
+          onRemove={() => removeItem(idx)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function FoodScoreTab({ items, totals, consumedAt, mealTitle, updateItem, removeItem, removing, onEditMeal, onRemoveMeal }) {
+  return (
+    <div className="px-5">
+      <MealInfo mealTitle={mealTitle} consumedAt={consumedAt} />
+
+      <p className="mt-5 text-[12px] font-semibold uppercase text-black">Your Meal</p>
+      <ItemList items={items} updateItem={updateItem} removeItem={removeItem} />
+
+      <p className="mt-5 text-[12px] font-semibold uppercase text-black">Macro Split</p>
+      <MacroGrid totals={totals} />
+
+      {/* Actions */}
+      <button
+        type="button"
+        onClick={onEditMeal}
+        className="mt-8 block text-[16px] font-semibold leading-6 text-black transition hover:opacity-70"
+      >
+        Edit Meal
+      </button>
+      <button
+        type="button"
+        onClick={onRemoveMeal}
+        disabled={removing}
+        className="mt-3 block text-[16px] font-semibold leading-6 text-biomarkerOutOfRange transition hover:opacity-70 disabled:opacity-50"
+      >
+        {removing ? "Removing…" : "Remove the Meal"}
+      </button>
+    </div>
+  );
+}
+
+function PredictedGlucoseTab({ items, totals, consumedAt, mealTitle, updateItem, removeItem, glucoseCurve }) {
+  return (
+    <div className="px-5">
       {/* Glucose chart */}
-      <div className="mt-4 rounded-lg border border-[#E6E6E8] bg-white p-4" style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}>
+      <div className="mt-4 rounded-lg border border-borderColor bg-white p-4 shadow-sm">
         <p className="mb-3 text-[12px] font-semibold uppercase text-black">Predicted Response</p>
         <div className="h-40 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={glucoseCurve.points} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="glucFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#541D7A" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#541D7A" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="minute" tick={{ fontSize: 10, fill: "#717178" }} tickFormatter={(v) => `${v}m`} axisLine={{ stroke: "#E6E6E8" }} tickLine={false} />
               <YAxis domain={["dataMin - 5", "dataMax + 5"]} tick={{ fontSize: 10, fill: "#717178" }} axisLine={false} tickLine={false} />
               <ReferenceLine y={glucoseCurve.baseline} stroke="#E6E6E8" strokeDasharray="4 4" />
               <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E6E6E8" }} formatter={(val) => [`${val} mg/dL`, "Glucose"]} labelFormatter={(v) => `${v} min`} />
-              <Area type="monotone" dataKey="glucose" stroke="#6366f1" strokeWidth={2} fill="url(#glucFill)" />
+              <Area type="monotone" dataKey="glucose" stroke="#541D7A" strokeWidth={2} fill="url(#glucFill)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Meal info */}
-      <p className="mt-4 text-center text-[16px] font-medium leading-6 text-black">{mealTitle}</p>
-      {consumedAt && (
-        <p className="mt-1 text-center text-[12px] font-medium leading-4 text-[#717178]">{formatMealDateTime(consumedAt)}</p>
-      )}
+      <MealInfo mealTitle={mealTitle} consumedAt={consumedAt} />
 
-      {/* Food items */}
-      <div className="mt-3 space-y-2">
-        {items.map((item, idx) => (
-          <FoodItemCard key={idx} item={item} />
-        ))}
-      </div>
+      <p className="mt-5 text-[12px] font-semibold uppercase text-black">Your Meal</p>
+      <ItemList items={items} updateItem={updateItem} removeItem={removeItem} />
 
-      {/* Macro split */}
-      <p className="mt-5 text-[12px] font-semibold uppercase text-black">MACRO SPLIT</p>
+      <p className="mt-5 text-[12px] font-semibold uppercase text-black">Macro Split</p>
       <MacroGrid totals={totals} />
     </div>
   );
@@ -240,56 +286,22 @@ function PredictedGlucoseTab({ scoreVal, predictedDelta, glucoseCurve, items, to
 function MacroGrid({ totals }) {
   return (
     <div className="mt-2 grid grid-cols-3 gap-1.5">
-      {MACROS.map(({ key, label, color, unit }) => {
+      {MACRO_META.map(({ key, label, unit, Icon, color }) => {
         const raw = totals[key];
         const val = raw != null ? Math.round(raw) : "--";
         return (
-          <div
-            key={key}
-            className="rounded-lg border border-[#E6E6E8] bg-white px-2.5 py-2"
-            style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}
-          >
+          <div key={key} className="rounded-lg border border-borderColor bg-white px-2.5 py-2 shadow-sm">
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-[9px] font-medium uppercase text-[#717178]">{label}</span>
+              <Icon size={12} color={color} className="shrink-0" />
+              <span className="text-[9px] font-medium uppercase text-secondary">{label}</span>
             </div>
             <p className="mt-0.5 text-[14px] font-semibold leading-5 text-black">
-              {val}{unit}
+              {val}
+              {unit}
             </p>
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function FoodItemCard({ item }) {
-  if (!item) return null;
-  const { name, portion = {}, calories = 0, proteinG = 0, fatG = 0 } = item;
-
-  const portionBits = [];
-  if (portion.quantity != null && portion.unit) portionBits.push(`${portion.quantity} ${portion.unit}`);
-  if (portion.grams != null) portionBits.push(`(${portion.grams}g)`);
-  const portionText = portionBits.join(" ");
-
-  const macroLine = `${Math.round(calories)} Cal · ${Math.round(proteinG)}P · ${Math.round(fatG)}F...`;
-
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-[#E6E6E8] bg-white px-3 py-3" style={{ boxShadow: "0px 0px 10px rgba(0,0,0,0.05)" }}>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-medium leading-4 text-black">{name}</p>
-        <p className="mt-1 text-[12px] font-medium leading-4 text-[#717178]">
-          {portionText && `${portionText} · `}{macroLine}
-        </p>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <button type="button" aria-label="Edit" className="text-[#717178] hover:text-black">
-          <Pencil size={16} />
-        </button>
-        <button type="button" aria-label="Remove" className="text-[#717178] hover:text-[#FB2C36]">
-          <X size={16} />
-        </button>
-      </div>
     </div>
   );
 }
