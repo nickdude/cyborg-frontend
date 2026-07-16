@@ -183,8 +183,8 @@ export default function Dashboard() {
                         : "Review your biomarker results",
                 },
                 timelineActions: [
-                    { label: "Log Food", variant: "solid" },
-                    { label: "Add an activity", variant: "solid" },
+                    { label: "Log Food", variant: "solid", href: "/meals/log?from=insights" },
+                    { label: "Add an activity", variant: "solid", href: "/activities/new?from=insights" },
                 ],
                 liveBetter: {
                     title: "Live better, longer together",

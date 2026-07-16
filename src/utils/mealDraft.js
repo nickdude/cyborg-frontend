@@ -94,7 +94,18 @@ export function readDraft() {
   try {
     const raw = sessionStorage.getItem(DRAFT_KEY);
     if (!raw) return null;
-    return normalize(JSON.parse(raw));
+    const draft = normalize(JSON.parse(raw));
+    // A resumed old draft shouldn't silently log the meal under a stale
+    // pinned time — drop consumedAt so the review re-suggests "now".
+    if (draft?.consumedAt) {
+      const pinnedAge = Date.now() - new Date(draft.pickedAt || 0).getTime();
+      const pinnedDay = String(draft.consumedAt).slice(0, 10);
+      const today = new Date().toISOString().slice(0, 10);
+      if (pinnedAge > 12 * 60 * 60 * 1000 || pinnedDay < today) {
+        draft.consumedAt = null;
+      }
+    }
+    return draft;
   } catch (e) {
     console.warn("[mealDraft] Failed to read draft:", e?.message);
     return null;
