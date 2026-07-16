@@ -30,8 +30,11 @@ export default function TimelineDateNav({ date, onChange }) {
   const isToday = today !== null && date === today;
 
   const shift = (days) => {
-    const d = new Date(date + "T00:00:00");
-    d.setDate(d.getDate() + days);
+    // All math in UTC — parsing local midnight and serializing with
+    // toISOString() skips/repeats days for any UTC+ timezone (IST users
+    // could never navigate back to today).
+    const d = new Date(date + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() + days);
     onChange(d.toISOString().slice(0, 10));
   };
 

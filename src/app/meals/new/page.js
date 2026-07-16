@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+export const dynamic = "force-dynamic";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { mealAPI } from "@/services/api";
 import MealReviewScreen from "@/components/MealReviewScreen";
@@ -13,6 +15,9 @@ function todayUTC() {
 
 export default function NewMealPage() {
   const router = useRouter();
+  const from = useSearchParams().get("from");
+  const dashboardHref = from === "insights" ? "/dashboard?view=insights" : "/dashboard";
+  const hubHref = from ? `/meals/log?from=${from}` : "/meals/log";
   const { user, loading: authLoading } = useAuth();
   const userId = user?._id || user?.id;
 
@@ -32,9 +37,9 @@ export default function NewMealPage() {
   useEffect(() => {
     if (!hydrated || authLoading) return;
     if (!draft) {
-      router.replace("/meals/log");
+      router.replace(hubHref);
     }
-  }, [hydrated, authLoading, draft, router]);
+  }, [hydrated, authLoading, draft, router, hubHref]);
 
   // Fetch today's summary in the background so the counter strip is accurate.
   useEffect(() => {
@@ -64,7 +69,7 @@ export default function NewMealPage() {
       clearDraft();
       // Land on the dashboard: remount refetches the timeline + macro split,
       // so the just-logged meal is immediately visible.
-      router.replace("/dashboard");
+      router.replace(dashboardHref);
     } catch (err) {
       const serverMsg = err?.response?.data?.message || err?.message;
       setError(serverMsg || "Couldn't save meal. Try again.");
@@ -82,12 +87,12 @@ export default function NewMealPage() {
       mealType: current.mealType,
       consumedAt: current.consumedAt,
     });
-    router.push("/meals/log");
+    router.push(hubHref);
   };
 
   // Back keeps the draft — the hub is the place to abandon it.
   const handleBack = () => {
-    router.push("/meals/log");
+    router.push(hubHref);
   };
 
   // Auth still hydrating or draft hasn't loaded yet.
@@ -104,18 +109,28 @@ export default function NewMealPage() {
     return null;
   }
 
-  const initialData = {
-    title: draft.title || "",
-    consumedAt: draft.consumedAt || new Date(),
-    mealType: draft.mealType || null,
-    totals: computeTotals(draft.items),
-    items: draft.items,
-    imageKeys: draft.imageKeys || [],
-    inputText: draft.inputText || null,
-    confidence: draft.confidence,
-    notes: draft.notes,
-    tokensUsed: draft.tokensUsed || { input: 0, output: 0 },
-  };
+  return <NewMealReview draft={draft} dailySummary={dailySummary} saving={saving} error={error} onSave={handleSave} onAddMore={handleAddMore} onBack={handleBack} />;
+}
+
+// Split so initialData can be memoized on the stable draft object — rebuilding
+// it every parent render made MealReviewScreen's reset effect wipe live edits
+// whenever unrelated state (summary fetch, saving flag) changed.
+function NewMealReview({ draft, dailySummary, saving, error, onSave, onAddMore, onBack }) {
+  const initialData = useMemo(
+    () => ({
+      title: draft.title || "",
+      consumedAt: draft.consumedAt || new Date(),
+      mealType: draft.mealType || null,
+      totals: computeTotals(draft.items),
+      items: draft.items,
+      imageKeys: draft.imageKeys || [],
+      inputText: draft.inputText || null,
+      confidence: draft.confidence,
+      notes: draft.notes,
+      tokensUsed: draft.tokensUsed || { input: 0, output: 0 },
+    }),
+    [draft]
+  );
 
   return (
     <MealReviewScreen
@@ -123,9 +138,9 @@ export default function NewMealPage() {
       initialData={initialData}
       imagePreviews={draft.imagePreviews || []}
       dailySummary={dailySummary}
-      onSave={handleSave}
-      onAddMore={handleAddMore}
-      onBack={handleBack}
+      onSave={onSave}
+      onAddMore={onAddMore}
+      onBack={onBack}
       isBusy={saving}
       error={error}
     />

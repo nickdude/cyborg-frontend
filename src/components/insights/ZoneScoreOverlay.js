@@ -61,8 +61,20 @@ export default function ZoneScoreOverlay({ entry, userId, onClose, onDetails }) 
   const [showInfo, setShowInfo] = useState(false);
 
   const mealId = entry?.id || entry?._id;
+  // The timeline response bundles the meal's score — when it's there the
+  // overlay opens with zero requests; the fetch is only a fallback for
+  // entries from older cached payloads.
+  const bundledScore = entry?.data?.foodScore;
 
   useEffect(() => {
+    if (bundledScore != null) {
+      setScore({
+        score: bundledScore,
+        predictedGlucosePeak: { deltaMgDl: entry?.data?.deltaMgDl ?? null },
+      });
+      setLoading(false);
+      return;
+    }
     if (!userId || !mealId) {
       setLoading(false);
       return;
@@ -81,7 +93,8 @@ export default function ZoneScoreOverlay({ entry, userId, onClose, onDetails }) 
     return () => {
       cancelled = true;
     };
-  }, [userId, mealId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, mealId, bundledScore]);
 
   useEffect(() => {
     const onKey = (e) => {

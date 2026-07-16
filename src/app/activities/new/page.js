@@ -1,13 +1,17 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import ActivitySearchSheet from "@/components/ActivitySearchSheet";
 import ActivityDetailScreen from "@/components/ActivityDetailScreen";
 
 export default function NewActivityPage() {
   const router = useRouter();
+  const from = useSearchParams().get("from");
+  const dashboardHref = from === "insights" ? "/dashboard?view=insights" : "/dashboard";
   const { user, loading: authLoading } = useAuth();
   const userId = user?._id || user?.id;
 
@@ -36,7 +40,7 @@ export default function NewActivityPage() {
       <ActivityDetailScreen
         activity={selectedActivity}
         userId={userId}
-        onSave={() => router.replace("/dashboard")}
+        onSave={() => router.replace(dashboardHref)}
         onBack={() => {
           setSelectedActivity(null);
           setStep("search");

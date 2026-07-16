@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { mealAPI } from "@/services/api";
@@ -21,6 +21,13 @@ export default function SavedMealPage() {
   const [dailySummary, setDailySummary] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  // Logged-out users get bounced to login instead of an eternal spinner.
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace("/login");
+    }
+  }, [authLoading, user, router]);
 
   // Load the meal.
   useEffect(() => {
@@ -106,6 +113,31 @@ export default function SavedMealPage() {
 
   const handleBack = () => router.replace("/dashboard");
 
+  // Memoized on the stable meal object — a fresh object every render would
+  // make MealReviewScreen's reset effect wipe in-progress edits whenever the
+  // summary fetch or busy flag re-rendered this page.
+  const initialData = useMemo(
+    () =>
+      meal
+        ? {
+            title: meal.title || "",
+            consumedAt: meal.consumedAt,
+            mealType: meal.mealType || null,
+            totals: meal.totals,
+            items: meal.items,
+            imageKeys: meal.imageKeys,
+            inputText: meal.inputText,
+            confidence: meal.confidence,
+            tokensUsed: meal.tokensUsed,
+          }
+        : null,
+    [meal]
+  );
+
+  if (!user && !authLoading) {
+    return null; // redirect effect is firing
+  }
+
   if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f4f5f9] text-sm text-[#6d6f7b]">
@@ -128,18 +160,6 @@ export default function SavedMealPage() {
       </div>
     );
   }
-
-  const initialData = {
-    title: meal.title || "",
-    consumedAt: meal.consumedAt,
-    mealType: meal.mealType || null,
-    totals: meal.totals,
-    items: meal.items,
-    imageKeys: meal.imageKeys,
-    inputText: meal.inputText,
-    confidence: meal.confidence,
-    tokensUsed: meal.tokensUsed,
-  };
 
   return (
     <MealReviewScreen

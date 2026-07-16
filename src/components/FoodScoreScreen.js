@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
@@ -50,36 +50,49 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
   const [score, setScore] = useState(initialScore);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState("");
+  // Rapid stepper taps: serialize PATCHes so they can't land out of order,
+  // and drop score responses that a newer edit has superseded.
+  const editQueueRef = useRef(Promise.resolve());
+  const editSeqRef = useRef(0);
 
   const mealId = meal?._id || meal?.id;
   const scoreVal = score?.score ?? score?.foodScore ?? null;
   const predicted = score?.predictedGlucosePeak;
-  const predictedDelta = predicted?.deltaMgDl ?? 26;
+  // No fabricated numbers: without a prediction there is no delta and no curve.
+  const predictedDelta =
+    typeof predicted?.deltaMgDl === "number" ? predicted.deltaMgDl : null;
 
   const totals = meal?.totals || {};
   const items = meal?.items || [];
   const consumedAt = meal?.consumedAt;
   const mealTitle = items.map((i) => i.name).filter(Boolean).join(", ") || meal?.title || "Meal";
 
-  const glucoseCurve = useMemo(() => buildGlucoseCurve(predictedDelta), [predictedDelta]);
+  const glucoseCurve = useMemo(
+    () => (predictedDelta != null ? buildGlucoseCurve(predictedDelta) : null),
+    [predictedDelta]
+  );
 
   /* Persist an items change, then re-score in the background. */
-  const applyItems = async (nextItems) => {
+  const applyItems = (nextItems) => {
     const prev = meal;
     const nextTotals = computeTotals(nextItems);
     setMeal({ ...meal, items: nextItems, totals: nextTotals }); // optimistic
     setError("");
-    try {
-      await mealAPI.update(userId, mealId, { items: nextItems, totals: nextTotals });
-      foodScoreAPI
-        .compute(userId, mealId)
-        .then(() => foodScoreAPI.get(userId, mealId))
-        .then((r) => setScore(r?.data || r))
-        .catch(() => {}); // stale score is acceptable; totals are saved
-    } catch (err) {
-      setMeal(prev);
-      setError(err?.message || "Couldn't update the meal. Try again.");
-    }
+    const seq = ++editSeqRef.current;
+    editQueueRef.current = editQueueRef.current.then(async () => {
+      try {
+        await mealAPI.update(userId, mealId, { items: nextItems, totals: nextTotals });
+        // compute returns the fresh score doc — no follow-up GET needed.
+        const r = await foodScoreAPI.compute(userId, mealId).catch(() => null);
+        if (r && seq === editSeqRef.current) setScore(r?.data || r);
+      } catch (err) {
+        if (seq === editSeqRef.current) {
+          setMeal(prev);
+          setError(err?.message || "Couldn't update the meal. Try again.");
+        }
+      }
+    });
+    return editQueueRef.current;
   };
 
   const handleRemoveMeal = async () => {
@@ -167,9 +180,11 @@ function ScoreHero({ scoreVal, predictedDelta, variant, onSwitch }) {
           <p className="text-[55px] font-bold text-white" style={{ fontFamily: "var(--font-arimo), Inter, sans-serif" }}>
             {scoreVal ?? "--"}
           </p>
-          <p className="text-[15px] font-medium text-white">
-            +{Math.round(predictedDelta)} mg/dL
-          </p>
+          {predictedDelta != null && (
+            <p className="text-[15px] font-medium text-white">
+              +{Math.round(predictedDelta)} mg/dL
+            </p>
+          )}
         </div>
       </div>
 
@@ -250,7 +265,8 @@ function FoodScoreTab({ items, totals, consumedAt, mealTitle, updateItem, remove
 function PredictedGlucoseTab({ items, totals, consumedAt, mealTitle, updateItem, removeItem, glucoseCurve }) {
   return (
     <div className="px-5">
-      {/* Glucose chart */}
+      {/* Glucose chart — only drawn from a real prediction */}
+      {glucoseCurve ? (
       <div className="mt-4 rounded-lg border border-borderColor bg-white p-4 shadow-sm">
         <p className="mb-3 text-[12px] font-semibold uppercase text-black">Predicted Response</p>
         <div className="h-40 w-full">
@@ -271,6 +287,11 @@ function PredictedGlucoseTab({ items, totals, consumedAt, mealTitle, updateItem,
           </ResponsiveContainer>
         </div>
       </div>
+      ) : (
+      <div className="mt-4 rounded-lg border border-borderColor bg-white p-6 text-center text-sm text-secondary">
+        No glucose prediction is available for this meal yet.
+      </div>
+      )}
 
       <MealInfo mealTitle={mealTitle} consumedAt={consumedAt} />
 

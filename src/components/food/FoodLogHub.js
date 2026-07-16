@@ -18,8 +18,11 @@ import { addItems, clearDraft, readDraft } from "@/utils/mealDraft";
  *   Quick Add (text→AI). Everything accumulates in the shared meal draft;
  *   the pill in the header carries the user to the Review screen.
  */
-export default function FoodLogHub({ userId }) {
+export default function FoodLogHub({ userId, from }) {
   const router = useRouter();
+  // Return to the view the user came from (Insights keeps its tab).
+  const dashboardHref = from === "insights" ? "/dashboard?view=insights" : "/dashboard";
+  const reviewHref = from ? `/meals/new?from=${from}` : "/meals/new";
   const [query, setQuery] = useState("");
   // null | "upload" | "details" | "quickadd"
   const [sheet, setSheet] = useState(null);
@@ -62,6 +65,10 @@ export default function FoodLogHub({ userId }) {
   );
 
   const handleDiscard = () => {
+    const n = readDraft()?.items?.length || 0;
+    if (n > 0 && !window.confirm(`Discard ${n} item${n === 1 ? "" : "s"} from this meal?`)) {
+      return;
+    }
     clearDraft();
     setDraftVersion((v) => v + 1);
   };
@@ -83,7 +90,7 @@ export default function FoodLogHub({ userId }) {
       <div className="flex items-center gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),12px)]">
         <button
           type="button"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push(dashboardHref)}
           aria-label="Go back"
           className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-pageBackground"
         >
@@ -94,7 +101,7 @@ export default function FoodLogHub({ userId }) {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => router.push("/meals/new")}
+              onClick={() => router.push(reviewHref)}
               className="inline-flex items-center gap-1 rounded-full bg-black px-3 py-1.5 text-xs font-medium text-white"
             >
               {draftCount} {draftCount === 1 ? "item" : "items"} · Review
@@ -191,7 +198,7 @@ export default function FoodLogHub({ userId }) {
             {toast} ·{" "}
             <button
               type="button"
-              onClick={() => router.push("/meals/new")}
+              onClick={() => router.push(reviewHref)}
               className="pointer-events-auto underline underline-offset-2"
             >
               Review

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory } from "@/components/data/organStatus";
-import { actionPlanAPI, timelineAPI, mealAPI } from "@/services/api";
+import { actionPlanAPI, timelineAPI } from "@/services/api";
 import ActionButtons from "@/components/home/ActionButtons";
 import TimelineMealCard from "@/components/home/TimelineMealCard";
 import TimelineActivityCard from "@/components/home/TimelineActivityCard";
@@ -836,10 +836,17 @@ function TimelineSection({ userId, router }) {
 
     useEffect(() => {
         if (!userId) return;
-        const date = localToday();
+        // UTC date — the backend buckets days in UTC, and every other timeline
+        // surface queries UTC; the local date hid just-saved entries near
+        // midnight on this tab only.
+        const date = new Date().toISOString().slice(0, 10);
         let active = true;
-        timelineAPI.get(userId, date).then((r) => { if (active) setEntries(r?.data?.entries || r?.data || []); }).catch(() => {});
-        mealAPI.summary(userId, date).then((r) => { if (active) setMacros(r?.data || null); }).catch(() => {});
+        // One request — the timeline response bundles the day's macro totals.
+        timelineAPI.get(userId, date).then((r) => {
+            if (!active) return;
+            setEntries(r?.data?.entries || r?.data || []);
+            setMacros(r?.data?.summary?.macros || null);
+        }).catch(() => {});
         return () => { active = false; };
     }, [userId]);
 
