@@ -44,6 +44,9 @@ export default function TimelineFeed({ userId, actions }) {
     <div>
       {date && <TimelineDateNav date={date} onChange={setDate} />}
 
+      {/* Actions above the feed — logs for the day read below the buttons. */}
+      {actions && actions.length > 0 && <ActionButtons actions={actions} />}
+
       <div className="mt-4 space-y-3">
         {loading && entries.length === 0 && (
           <p className="py-6 text-center text-sm text-[#6d6f7b]">Loading timeline...</p>
@@ -84,8 +87,6 @@ export default function TimelineFeed({ userId, actions }) {
           return null;
         })}
       </div>
-
-      {actions && actions.length > 0 && <ActionButtons actions={actions} />}
     </div>
   );
 }

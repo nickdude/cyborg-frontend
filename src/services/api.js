@@ -182,6 +182,8 @@ export const mealAPI = {
     API.get(`/api/users/${userId}/meals/history`, { params: { days } }),
   summary: (userId, date) =>
     API.get(`/api/users/${userId}/meals/summary`, { params: { date } }),
+  recentItems: (userId, limit = 20) =>
+    API.get(`/api/users/${userId}/meals/recent-items`, { params: { limit } }),
   get: (userId, mealId) =>
     API.get(`/api/users/${userId}/meals/${mealId}`),
   update: (userId, mealId, body) =>

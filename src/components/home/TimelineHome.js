@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "motion/react";
+import DayLogSection from "./DayLogSection";
 import {
   Lock, ChevronRight, Check, DollarSign, CreditCard, Activity,
   ShieldCheck, Watch, ScanFace, ClipboardList,
@@ -551,7 +552,7 @@ function RxCard({ data }) {
 /* ═══════════════════════════ TimelineHome ═══════════════════════════ */
 export default function TimelineHome({
   data, greeting, name, initials, activeTab, onTabChange,
-  cyborgScore, bioAge, planReady, actionPlanHref, journey, processing,
+  cyborgScore, bioAge, planReady, actionPlanHref, journey, processing, userId,
 }) {
   const safeInitials =
     initials ||
@@ -595,6 +596,8 @@ export default function TimelineHome({
                 processing={processing}
                 nextEvent={nextEvent}
               />
+
+              <DayLogSection userId={userId} />
 
               {journey?.length > 0 && (
                 <div className="space-y-3">

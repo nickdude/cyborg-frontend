@@ -849,7 +849,7 @@ function TimelineSection({ userId, router }) {
     return (
         <div className={`${CARD} p-5 lg:p-6`}>
             <h3 className="text-base font-semibold tracking-tight text-blue">Timeline</h3>
-            <ActionButtons actions={[{ label: "Log Food", href: "/meals/new" }, { label: "Add an activity", href: "/activities/new" }]} />
+            <ActionButtons actions={[{ label: "Log Food", href: "/meals/log" }, { label: "Add an activity", href: "/activities/new" }]} />
 
             {list.length > 0 && (
                 <div className="mt-4 space-y-3">

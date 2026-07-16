@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { mealAPI } from "@/services/api";
 import MealReviewScreen from "@/components/MealReviewScreen";
-
-const DRAFT_KEY = "cyborg.mealDraft";
+import { clearDraft, computeTotals, readDraft, writeDraft } from "@/utils/mealDraft";
 
 function todayUTC() {
   return new Date().toISOString().slice(0, 10);
@@ -23,22 +22,17 @@ export default function NewMealPage() {
   const [error, setError] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
-  // Read the draft once on mount.
+  // Read the draft once on mount (readDraft normalizes legacy shapes).
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(DRAFT_KEY);
-      if (raw) setDraft(JSON.parse(raw));
-    } catch (e) {
-      console.warn("[NewMealPage] Failed to parse meal draft:", e?.message);
-    }
+    setDraft(readDraft());
     setHydrated(true);
   }, []);
 
-  // If there's no draft and auth has settled, bounce back to the dashboard.
+  // No draft? Send the user to the Log Food hub so they can start one.
   useEffect(() => {
     if (!hydrated || authLoading) return;
     if (!draft) {
-      router.replace("/dashboard");
+      router.replace("/meals/log");
     }
   }, [hydrated, authLoading, draft, router]);
 
@@ -67,8 +61,10 @@ export default function NewMealPage() {
       const resp = await mealAPI.commit(userId, payload);
       const saved = resp?.data;
       if (!saved?._id) throw new Error("No meal id returned");
-      sessionStorage.removeItem(DRAFT_KEY);
-      router.replace("/meals");
+      clearDraft();
+      // Land on the dashboard: remount refetches the timeline + macro split,
+      // so the just-logged meal is immediately visible.
+      router.replace("/dashboard");
     } catch (err) {
       const serverMsg = err?.response?.data?.message || err?.message;
       setError(serverMsg || "Couldn't save meal. Try again.");
@@ -76,15 +72,28 @@ export default function NewMealPage() {
     }
   };
 
+  // "Add more" — persist the review edits back into the draft, then return to
+  // the hub so search/scan/quick-add can append to the same meal.
+  const handleAddMore = (current) => {
+    writeDraft({
+      ...draft,
+      items: current.items,
+      title: current.title,
+      mealType: current.mealType,
+      consumedAt: current.consumedAt,
+    });
+    router.push("/meals/log");
+  };
+
+  // Back keeps the draft — the hub is the place to abandon it.
   const handleBack = () => {
-    sessionStorage.removeItem(DRAFT_KEY);
-    router.replace("/dashboard");
+    router.push("/meals/log");
   };
 
   // Auth still hydrating or draft hasn't loaded yet.
   if (authLoading || !hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f4f5f9] text-sm text-[#6d6f7b]">
+      <div className="flex min-h-screen items-center justify-center bg-pageBackground text-sm text-secondary">
         Loading…
       </div>
     );
@@ -95,17 +104,17 @@ export default function NewMealPage() {
     return null;
   }
 
-  // Normalize the draft.estimate into the shape MealReviewScreen expects.
   const initialData = {
-    title: draft.estimate?.title || "",
-    consumedAt: new Date(),
-    totals: draft.estimate?.totals,
-    items: draft.estimate?.items,
+    title: draft.title || "",
+    consumedAt: draft.consumedAt || new Date(),
+    mealType: draft.mealType || null,
+    totals: computeTotals(draft.items),
+    items: draft.items,
     imageKeys: draft.imageKeys || [],
-    inputText: null,
-    confidence: draft.estimate?.confidence,
-    notes: draft.estimate?.notes,
-    tokensUsed: draft.estimate?.tokensUsed || { input: 0, output: 0 },
+    inputText: draft.inputText || null,
+    confidence: draft.confidence,
+    notes: draft.notes,
+    tokensUsed: draft.tokensUsed || { input: 0, output: 0 },
   };
 
   return (
@@ -115,6 +124,7 @@ export default function NewMealPage() {
       imagePreviews={draft.imagePreviews || []}
       dailySummary={dailySummary}
       onSave={handleSave}
+      onAddMore={handleAddMore}
       onBack={handleBack}
       isBusy={saving}
       error={error}
