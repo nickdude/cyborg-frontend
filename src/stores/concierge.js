@@ -16,6 +16,18 @@ export const useConciergeStore = create((set, get) => ({
 
   setActive: (id) => set({ activeChatId: id }),
 
+  // Clear all chat state. Called on logout so the next user on a shared/clinic
+  // device never sees the previous user's private AI conversations.
+  reset: () =>
+    set({
+      chats: {},
+      chatOrder: [],
+      messages: {},
+      streams: {},
+      activeChatId: null,
+      chatsLoaded: false,
+    }),
+
   loadChats: async () => {
     if (get().chatsLoaded) return;
     try {

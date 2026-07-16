@@ -60,19 +60,30 @@ export default function GoogleAuthButton({
   const completeLogin = useCallback(
     async (accessToken) => {
       try {
-        // Fetch the Google profile (sub = stable provider id, email, name).
-        const profileRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (!profileRes.ok) throw new Error("Could not retrieve your Google profile.");
-        const profile = await profileRes.json();
+        // Identity (email + provider id) is verified server-side from the access
+        // token — we only fetch the profile here for the display name, which is
+        // cosmetic and never trusted for authentication.
+        let firstName = "";
+        let lastName = "";
+        try {
+          const profileRes = await fetch(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+          if (profileRes.ok) {
+            const profile = await profileRes.json();
+            firstName = profile.given_name || "";
+            lastName = profile.family_name || "";
+          }
+        } catch {
+          /* name is optional — the backend derives identity from the token */
+        }
 
         const response = await authAPI.socialLogin({
           provider: "google",
-          providerId: profile.sub,
-          email: profile.email,
-          firstName: profile.given_name || "",
-          lastName: profile.family_name || "",
+          accessToken,
+          firstName,
+          lastName,
           userType,
         });
 

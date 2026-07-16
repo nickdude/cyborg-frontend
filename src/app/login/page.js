@@ -178,7 +178,7 @@ export default function Login() {
               onChange={handleInputChange}
             />
 
-            <Button fullWidth variant="primary" disabled={loading || !formData.phone} className="mb-4">
+            <Button type="submit" fullWidth variant="primary" disabled={loading || !formData.phone} className="mb-4">
               {loading ? "Sending OTP..." : "Send OTP"}
             </Button>
           </form>
@@ -393,12 +393,19 @@ export default function Login() {
 
         <GoogleAuthButton label="Sign in with Google" onError={setError} className="mb-3" />
 
-        <SocialButton
-          icon="/assets/icons/phone.svg"
-          onClick={handlePhoneLogin}
-        >
-          Sign in using Phone
-        </SocialButton>
+        {/* Phone sign-in is hidden until SMS OTP delivery is implemented. The
+            backend generates a phone OTP but only ever sends it by email, so the
+            flow dead-ends at the OTP screen with a code the user never receives.
+            Re-enable this entry point once SMS delivery exists (the step-2 UI and
+            handlePhoneLogin below are kept ready for that). */}
+        {false && (
+          <SocialButton
+            icon="/assets/icons/phone.svg"
+            onClick={handlePhoneLogin}
+          >
+            Sign in using Phone
+          </SocialButton>
+        )}
 
         <div className="mt-8 pt-6 text-center space-y-1">
           <Link href="/privacy" className="text-secondary hover:text-gray-900 text-lg block">

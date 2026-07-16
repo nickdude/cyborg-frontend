@@ -1,89 +1,91 @@
 import { defaultCache } from "@serwist/next/worker";
-import { Serwist } from "serwist";
+import {
+  Serwist,
+  NetworkFirst,
+  CacheFirst,
+  StaleWhileRevalidate,
+  ExpirationPlugin,
+} from "serwist";
+
+// Precache the build manifest, and ensure the offline fallback page is precached
+// too (added only if the build didn't already include it) so the fallback below
+// can actually be served on a cold, never-visited offline load.
+const manifest = self.__SW_MANIFEST || [];
+const hasOffline = manifest.some(
+  (entry) => (typeof entry === "string" ? entry : entry.url) === "/offline"
+);
+const precacheEntries = hasOffline
+  ? manifest
+  : [...manifest, { url: "/offline", revision: null }];
 
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
+  precacheEntries,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
-    // API calls — network first, fall back to cache
+    // API calls — network first, fall back to cache.
     {
-      urlPattern: /\/api\/.*/i,
-      handler: "NetworkFirst",
-      options: {
+      matcher: /\/api\/.*/i,
+      handler: new NetworkFirst({
         cacheName: "api-cache",
-        expiration: {
-          maxEntries: 64,
-          maxAgeSeconds: 60 * 60, // 1 hour
-        },
         networkTimeoutSeconds: 10,
-      },
+        plugins: [new ExpirationPlugin({ maxEntries: 64, maxAgeSeconds: 60 * 60 })],
+      }),
     },
-    // Static assets (JS, CSS) — stale while revalidate
+    // Static assets (JS, CSS) — stale while revalidate.
     {
-      urlPattern: /\/_next\/static\/.*/i,
-      handler: "StaleWhileRevalidate",
-      options: {
+      matcher: /\/_next\/static\/.*/i,
+      handler: new StaleWhileRevalidate({
         cacheName: "static-assets",
-        expiration: {
-          maxEntries: 128,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-        },
-      },
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 128, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+        ],
+      }),
     },
-    // Hero scroll-sequence frames — a large fixed set (~171 files) that must
-    // ALL stay cached together. Dedicated bucket with a cap above the frame
-    // count so the sequence never evicts itself (the previous shared 100-entry
-    // image cache thrashed on every refresh, re-downloading frames). Listed
-    // before the generic image rule so it wins the match for these URLs.
+    // Hero scroll-sequence frames — a large fixed set (~171 files) that must ALL
+    // stay cached together. Dedicated bucket with a cap above the frame count so
+    // the sequence never evicts itself. Listed before the generic image rule so
+    // it wins the match for these URLs.
     {
-      urlPattern: /\/assets\/hero-images\/.*/i,
-      handler: "CacheFirst",
-      options: {
+      matcher: /\/assets\/hero-images\/.*/i,
+      handler: new CacheFirst({
         cacheName: "hero-frames",
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 60 * 60 * 24 * 60, // 60 days
-        },
-      },
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 60 }),
+        ],
+      }),
     },
-    // Images — cache first
+    // Images — cache first.
     {
-      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
-      handler: "CacheFirst",
-      options: {
+      matcher: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+      handler: new CacheFirst({
         cacheName: "image-cache",
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-        },
-      },
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+        ],
+      }),
     },
-    // Fonts — cache first (rarely change)
+    // Fonts — cache first (rarely change).
     {
-      urlPattern: /\.(?:woff|woff2|ttf|otf)$/i,
-      handler: "CacheFirst",
-      options: {
+      matcher: /\.(?:woff|woff2|ttf|otf)$/i,
+      handler: new CacheFirst({
         cacheName: "font-cache",
-        expiration: {
-          maxEntries: 20,
-          maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
-        },
-      },
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 }),
+        ],
+      }),
     },
-    // Pages — network first for fresh content
+    // Pages — network first for fresh content.
     {
-      urlPattern: ({ request }) => request.mode === "navigate",
-      handler: "NetworkFirst",
-      options: {
+      matcher: ({ request }) => request.mode === "navigate",
+      handler: new NetworkFirst({
         cacheName: "page-cache",
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 60 * 60 * 24, // 1 day
-        },
         networkTimeoutSeconds: 5,
-      },
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 32, maxAgeSeconds: 60 * 60 * 24 }),
+        ],
+      }),
     },
     ...defaultCache,
   ],
