@@ -7,6 +7,7 @@ import TimelineDateNav from "./TimelineDateNav";
 import TimelineMealCard from "./TimelineMealCard";
 import TimelineActivityCard from "./TimelineActivityCard";
 import ActionButtons from "./ActionButtons";
+import ZoneScoreOverlay from "@/components/insights/ZoneScoreOverlay";
 
 function todayUTC() {
   return new Date().toISOString().slice(0, 10);
@@ -17,6 +18,7 @@ export default function TimelineFeed({ userId, actions }) {
   const [date, setDate] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState(null);
 
   // Defer current-date computation to the client to avoid SSR/hydration mismatch.
   useEffect(() => {
@@ -65,10 +67,7 @@ export default function TimelineFeed({ userId, actions }) {
               <TimelineMealCard
                 key={entry.id || entry._id}
                 entry={entry}
-                onClick={() => {
-                  const id = entry.id || entry._id;
-                  if (id) router.push(`/meals/${id}/score`);
-                }}
+                onClick={() => setSelectedMeal(entry)}
               />
             );
           }
@@ -87,6 +86,17 @@ export default function TimelineFeed({ userId, actions }) {
           return null;
         })}
       </div>
+
+      {selectedMeal && (
+        <ZoneScoreOverlay
+          entry={selectedMeal}
+          userId={userId}
+          onClose={() => setSelectedMeal(null)}
+          onDetails={() =>
+            router.push(`/meals/${selectedMeal.id || selectedMeal._id}/review`)
+          }
+        />
+      )}
     </div>
   );
 }
