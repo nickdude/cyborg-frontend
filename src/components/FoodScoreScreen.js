@@ -82,9 +82,13 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
     editQueueRef.current = editQueueRef.current.then(async () => {
       try {
         await mealAPI.update(userId, mealId, { items: nextItems, totals: nextTotals });
-        // compute returns the fresh score doc — no follow-up GET needed.
-        const r = await foodScoreAPI.compute(userId, mealId).catch(() => null);
-        if (r && seq === editSeqRef.current) setScore(r?.data || r);
+        // Re-score only for the LATEST edit — the AI compute takes seconds,
+        // and superseded edits recomputing would just stall the queue.
+        if (seq === editSeqRef.current) {
+          // compute returns the fresh score doc — no follow-up GET needed.
+          const r = await foodScoreAPI.compute(userId, mealId).catch(() => null);
+          if (r && seq === editSeqRef.current) setScore(r?.data || r);
+        }
       } catch (err) {
         if (seq === editSeqRef.current) {
           setMeal(prev);
