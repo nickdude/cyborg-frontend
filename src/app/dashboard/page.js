@@ -85,7 +85,8 @@ export default function Dashboard() {
     // ── Latest action plan → scores for the home header cards ─────────────────
     const [plan, setPlan] = useState(null);
     const [planLoading, setPlanLoading] = useState(true);
-    const [homeTab, setHomeTab] = useState("twin"); // twin | timeline
+    const initialTab = searchParams.get("tab") === "timeline" ? "timeline" : "twin";
+    const [homeTab, setHomeTab] = useState(initialTab); // twin | timeline
     const [goals, setGoals] = useState([]);
 
     useEffect(() => {

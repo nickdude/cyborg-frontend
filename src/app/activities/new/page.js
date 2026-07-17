@@ -11,7 +11,12 @@ import ActivityDetailScreen from "@/components/ActivityDetailScreen";
 export default function NewActivityPage() {
   const router = useRouter();
   const from = useSearchParams().get("from");
-  const dashboardHref = from === "insights" ? "/dashboard?view=insights" : "/dashboard";
+  const dashboardHref =
+    from === "insights"
+      ? "/dashboard?view=insights"
+      : from === "timeline"
+        ? "/dashboard?tab=timeline"
+        : "/dashboard";
   const { user, loading: authLoading } = useAuth();
   const userId = user?._id || user?.id;
 

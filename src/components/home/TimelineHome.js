@@ -6,7 +6,7 @@ import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform } from "motion/react";
 import DayLogSection from "./DayLogSection";
 import {
-  Lock, ChevronRight, Check, DollarSign, CreditCard, Activity,
+  Lock, ChevronRight, Check,
   ShieldCheck, Watch, ScanFace, ClipboardList,
 } from "lucide-react";
 
@@ -520,35 +520,6 @@ function LiveBetter({ data }) {
   );
 }
 
-/* ═══════════════════════════ Cyborg for Rx ═══════════════════════════ */
-const RX_ICON = { DollarSign, CreditCard, Activity };
-function RxCard({ data }) {
-  return (
-    <div className="rounded-2xl border border-borderColor bg-white p-5">
-      <div className="flex items-center gap-4">
-        <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-xl">
-          <Image src={data.image} alt="" fill className="object-contain" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium text-secondary">{data.eyebrow || data.title}</p>
-          <h4 className="mt-1 text-[17px] font-semibold leading-snug text-black">{data.headline}</h4>
-          <div className="mt-3 space-y-3">
-            {data.benefits.map((b) => {
-              const Icon = RX_ICON[b.icon] || DollarSign;
-              return (
-                <div key={b.text} className="flex items-start gap-2.5">
-                  <Icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-primary" />
-                  <span className="text-[13px] text-secondary">{b.text}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ═══════════════════════════ TimelineHome ═══════════════════════════ */
 export default function TimelineHome({
   data, greeting, name, initials, activeTab, onTabChange,
@@ -597,8 +568,6 @@ export default function TimelineHome({
                 nextEvent={nextEvent}
               />
 
-              <DayLogSection userId={userId} />
-
               {journey?.length > 0 && (
                 <div className="space-y-3">
                   {journey.map((m) => <MilestoneRow key={m.key} m={m} />)}
@@ -610,7 +579,7 @@ export default function TimelineHome({
 
             <div className="mt-6 flex flex-col gap-6 lg:col-span-5 lg:mt-0">
               <LiveBetter data={data.liveBetter} />
-              <RxCard data={data.rx} />
+              <DayLogSection userId={userId} />
             </div>
           </div>
         </div>

@@ -2,22 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Flame, Info, UtensilsCrossed } from "lucide-react";
 import { timelineAPI } from "@/services/api";
-import ActionButtons from "./ActionButtons";
-import TimelineMealCard from "./TimelineMealCard";
-import TimelineActivityCard from "./TimelineActivityCard";
 
-// The timeline endpoint buckets strictly by UTC day, so query the UTC date
-// (same convention as TimelineFeed) — the local calendar date's UTC window
-// doesn't contain "now" near midnight, which would hide just-saved entries.
 function todayUTC() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function formatTime(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d
+    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
+    .toLowerCase();
+}
+
+// Macro palette ring — the Figma frame marks meal rows with a colored ring.
+const RING_GRADIENT =
+  "conic-gradient(#EF1360 0deg 60deg, #DE8E4E 60deg 120deg, #34C759 120deg 200deg, #548ADE 200deg 280deg, #4F378B 280deg 360deg)";
+
 /**
- * Today's food + activity logs, shown right below the Log Food / Add an
- * activity buttons (per the Figma Timeline frame). The meal/activity cards
- * are white, so the section sits on a pageBackground panel.
+ * Today's food + activity logs (Figma "Timeline" frame): two compact action
+ * pills with the day's log cards directly below — no heading, no panel.
  */
 export default function DayLogSection({ userId }) {
   const router = useRouter();
@@ -52,21 +58,33 @@ export default function DayLogSection({ userId }) {
   const list = Array.isArray(entries) ? entries : [];
 
   return (
-    <div className="rounded-3xl bg-pageBackground p-4 lg:p-5">
-      <h3 className="text-[18px] font-semibold text-black">Timeline</h3>
+    <div>
+      {/* Compact action pills */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => router.push("/meals/log?from=timeline")}
+          className="flex h-9 items-center gap-2 rounded-full bg-black px-4 text-sm font-medium text-white transition hover:bg-black/85"
+        >
+          <UtensilsCrossed size={15} />
+          Log Food
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push("/activities/new?from=timeline")}
+          className="flex h-9 items-center gap-2 rounded-full bg-black px-4 text-sm font-medium text-white transition hover:bg-black/85"
+        >
+          <Flame size={15} fill="currentColor" />
+          Add an activity
+        </button>
+      </div>
 
-      <ActionButtons
-        actions={[
-          { label: "Log Food", href: "/meals/log" },
-          { label: "Add an activity", href: "/activities/new" },
-        ]}
-      />
-
+      {/* Day cards */}
       {loading ? (
         <p className="mt-4 text-sm text-secondary">Loading today&apos;s logs...</p>
       ) : error ? (
         <p className="mt-4 text-sm text-secondary">
-          Couldn&apos;t load today&apos;s logs — pull to refresh or try again later.
+          Couldn&apos;t load today&apos;s logs — try again later.
         </p>
       ) : list.length > 0 ? (
         <div className="mt-4 space-y-3">
@@ -74,18 +92,52 @@ export default function DayLogSection({ userId }) {
             const id = entry.id || entry._id;
             if (entry.type === "meal") {
               return (
-                <TimelineMealCard
+                <CompactLogCard
                   key={id}
-                  entry={entry}
+                  Icon={UtensilsCrossed}
+                  timeLine={formatTime(entry.time)}
+                  bottom={
+                    <>
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{
+                          background: RING_GRADIENT,
+                          WebkitMask:
+                            "radial-gradient(circle, transparent 3px, #000 3.5px)",
+                          mask: "radial-gradient(circle, transparent 3px, #000 3.5px)",
+                        }}
+                      />
+                      <span className="truncate">
+                        {(entry.data?.items || [])
+                          .map((i) => i.name)
+                          .filter(Boolean)
+                          .join(", ") || entry.title || "Meal"}
+                      </span>
+                    </>
+                  }
                   onClick={() => id && router.push(`/meals/${id}/score`)}
                 />
               );
             }
             if (entry.type === "activity") {
               return (
-                <TimelineActivityCard
+                <CompactLogCard
                   key={id}
-                  entry={entry}
+                  Icon={Flame}
+                  iconFilled
+                  timeLine={`${formatTime(entry.time)}${
+                    entry.data?.durationMinutes != null
+                      ? ` • ${entry.data.durationMinutes} min`
+                      : ""
+                  }`}
+                  bottom={
+                    <>
+                      <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-[2px] bg-borderColor">
+                        <Flame size={9} className="text-black" fill="currentColor" />
+                      </span>
+                      <span className="truncate">{entry.title || "Activity"}</span>
+                    </>
+                  }
                   onClick={() => id && router.push(`/activities/${id}`)}
                 />
               );
@@ -99,5 +151,28 @@ export default function DayLogSection({ userId }) {
         </p>
       )}
     </div>
+  );
+}
+
+/* One bordered log card: [icon  time • meta          ⓘ] / divider / bottom row */
+function CompactLogCard({ Icon, iconFilled, timeLine, bottom, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="block w-full rounded-lg border border-borderColor bg-white text-left shadow-sm transition hover:border-primary/30"
+    >
+      <div className="flex items-center gap-2 px-3.5 py-3">
+        <Icon size={14} className="shrink-0 text-black" fill={iconFilled ? "currentColor" : "none"} />
+        <span className="flex-1 truncate text-sm font-medium leading-5 text-black">
+          {timeLine}
+        </span>
+        <Info size={13} className="shrink-0 text-secondary" />
+      </div>
+      <div className="mx-3 border-t border-borderColor" />
+      <div className="flex items-center gap-2 px-3.5 py-3 text-sm font-medium leading-5 text-secondary">
+        {bottom}
+      </div>
+    </button>
   );
 }
