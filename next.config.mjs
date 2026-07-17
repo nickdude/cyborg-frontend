@@ -14,6 +14,9 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   experimental: {
     missingSuspenseWithCSRBailout: false,
+    // Rewrite barrel imports to direct file imports for heavy libraries the
+    // default list doesn't cover — cuts hundreds of modules per dev compile.
+    optimizePackageImports: ["recharts", "motion", "framer-motion", "three"],
   },
   async headers() {
     return [
