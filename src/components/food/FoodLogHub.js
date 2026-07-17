@@ -21,7 +21,12 @@ import { addItems, clearDraft, readDraft } from "@/utils/mealDraft";
 export default function FoodLogHub({ userId, from }) {
   const router = useRouter();
   // Return to the view the user came from (Insights keeps its tab).
-  const dashboardHref = from === "insights" ? "/dashboard?view=insights" : "/dashboard";
+  const dashboardHref =
+    from === "insights"
+      ? "/dashboard?view=insights"
+      : from === "timeline"
+        ? "/dashboard?tab=timeline"
+        : "/dashboard";
   const reviewHref = from ? `/meals/new?from=${from}` : "/meals/new";
   const [query, setQuery] = useState("");
   // null | "upload" | "details" | "quickadd"

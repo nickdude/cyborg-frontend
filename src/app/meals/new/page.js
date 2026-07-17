@@ -16,7 +16,12 @@ function todayUTC() {
 export default function NewMealPage() {
   const router = useRouter();
   const from = useSearchParams().get("from");
-  const dashboardHref = from === "insights" ? "/dashboard?view=insights" : "/dashboard";
+  const dashboardHref =
+    from === "insights"
+      ? "/dashboard?view=insights"
+      : from === "timeline"
+        ? "/dashboard?tab=timeline"
+        : "/dashboard";
   const hubHref = from ? `/meals/log?from=${from}` : "/meals/log";
   const { user, loading: authLoading } = useAuth();
   const userId = user?._id || user?.id;
