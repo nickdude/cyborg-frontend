@@ -62,7 +62,7 @@ export default function ProductCard({ product, onAdded }) {
         {/* Product image */}
         <div className="relative mb-5 flex h-[150px] items-center justify-center lg:h-[180px]">
           <Image
-            src={product.image || "/assets/preview/product-1.png"}
+            src={product.image || "/assets/preview/product-1.webp"}
             alt={product.name || "Product"}
             width={120}
             height={120}

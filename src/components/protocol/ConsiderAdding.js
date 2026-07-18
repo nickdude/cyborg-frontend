@@ -22,7 +22,7 @@ function testImage(name) {
   return "/assets/tests/metabolic-health.png";
 }
 
-const FALLBACK = "/assets/preview/product-1.png";
+const FALLBACK = "/assets/preview/product-1.webp";
 
 // "Consider adding" — recommended supplements + diagnostic tests from the action
 // plan, shown as display-only cards that link to the marketplace.

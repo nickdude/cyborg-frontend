@@ -14,7 +14,7 @@ const SEMAGLUTIDE_SECTIONS = [
         description:
           "The following intake questionnaire helps your clinician tailor your plan and ensure Semaglutide is a perfect match for you.",
         type: "intro",
-        image: "/assets/started/started1.png",
+        image: "/assets/started/started1.webp",
       },
       {
         code: "address.1",
@@ -198,7 +198,7 @@ This is intended for providing you with the information necessary to make an inf
         title: "I understand Semaglutide is for personal use only and agree to follow application instructions.",
         description:
           "Before proceeding, please verify the key terms and instructions below. By selecting 'Verify' you are consenting to the following: I understand that I should only use Semaglutide for my personal use only.",
-        image: "/assets/started/started1.png",
+        image: "/assets/started/started1.webp",
         type: "final-consent",
         options: ["Verify"],
       },

@@ -396,7 +396,7 @@ export default function MembershipPage() {
 
                       <div className="overflow-hidden rounded-2xl border border-tertiary">
                         <Image
-                          src="/assets/plans/plan1.jpg"
+                          src="/assets/plans/plan1.webp"
                           alt={p.name}
                           width={480}
                           height={240}

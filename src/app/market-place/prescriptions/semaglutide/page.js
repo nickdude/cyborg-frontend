@@ -13,7 +13,7 @@ export default function SemaglutidePage() {
     id: "semaglutide-001",
     name: "Semaglutide",
     brand: "Cyborg",
-    image: "/assets/sample-medicine.png",
+    image: "/assets/sample-medicine.webp",
     category: "Prescriptions",
     subcategory: "Weight Management",
     badges: [
@@ -109,25 +109,25 @@ export default function SemaglutidePage() {
         stepNumber: "1",
         title: "Fill out questionnaire",
         description: "Take our eligibility assessment to make sure you're qualified.",
-        image: "/assets/started/started1.png",
+        image: "/assets/started/started1.webp",
       },
       {
         stepNumber: "2",
         title: "Clinical Review",
         description: "Your Cyborg clinical team (licensed physician) will review and approve.",
-        image: "/assets/started/started2.png",
+        image: "/assets/started/started2.webp",
       },
       {
         stepNumber: "3",
         title: "Delivery",
         description: "Your boxed medications shipped discreetly to your door.",
-        image: "/assets/started/started3.png",
+        image: "/assets/started/started3.webp",
       },
       {
         stepNumber: "4",
         title: "Support",
         description: "Weekly check-ins, adjustments, and 24/7 provider access.",
-        image: "/assets/started/started4.png",
+        image: "/assets/started/started4.webp",
       },
     ],
     faqTitle: "Frequently asked questions",
@@ -174,7 +174,7 @@ export default function SemaglutidePage() {
       type: "supplement",
       price: 28.00,
       originalPrice: 35,
-      image: "/assets/sample-medicine.png",
+      image: "/assets/sample-medicine.webp",
       onSale: true,
       section: "recommended"
     },
@@ -186,7 +186,7 @@ export default function SemaglutidePage() {
       type: "supplement",
       price: 34.40,
       originalPrice: 43,
-      image: "/assets/sample-medicine.png",
+      image: "/assets/sample-medicine.webp",
       onSale: true,
       section: "recommended"
     },
@@ -198,7 +198,7 @@ export default function SemaglutidePage() {
       type: "supplement",
       price: 43.20,
       originalPrice: 54,
-      image: "/assets/sample-medicine.png",
+      image: "/assets/sample-medicine.webp",
       onSale: true,
       section: "brain"
     },
@@ -210,7 +210,7 @@ export default function SemaglutidePage() {
       type: "supplement",
       price: 35.48,
       originalPrice: 44.4,
-      image: "/assets/sample-medicine.png",
+      image: "/assets/sample-medicine.webp",
       onSale: true,
       section: "brain"
     },
@@ -349,7 +349,7 @@ export default function SemaglutidePage() {
           </div>
 
           <div className="relative w-full h-60 rounded-2xl overflow-hidden mb-6">
-            <Image src="/assets/semagltuide.png" alt="Semaglutide" fill className="object-cover" />
+            <Image src="/assets/semagltuide.webp" alt="Semaglutide" fill className="object-cover" />
           </div>
 
           <h3 className="text-xl font-medium font-inter text-black mb-4">

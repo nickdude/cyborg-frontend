@@ -37,7 +37,7 @@ export default function GoalCard({ goal, onClick, showCTA = true }) {
 
   // Alternate between two background images using goalId or id
   const goalIndex = goal.goalId ? goal.goalId.length : (goal.id || 0);
-  const bgImage = goalIndex % 2 === 1 ? "/assets/goal-theme-1.png" : "/assets/goal-theme-2.png";
+  const bgImage = goalIndex % 2 === 1 ? "/assets/goal-theme-1.webp" : "/assets/goal-theme-2.webp";
   const description = goal.summary || goal.description || "";
 
   return (

@@ -8,7 +8,7 @@ export default function ProtocolItem({ item }) {
       {/* Product Image */}
       <div className="flex-shrink-0 w-40 h-40 relative">
         <Image
-          src="/assets/sample-medicine.png"
+          src="/assets/sample-medicine.webp"
           alt={item.name}
           fill
           className="object-contain"

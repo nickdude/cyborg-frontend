@@ -139,7 +139,7 @@ export default function TestCoverageTabs() {
               }`}
             >
               <span className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-[#E6E6E8]">
-                <img src={tab.icon} alt={tab.title} className="h-full w-full object-cover" />
+                <img src={tab.icon} alt={tab.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
               </span>
               <span>{tab.title}</span>
             </button>

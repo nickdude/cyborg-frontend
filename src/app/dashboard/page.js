@@ -191,12 +191,12 @@ export default function Dashboard() {
                     title: "Live better, longer together",
                     cards: [
                         {
-                            image: "/assets/refer.png",
+                            image: "/assets/refer.webp",
                             text: "Review family health insights from your intake",
                             action: { type: "chevron" },
                         },
                         {
-                            image: "/assets/refer-friend.png",
+                            image: "/assets/refer-friend.webp",
                             textLines: ["Refer your friends and", "earn ₹299"],
                             subtext: "Get ₹299 each",
                             action: { type: "button", label: "Earn ₹299" },
@@ -315,7 +315,7 @@ export default function Dashboard() {
     const planDate = plan?.generatedAt || plan?.createdAt || null;
 
     const journey = [
-        { key: "intake", tone: "purple", Icon: ClipboardList, title: "Health intake", img: "/assets/timeline/intake.jpg",
+        { key: "intake", tone: "purple", Icon: ClipboardList, title: "Health intake", img: "/assets/timeline/intake.webp",
           date: user?.createdAt || null, href: "/onboarding",
           status: user?.onboardingCompleted ? "complete" : "active",
           note: user?.onboardingCompleted ? "Complete" : "Answer a few questions" },
@@ -331,7 +331,7 @@ export default function Dashboard() {
           date: planReady && planDate ? addDaysISO(planDate, 7) : null, href: "/consults",
           status: planReady ? "upcoming" : "locked",
           note: "Review your results with a clinician" },
-        { key: "retest", tone: "green", Icon: RefreshCw, title: "90-day re-test", img: "/assets/timeline/retest.jpg",
+        { key: "retest", tone: "green", Icon: RefreshCw, title: "90-day re-test", img: "/assets/timeline/retest.webp",
           date: lastReportDate ? addDaysISO(lastReportDate, 90) : null, href: "/data",
           status: "locked", note: "Track your progress" },
     ];

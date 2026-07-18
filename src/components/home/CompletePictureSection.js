@@ -10,7 +10,7 @@ export default function CompletePictureSection() {
 
         <div className="mx-auto mt-8 w-full max-w-[330px] md:max-w-[420px] lg:mx-0 lg:mt-0 lg:max-w-[460px] lg:justify-self-end lg:transition-transform lg:duration-500 lg:hover:scale-[1.02]">
           <Image
-            src="/assets/preview/sub-main.png"
+            src="/assets/preview/sub-main.webp"
             alt="Cyborg health dashboard preview"
             width={1024}
             height={1536}

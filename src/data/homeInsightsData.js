@@ -67,12 +67,12 @@ export const homeInsightsData = {
     title: "Live better, longer together",
     cards: [
       {
-        image: "/assets/refer.png",
+        image: "/assets/refer.webp",
         text: "Review family health insights from your intake",
         action: { type: "chevron" },
       },
       {
-        image: "/assets/refer-friend.png",
+        image: "/assets/refer-friend.webp",
         textLines: ["Refer your friends and", "earn ₹299"],
         subtext: "Get ₹299 each",
         action: { type: "button", label: "Earn ₹299" },

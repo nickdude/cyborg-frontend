@@ -8,7 +8,7 @@ export const mockOrders = [
     type: "test_booking",
     source: "Tata 1mg",
     status: "active",
-    image: "/assets/sample-medicine.png",
+    image: "/assets/sample-medicine.webp",
     details: {
       appointmentType: "In lab appointment",
       date: "Nov 13th, 2025",
@@ -27,7 +27,7 @@ export const mockOrders = [
     type: "medicine",
     source: "Cyborg Pharmacy",
     status: "active",
-    image: "/assets/sample-medicine.png",
+    image: "/assets/sample-medicine.webp",
     details: {
       fulfillment: "Preparing for dispatch",
       eta: "Estimated delivery in 2-3 days",
@@ -43,7 +43,7 @@ export const mockOrders = [
     type: "concierge",
     source: "Cyborg Concierge",
     status: "past",
-    image: "/assets/sample-medicine.png",
+    image: "/assets/sample-medicine.webp",
     details: {
       sessionDate: "Jan 03, 2026",
       sessionMode: "Video consultation",
@@ -59,7 +59,7 @@ export const mockOrders = [
     type: "action_plan",
     source: "Cyborg AI",
     status: "past",
-    image: "/assets/sample-medicine.png",
+    image: "/assets/sample-medicine.webp",
     details: {
       generatedAt: "Dec 20, 2025",
       statusText: "Plan generated successfully",

@@ -92,7 +92,7 @@ export default function Footer() {
       {/* CTA banner */}
       <section className="relative isolate overflow-hidden">
         <Image
-          src="/assets/footer/footer.jpg"
+          src="/assets/footer/footer.webp"
           alt=""
           fill
           sizes="100vw"
@@ -205,7 +205,7 @@ export default function Footer() {
             {AI_LOGOS.map((logo) => (
               <span key={logo.alt} className="flex h-14 w-14 items-center justify-center rounded-2xl border border-black/10 bg-white shadow-sm">
                 {/* Plain img: next/image won't optimize SVGs without dangerouslyAllowSVG */}
-                <img src={logo.src} alt={logo.alt} className="h-7 w-7 object-contain" />
+                <img src={logo.src} alt={logo.alt} loading="lazy" decoding="async" className="h-7 w-7 object-contain" />
               </span>
             ))}
           </div>

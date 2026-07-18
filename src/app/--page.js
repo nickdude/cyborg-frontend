@@ -16,7 +16,7 @@ export default function Home() {
             <div className="relative w-full min-h-[60vh] text-white">
                 <div className="absolute inset-0 z-0">
                     <Image
-                        src="/assets/welcome/welcome.jpg"
+                        src="/assets/welcome/welcome.webp"
                         alt="Welcome background"
                         fill
                         className="object-cover"

@@ -4,7 +4,7 @@ const HOW_IT_WORKS_STEPS = [
     title: "Test your whole body",
     description:
       "Get a comprehensive blood draw at one of our 2,000+ partner labs or from the comfort of your own home.",
-    image: "/assets/preview/1.jpg",
+    image: "/assets/preview/1.webp",
     imageAlt: "Blood draw at home by a clinician",
   },
   {
@@ -12,7 +12,7 @@ const HOW_IT_WORKS_STEPS = [
     title: "An actionable plan",
     description:
       "Easy to understand results and a clear health plan with tailored recommendations on diet, lifestyle changes & supplements.",
-    image: "/assets/preview/2.jpg",
+    image: "/assets/preview/2.webp",
     imageAlt: "Actionable biomarker plan in the Cyborg app",
   },
   {
@@ -20,7 +20,7 @@ const HOW_IT_WORKS_STEPS = [
     title: "A connected ecosystem",
     description:
       "You can book additional diagnostics, buy curated supplements with members-only discount in your Cyborg dashboard.",
-    image: "/assets/preview/3.jpg",
+    image: "/assets/preview/3.webp",
     imageAlt: "Connected ecosystem with wearable and supplement suggestions",
   },
 ];

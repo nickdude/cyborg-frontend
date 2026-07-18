@@ -9,31 +9,31 @@ const MEMBERSHIP_FEATURES = [
     id: 1,
     title: "Upload past lab data",
     description: "Visualize past Quest or Labcorp results.",
-    image: "/assets/preview/membership/membership-1.png",
+    image: "/assets/preview/membership/membership-1.webp",
   },
   {
     id: 2,
     title: "Your personalized health plan",
     description: "Lifestyle, diet, supplement & Rx recommendations.",
-    image: "/assets/preview/membership/membership-2.png",
+    image: "/assets/preview/membership/membership-2.webp",
   },
   {
     id: 3,
     title: "Unlimited concierge messaging",
     description: "Ask questions and get answers from our care team.",
-    image: "/assets/preview/membership/membership-3.png",
+    image: "/assets/preview/membership/membership-3.webp",
   },
   {
     id: 4,
     title: "Add-on testing anytime",
     description: "Advanced gut microbiome, toxins & cancer screens.",
-    image: "/assets/preview/membership/membership-4.png",
+    image: "/assets/preview/membership/membership-4.webp",
   },
   {
     id: 5,
     title: "Access to Cyborg’s Virtual Clinic",
     description: "Curated solutions available after medical evaluation.",
-    image: "/assets/preview/membership/membership-5.png",
+    image: "/assets/preview/membership/membership-5.webp",
   },
 ];
 

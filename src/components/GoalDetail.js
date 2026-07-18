@@ -188,7 +188,7 @@ export default function GoalDetail({ goal, protocol, onBack, stepNumber = 1 }) {
       dosing: item.dosing || supp.dose || "",
       why: supp.whyItMatters || info.why || "",
       how: supp.howToTake || info.how || "",
-      image: supplementImage(item.productName) || "/assets/preview/product-1.png",
+      image: supplementImage(item.productName) || "/assets/preview/product-1.webp",
     };
   };
 

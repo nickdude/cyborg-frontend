@@ -9,7 +9,7 @@ export default function ProtocolProductItem({ product, onBuyClick }) {
         <div className="flex items-center gap-4 flex-1">
           <div className="w-16 h-16 relative flex-shrink-0 lg:h-20 lg:w-20">
             <Image
-              src="/assets/sample-medicine.png"
+              src="/assets/sample-medicine.webp"
               alt={product.name}
               fill
               className="object-contain"

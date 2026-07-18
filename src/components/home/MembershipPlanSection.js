@@ -60,6 +60,8 @@ export default function MembershipPlanSection() {
             <img
               src={STEP_IMAGES[activeStep]}
               alt={`Membership step ${activeStep + 1}`}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full scale-110 rounded-md object-contain"
             />
           </div>
@@ -73,7 +75,7 @@ export default function MembershipPlanSection() {
                 className={`overflow-hidden rounded border ${activeStep === index ? "border-[#5B2487]" : "border-[#cfd0d5]"}`}
                 aria-label={`Show step ${index + 1}`}
               >
-                <img src={image} alt="" aria-hidden="true" className="h-[56px] w-full object-cover" style={{ imageRendering: "crisp-edges" }} />
+                <img src={image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-[56px] w-full object-cover" style={{ imageRendering: "crisp-edges" }} />
               </button>
             ))}
           </div>

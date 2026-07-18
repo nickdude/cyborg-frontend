@@ -172,7 +172,7 @@ function ScoreHero({ scoreVal, predictedDelta, variant, onSwitch }) {
     <div className="px-5">
       <div className="relative mt-4 overflow-hidden rounded-lg" style={{ height: 160 }}>
         <Image
-          src="/images/food-score/score-hero-bg.png"
+          src="/images/food-score/score-hero-bg.webp"
           alt=""
           fill
           className="object-cover"

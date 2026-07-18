@@ -29,7 +29,7 @@ export default function InsightsDashboard({ userName, data, scores, reportDate, 
         <div className="mt-6 xl:hidden">
           <div className={`relative mx-auto w-full max-w-[520px] overflow-hidden ${CARD}`}>
             <div className="relative h-[360px] bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.95),rgba(242,242,242,1))] sm:h-[420px]">
-              <Image src="/assets/man.png" alt="Digital twin" fill className="object-contain object-center" priority />
+              <Image src="/assets/man.webp" alt="Digital twin" fill className="object-contain object-center" priority />
             </div>
           </div>
         </div>
@@ -39,7 +39,7 @@ export default function InsightsDashboard({ userName, data, scores, reportDate, 
           <aside className="hidden xl:block xl:sticky xl:top-6">
             <div className={`${CARD} p-4`}>
               <div className="relative h-[460px] overflow-hidden rounded-xl bg-gradient-to-b from-white to-gray-100">
-                <Image src="/assets/man.png" alt="Digital twin" fill className="object-contain object-center" priority />
+                <Image src="/assets/man.webp" alt="Digital twin" fill className="object-contain object-center" priority />
               </div>
               <div className="mt-4 border-t border-borderColor pt-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-secondary">Digital Twin</p>
@@ -76,7 +76,7 @@ export default function InsightsDashboard({ userName, data, scores, reportDate, 
                   </p>
                 </div>
                 <div className="relative h-[72px] w-[108px] flex-shrink-0 lg:h-[84px] lg:w-[120px]">
-                  <Image src="/assets/book.png" alt="Action plan book" fill className="object-contain object-right" />
+                  <Image src="/assets/book.webp" alt="Action plan book" fill className="object-contain object-right" />
                 </div>
               </Link>
             </div>

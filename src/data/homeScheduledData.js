@@ -28,7 +28,7 @@ export const homeScheduledData = {
     title: "Finish onboarding to get most out of Cyborg",
     items: [
       { key: "insurance", icon: "ShieldCheck", image: "/assets/timeline/insurance.png", title: "Insurance", sub: "Get the most value from Cyborg", href: "/settings" },
-      { key: "wearable", icon: "Watch", image: "/assets/timeline/wearable.png", title: "Wearable", sub: "Sync data from your health trackers", href: "/settings" },
+      { key: "wearable", icon: "Watch", image: "/assets/timeline/wearable.png", title: "Wearable", sub: "Sync data from your health trackers", href: "/settings?tab=integrations" },
       { key: "identify", icon: "ScanFace", image: "/assets/timeline/identify.webp", title: "Identify", sub: "Verify your identity to import past medical records", href: "/onboarding" },
     ],
   },
@@ -52,7 +52,7 @@ export const homeScheduledData = {
   rx: {
     eyebrow: "Cyborg for Rx",
     headline: "Manage your medications with Cyborg",
-    image: "/assets/timeline/rx-vial.png",
+    image: "/assets/timeline/rx-vial.webp",
     benefits: [
       { icon: "DollarSign", text: "Members-only pricing" },
       { icon: "CreditCard", text: "No payment until approved" },

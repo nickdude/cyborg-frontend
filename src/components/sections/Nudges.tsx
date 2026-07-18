@@ -115,6 +115,8 @@ export function Nudges() {
                   alt=""
                   width={320}
                   height={380}
+                  loading="lazy"
+                  decoding="async"
                   className="block h-auto w-full select-none"
                   draggable={false}
                 />

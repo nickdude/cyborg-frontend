@@ -10,7 +10,6 @@ import { LandingPreloader } from "@/components/LandingPreloader";
 import { Reveal } from "@/components/Reveal";
 import { BiomarkerTicker } from "@/components/BiomarkerTicker";
 import { Hero } from "@/components/sections/Hero";
-import { TiltTablet } from "@/components/sections/TiltTablet";
 import { Products } from "@/components/sections/Products";
 import { AllInOneApp } from "@/components/sections/AllInOneApp";
 import { Nudges } from "@/components/sections/Nudges";
@@ -21,12 +20,9 @@ import {
   VISUALISE_PART_ONE,
   VISUALISE_PART_TWO,
 } from "@/components/sections/VisualStorySection";
-import MedicalProfessionalsSection from "@/components/home/MedicalProfessionalsSection";
 import MembershipPlanSection from "@/components/home/MembershipPlanSection";
 import TagOverlaySection from "@/components/home/TagOverlaySection";
 import VsDifferenceSection from "@/components/home/VsDifferenceSection";
-import CyborgLabsSection from "@/components/home/CyborgLabsSection";
-import ChangeHealthSection from "@/components/home/ChangeHealthSection";
 import FaqAccordion from "@/components/home/FaqAccordion";
 import TestCoverageTabs from "@/components/home/TestCoverageTabs";
 import Footer from "@/components/home/Footer";

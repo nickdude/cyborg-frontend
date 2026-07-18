@@ -284,7 +284,7 @@ export default function PatientDetail() {
             {patientName}
           </h1>
           <img
-            src="/assets/avatars/avatar-1.png"
+            src="/assets/avatars/avatar-1.webp"
             alt={patientName}
             className="h-8 w-8 rounded-full object-cover flex-shrink-0 z-10"
           />
@@ -299,7 +299,7 @@ export default function PatientDetail() {
             {/* Biological Age Card */}
             <div className="relative h-[176px] overflow-hidden rounded-2xl border border-borderColor shadow-sm ring-1 ring-black/5">
               <img
-                src="/assets/doctor/bio-age-card-bg-figma.png"
+                src="/assets/doctor/bio-age-card-bg-figma.webp"
                 alt=""
                 className="absolute inset-0 w-full h-full object-cover"
               />
@@ -395,7 +395,7 @@ export default function PatientDetail() {
               {highPriorityGoal && (
                 <div className="relative mb-4 h-[132px] overflow-hidden rounded-2xl border border-borderColor shadow-sm">
                   <img
-                    src="/assets/doctor/goals-card-bg-figma.png"
+                    src="/assets/doctor/goals-card-bg-figma.webp"
                     alt=""
                     className="absolute inset-0 w-full h-full object-cover"
                   />
