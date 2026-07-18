@@ -85,12 +85,12 @@ export function Hero({ start = true }: { start?: boolean }) {
         <>
           Starts at{" "}
           <CountUp
-            to={16499}
+            to={15000}
             start={start}
             delay={0.2}
             format={(n) => `₹${Math.round(n).toLocaleString("en-IN")}`}
           />
-          /year
+          /month
         </>
       ),
     },
