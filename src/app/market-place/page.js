@@ -7,6 +7,7 @@ import { ShoppingCart } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import ProductSection from "@/components/ProductSection";
 import { productAPI, cartAPI } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Top-level category tabs (superpower marketplace).
 // `match` maps the tab to our real product `type` values; "all" shows everything.
@@ -49,6 +50,7 @@ const SECTION_META = {
 
 function MarketplaceInner() {
   const searchParams = useSearchParams();
+  const { token } = useAuth();
 
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,13 +63,14 @@ function MarketplaceInner() {
   // Live cart count for the always-visible cart button (so added items are never lost).
   const [cartCount, setCartCount] = useState(0);
   const refreshCart = useCallback(async () => {
+    if (!token) return; // anonymous browsing — no cart to fetch
     try {
       const res = await cartAPI.get();
       setCartCount(res?.data?.itemCount || 0);
     } catch {
-      /* not logged in / empty — leave the count as-is */
+      /* empty cart / transient error — leave the count as-is */
     }
-  }, []);
+  }, [token]);
   useEffect(() => {
     refreshCart();
     const onFocus = () => refreshCart();

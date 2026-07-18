@@ -5,17 +5,24 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Plus, Minus } from "lucide-react";
 import { cartAPI } from "@/services/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Superpower-style marketplace card:
 // [category label] · [product image] · [name] · [description] · [price] + quantity stepper.
 // First click adds it to the cart (qty 1); each tap of + / − updates the cart quantity.
 export default function ProductCard({ product, onAdded }) {
   const router = useRouter();
+  const { token } = useAuth();
   const [qty, setQty] = useState(0);
   const [busy, setBusy] = useState(false);
 
   const changeQty = async (next) => {
     if (busy || next < 0) return;
+    if (!token) {
+      // Browsing is public; acting on the cart requires an account.
+      router.push("/login");
+      return;
+    }
     const prev = qty;
     setBusy(true);
     setQty(next); // optimistic

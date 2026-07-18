@@ -28,6 +28,9 @@ const PUBLIC_ROUTES = [
   "/forgot-password",
   "/reset-password",
   "/verify-otp",
+  // Marketplace is browsable logged-out (industry-standard catalog UX);
+  // auth is enforced at the cart/checkout actions instead.
+  "/market-place",
 ];
 
 API.interceptors.response.use(
