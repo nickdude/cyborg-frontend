@@ -19,35 +19,35 @@ export interface StoryCard {
 export const VISUALISE_PART_ONE: StoryCard[] = [
   {
     id: 1,
-    image: "/assets/viusalise-part-one/feature1.webp",
+    image: "/assets/viusalise-part-one/feature1.png",
     width: 320,
     height: 162,
     title: "Visualize your *metabolic fitness in real-time* with the *Metabolic Score*",
   },
   {
     id: 2,
-    image: "/assets/viusalise-part-one/feature2.webp",
+    image: "/assets/viusalise-part-one/feature2.png",
     width: 320,
     height: 282,
     title: "See exactly how your *body responds* to every meal, workout and night",
   },
   {
     id: 3,
-    image: "/assets/viusalise-part-one/feature3.webp",
+    image: "/assets/viusalise-part-one/feature3.png",
     width: 217,
     height: 244,
     title: "Spot your *patterns and trends* with clear, daily insights",
   },
   {
     id: 4,
-    image: "/assets/viusalise-part-one/feature4.webp",
+    image: "/assets/viusalise-part-one/feature4.png",
     width: 284,
     height: 268,
     title: "Turn complex biomarkers into *simple, personalized guidance*",
   },
   {
     id: 5,
-    image: "/assets/viusalise-part-one/feature5.webp",
+    image: "/assets/viusalise-part-one/feature5.png",
     width: 321,
     height: 241,
     title: "Stay on track with *real-time nudges* built around your life",
@@ -58,7 +58,7 @@ export const VISUALISE_PART_ONE: StoryCard[] = [
 export const VISUALISE_PART_TWO: StoryCard[] = [
   {
     id: 1,
-    image: "/assets/viusalise-part-two/feature1.webp",
+    image: "/assets/viusalise-part-two/feature1.png",
     width: 249,
     height: 217,
     title: "Track your *real-time glucose* with just a *quick scan*",
@@ -66,7 +66,7 @@ export const VISUALISE_PART_TWO: StoryCard[] = [
   },
   {
     id: 2,
-    image: "/assets/viusalise-part-two/feature2.webp",
+    image: "/assets/viusalise-part-two/feature2.png",
     width: 320,
     height: 107,
     title: "Measure the *impact of different foods* on your health with the *Food Score*",
@@ -74,7 +74,7 @@ export const VISUALISE_PART_TWO: StoryCard[] = [
   },
   {
     id: 3,
-    image: "/assets/viusalise-part-two/feature3.webp",
+    image: "/assets/viusalise-part-two/feature3.png",
     width: 226,
     height: 225,
     title: "Skip the guesswork and get real-time guidance from your *performance coach*",
@@ -82,7 +82,7 @@ export const VISUALISE_PART_TWO: StoryCard[] = [
   },
   {
     id: 4,
-    image: "/assets/viusalise-part-two/feature4.webp",
+    image: "/assets/viusalise-part-two/feature4.png",
     width: 291,
     height: 158,
     title: "Get smarter *food scores* and better guidance, powered by *real data from people like you*",
@@ -90,7 +90,7 @@ export const VISUALISE_PART_TWO: StoryCard[] = [
   },
   {
     id: 5,
-    image: "/assets/viusalise-part-two/feature5.webp",
+    image: "/assets/viusalise-part-two/feature5.png",
     width: 304,
     height: 180,
     title: "Build *lasting habits* with insights that *adapt to you*",

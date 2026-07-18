@@ -19,10 +19,10 @@ const easeOut = [0.22, 1, 0.36, 1] as const;
    no-op. The renders already include the device, so there is no wrapping phone
    frame (that caused a phone-in-phone nesting). */
 const TAB_IMAGES: Record<number, string> = {
-  0: "/assets/all-in-one/1.webp",
-  1: "/assets/all-in-one/2.webp",
-  3: "/assets/all-in-one/3.webp",
-  4: "/assets/all-in-one/4.webp",
+  0: "/assets/all-in-one/1.png",
+  1: "/assets/all-in-one/2.png",
+  3: "/assets/all-in-one/3.png",
+  4: "/assets/all-in-one/4.png",
 };
 
 // Auto-advance cycle through the demo screens; index 2 (the "+" no-op) is skipped.

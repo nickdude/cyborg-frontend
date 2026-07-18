@@ -15,10 +15,10 @@ interface Product {
 }
 
 const products: Product[] = [
-  { name: "Amino 9", image: "/assets/product-1.webp", price: "₹2,499", href: "/login", badge: "Best Seller" },
-  { name: "Mito Heart", image: "/assets/product-2.webp", price: "₹2,999", href: "/login", badge: "New" },
-  { name: "Ozempic", image: "/assets/product-3.webp", price: "₹14,999", href: "/login", badge: "Rx · Doctor-prescribed" },
-  { name: "Mounjaro", image: "/assets/product-4.webp", price: "₹16,999", href: "/login", badge: "Rx · Doctor-prescribed" },
+  { name: "Amino 9", image: "/assets/product-1.png", price: "₹2,499", href: "/login", badge: "Best Seller" },
+  { name: "Mito Heart", image: "/assets/product-2.png", price: "₹2,999", href: "/login", badge: "New" },
+  { name: "Ozempic", image: "/assets/product-3.png", price: "₹14,999", href: "/login", badge: "Rx · Doctor-prescribed" },
+  { name: "Mounjaro", image: "/assets/product-4.png", price: "₹16,999", href: "/login", badge: "Rx · Doctor-prescribed" },
 ];
 
 const easeOut = [0.22, 1, 0.36, 1] as const;

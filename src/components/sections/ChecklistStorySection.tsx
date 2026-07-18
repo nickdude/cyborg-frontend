@@ -19,7 +19,7 @@ interface StoryCardData {
 const CARDS: StoryCardData[] = [
   {
     id: 1,
-    image: "/assets/check-list/check-list1.webp",
+    image: "/assets/check-list/check-list1.png",
     step: "01",
     label: "A new health check",
     title: "Every membership starts with 100+ biomarkers",
@@ -28,7 +28,7 @@ const CARDS: StoryCardData[] = [
   },
   {
     id: 2,
-    image: "/assets/check-list/check-list2.webp",
+    image: "/assets/check-list/check-list2.png",
     step: "02",
     label: "All your health data",
     title: "All your health data, in one place",
@@ -37,7 +37,7 @@ const CARDS: StoryCardData[] = [
   },
   {
     id: 3,
-    image: "/assets/check-list/check-list3.webp",
+    image: "/assets/check-list/check-list3.png",
     step: "03",
     label: "A custom action plan",
     title: "Get a personalized health protocol",
@@ -46,7 +46,7 @@ const CARDS: StoryCardData[] = [
   },
   {
     id: 4,
-    image: "/assets/check-list/check-list4.webp",
+    image: "/assets/check-list/check-list4.png",
     step: "04",
     label: "24/7 care team",
     title: "Message your private care team 24/7",

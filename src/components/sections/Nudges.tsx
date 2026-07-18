@@ -111,7 +111,7 @@ export function Nudges() {
               {/* Nudge preview — photo with heading + notification overlays */}
               <div className="relative mb-8 w-full max-w-[320px] overflow-hidden rounded-[28px] shadow-[0_24px_60px_-15px_rgba(0,0,0,0.35)]">
                 <img
-                  src="/assets/nudge/nudge_image.webp"
+                  src="/assets/nudge/nudge_image.png"
                   alt=""
                   width={320}
                   height={380}

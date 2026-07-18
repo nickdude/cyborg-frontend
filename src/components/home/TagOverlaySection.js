@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 
 export default function TagOverlaySection({ images, tags, interval = 3000 }) {
   const defaultImages = [
-    "/assets/testinomial/test1.webp",
-    "/assets/testinomial/test2.webp",
-    "/assets/testinomial/test3.webp",
-    "/assets/testinomial/test4.webp",
-    "/assets/testinomial/test5.webp",
-    "/assets/testinomial/test6.webp",
+    "/assets/testinomial/test1.png",
+    "/assets/testinomial/test2.png",
+    "/assets/testinomial/test3.png",
+    "/assets/testinomial/test4.png",
+    "/assets/testinomial/test5.png",
+    "/assets/testinomial/test6.png",
   ];
 
   const defaultTags = [

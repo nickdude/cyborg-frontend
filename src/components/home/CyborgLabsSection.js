@@ -8,7 +8,7 @@ export default function CyborgLabsSection() {
         <div className="group relative isolate overflow-hidden rounded-[28px] lg:rounded-[36px]">
           {/* Closest existing photo as backdrop — swap for the real lab image later */}
           <Image
-            src="/assets/testinomial/test5.webp"
+            src="/assets/testinomial/test5.png"
             alt=""
             fill
             sizes="(min-width: 1024px) 1320px, (min-width: 768px) 820px, 100vw"
