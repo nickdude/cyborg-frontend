@@ -11,13 +11,14 @@ interface Product {
   /** price formatted for India, e.g. "₹2,499" */
   price: string;
   href: string;
+  badge?: string;
 }
 
 const products: Product[] = [
-  { name: "Amino 9", image: "/assets/product-1.png", price: "₹2,499", href: "/login" },
-  { name: "Mito Heart", image: "/assets/product-2.png", price: "₹2,999", href: "/login" },
-  { name: "Ozempic", image: "/assets/product-3.png", price: "₹14,999", href: "/login" },
-  { name: "Mounjaro", image: "/assets/product-4.png", price: "₹16,999", href: "/login" },
+  { name: "Amino 9", image: "/assets/product-1.webp", price: "₹2,499", href: "/login", badge: "Best Seller" },
+  { name: "Mito Heart", image: "/assets/product-2.webp", price: "₹2,999", href: "/login", badge: "New" },
+  { name: "Ozempic", image: "/assets/product-3.webp", price: "₹14,999", href: "/login", badge: "Rx · Doctor-prescribed" },
+  { name: "Mounjaro", image: "/assets/product-4.webp", price: "₹16,999", href: "/login", badge: "Rx · Doctor-prescribed" },
 ];
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -36,12 +37,14 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <motion.article
       variants={gridItem}
-      className="group relative flex h-full flex-col rounded-2xl border border-white/15 bg-[#9878AF] bg-[radial-gradient(120%_90%_at_50%_-10%,rgba(255,255,255,0.18),transparent_60%)] p-4 shadow-xl shadow-black/25 backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-1.5 hover:border-white/35 hover:shadow-2xl hover:shadow-black/40 sm:p-7"
+      className="group relative flex h-full flex-col rounded-2xl border border-white/15 bg-[#9878AF] bg-[radial-gradient(120%_90%_at_50%_-10%,rgba(255,255,255,0.18),transparent_60%)] p-4 shadow-xl shadow-black/25 backdrop-blur-xl transition-all duration-200 ease-out hover:-translate-y-1.5 hover:border-white/35 hover:shadow-2xl hover:shadow-black/40 sm:p-7"
     >
-      {/* Best Seller badge */}
-      <span className="self-start rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-cyborg-ink shadow-sm sm:px-3 sm:py-1.5 sm:text-sm">
-        Best Seller
-      </span>
+      {/* Product badge */}
+      {product.badge && (
+        <span className="self-start rounded-md bg-white px-2.5 py-1 text-xs font-semibold text-cyborg-ink shadow-sm sm:px-3 sm:py-1.5 sm:text-sm">
+          {product.badge}
+        </span>
+      )}
 
       {/* Product title */}
       <h3 className="mt-3 text-lg font-semibold leading-snug tracking-[-0.01em] text-white sm:mt-5 sm:text-2xl">
@@ -54,14 +57,14 @@ function ProductCard({ product }: { product: Product }) {
           src={product.image}
           alt={product.name}
           loading="lazy"
-          className="h-[120px] w-auto max-w-full object-contain drop-shadow-xl transition-transform duration-300 ease-out group-hover:scale-[1.04] sm:h-[240px]"
+          className="h-[120px] w-auto max-w-full object-contain drop-shadow-xl transition-transform duration-200 ease-out group-hover:scale-[1.05] sm:h-[240px]"
         />
       </div>
 
       {/* CTA */}
       <Link
         href={product.href}
-        className="inline-flex w-full items-center justify-center rounded-lg bg-cyborg-purple px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#4a1c74] hover:shadow-xl hover:shadow-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-cyborg-purple sm:rounded-xl sm:px-5 sm:py-3 sm:text-base"
+        className="inline-flex w-full items-center justify-center rounded-lg bg-cyborg-purple px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-black/20 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#4a1c74] hover:shadow-xl hover:shadow-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-cyborg-purple sm:rounded-xl sm:px-5 sm:py-3 sm:text-base"
       >
         Join Today
       </Link>

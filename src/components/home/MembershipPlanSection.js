@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 
 const STEP_IMAGES = [
-  "/assets/preview/steps/1.webp",
   "/assets/preview/steps/2.webp",
   "/assets/preview/steps/3.webp",
   "/assets/preview/steps/4.webp",
@@ -27,8 +26,7 @@ function PaymentBadges() {
           <span className="absolute right-1 h-5 w-5 rounded-full bg-[#f79e1b]" />
         </span>
       </span>
-      <span className="inline-flex h-9 min-w-[66px] items-center justify-center rounded bg-[#1c48c6] px-3 text-xl font-bold italic text-white">VISA</span>
-      <span className="inline-flex h-9 min-w-[66px] items-center justify-center rounded bg-[#1c48c6] px-3 text-xl font-bold italic text-white">VISA</span>
+      <span className="inline-flex h-9 min-w-[66px] items-center justify-center rounded border border-black/15 bg-white px-3 text-base font-bold tracking-wide text-black">UPI</span>
     </div>
   );
 }
@@ -58,15 +56,15 @@ export default function MembershipPlanSection() {
 
         {/* Visual — right column on desktop, vertically centered across both copy rows */}
         <div className="lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mx-auto lg:w-full lg:max-w-[440px] lg:self-center">
-          <div className="mt-7 flex items-center justify-center rounded-[18px] border-[6px] border-[#d7d7dc] lg:mt-0">
+          <div className="mt-7 flex items-center justify-center overflow-hidden rounded-[18px] border-[6px] border-[#d7d7dc] lg:mt-0">
             <img
               src={STEP_IMAGES[activeStep]}
               alt={`Membership step ${activeStep + 1}`}
-              className="h-full w-full rounded-md object-contain"
+              className="h-full w-full scale-110 rounded-md object-contain"
             />
           </div>
 
-          <div className="mt-4 grid grid-cols-5 gap-2">
+          <div className="mt-4 grid grid-cols-4 gap-2">
             {STEP_IMAGES.map((image, index) => (
               <button
                 key={image}
@@ -75,7 +73,7 @@ export default function MembershipPlanSection() {
                 className={`overflow-hidden rounded border ${activeStep === index ? "border-[#5B2487]" : "border-[#cfd0d5]"}`}
                 aria-label={`Show step ${index + 1}`}
               >
-                <img src={image} alt="" aria-hidden="true" className="h-[56px] w-full object-contain" style={{ imageRendering: "crisp-edges" }} />
+                <img src={image} alt="" aria-hidden="true" className="h-[56px] w-full object-cover" style={{ imageRendering: "crisp-edges" }} />
               </button>
             ))}
           </div>
@@ -100,6 +98,7 @@ export default function MembershipPlanSection() {
 
           <p className="mt-3 text-center text-[clamp(1.2rem,3.9vw,1.65rem)] text-[#666973] lg:mt-4 lg:text-left lg:text-[14px] lg:font-medium lg:uppercase lg:tracking-[0.1em]">Flexible payment options</p>
           <PaymentBadges />
+          <p className="mt-2 text-center text-xs text-secondary lg:text-left">Secure payments via Razorpay</p>
 
           <Link
             href="/register"

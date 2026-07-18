@@ -1,8 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useInView,
+  useReducedMotion,
+} from "motion/react";
 import { Container } from "@/components/Container";
 import BottomNavbar from "@/components/BottomNavbar";
 
@@ -14,22 +19,43 @@ const easeOut = [0.22, 1, 0.36, 1] as const;
    no-op. The renders already include the device, so there is no wrapping phone
    frame (that caused a phone-in-phone nesting). */
 const TAB_IMAGES: Record<number, string> = {
-  0: "/assets/all-in-one/1.png",
-  1: "/assets/all-in-one/2.png",
-  3: "/assets/all-in-one/3.png",
-  4: "/assets/all-in-one/4.png",
+  0: "/assets/all-in-one/1.webp",
+  1: "/assets/all-in-one/2.webp",
+  3: "/assets/all-in-one/3.webp",
+  4: "/assets/all-in-one/4.webp",
 };
 
-function AppShowcase() {
-  const [active, setActive] = useState(0);
+// Auto-advance cycle through the demo screens; index 2 (the "+" no-op) is skipped.
+const ORDER = [0, 1, 3, 4];
 
-  // The "+" (index 2) has no image, so tapping it changes nothing.
+function AppShowcase() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const inView = useInView(ref, { amount: 0.4 });
+  const reduce = useReducedMotion();
+
+  // Auto-advance while on screen — until the user takes over (paused) and
+  // never for reduced-motion users.
+  useEffect(() => {
+    if (!inView || paused || reduce) return;
+    const id = setInterval(
+      () => setActive((a) => ORDER[(ORDER.indexOf(a) + 1) % ORDER.length]),
+      3500
+    );
+    return () => clearInterval(id);
+  }, [inView, paused, reduce]);
+
+  // The "+" (index 2) has no image, so tapping it changes nothing. Any manual
+  // tap permanently stops the autoplay.
   const handleTab = (i: number) => {
+    setPaused(true);
     if (TAB_IMAGES[i] !== undefined) setActive(i);
   };
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px -10% 0px" }}

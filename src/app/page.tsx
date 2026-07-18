@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MotionConfig } from "motion/react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { BackgroundVideo } from "@/components/BackgroundVideo";
 import { LandingPreloader } from "@/components/LandingPreloader";
 import { Reveal } from "@/components/Reveal";
+import { BiomarkerTicker } from "@/components/BiomarkerTicker";
 import { Hero } from "@/components/sections/Hero";
 import { TiltTablet } from "@/components/sections/TiltTablet";
 import { Products } from "@/components/sections/Products";
@@ -32,6 +34,8 @@ import Footer from "@/components/home/Footer";
 export default function Home() {
   const { token, loading } = useAuth();
   const router = useRouter();
+  // Hero entrance waits for the preloader fade so it plays in view, not behind it.
+  const [introDone, setIntroDone] = useState(false);
 
   // Logged-in visitors go straight to their dashboard (unchanged behaviour).
   useEffect(() => {
@@ -42,19 +46,21 @@ export default function Home() {
 
   return (
     <>
-      <LandingPreloader />
+      <LandingPreloader onDone={() => setIntroDone(true)} />
       <SmoothScroll>
+        <MotionConfig reducedMotion="user">
         <BackgroundVideo />
       <main className="relative z-10">
         {/* Hero is transparent so the fixed scroll.mp4 shows through */}
-        <Hero />
+        <Hero start={introDone} />
 
         {/* Everything below sits on an opaque backdrop so reveals don't bleed the video */}
         <div className="relative bg-black">
+          <BiomarkerTicker />
 
           <Reveal><Products /></Reveal>
           <Reveal><AllInOneApp /></Reveal>
-          <Reveal><Nudges /></Reveal>
+          <Nudges />
           <Reveal><LabsByCyborg /></Reveal>
           <ChecklistStorySection />
 
@@ -62,7 +68,7 @@ export default function Home() {
               <Reveal><MembershipPlanSection /></Reveal>
               <Reveal><VisualStorySection cards={VISUALISE_PART_ONE} /></Reveal>
               <Reveal><VisualStorySection cards={VISUALISE_PART_TWO} /></Reveal>
-              <Reveal><TagOverlaySection image="/assets/testinomial/test1.png" /></Reveal>
+              <Reveal><TagOverlaySection /></Reveal>
               <Reveal><VsDifferenceSection /></Reveal>
               {/* <Reveal><CyborgLabsSection /></Reveal>
               <Reveal><ChangeHealthSection /></Reveal> */}
@@ -71,6 +77,7 @@ export default function Home() {
               <Footer />
         </div>
       </main>
+        </MotionConfig>
       </SmoothScroll>
     </>
   );

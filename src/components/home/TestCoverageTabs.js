@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "motion/react";
 
 const TAB_DATA = [
   {
@@ -131,7 +132,7 @@ export default function TestCoverageTabs() {
             <button
               key={tab.key}
               onClick={() => setActive(i)}
-              className={`flex shrink-0 items-center gap-3 rounded-full px-4 py-2 text-sm font-medium transition-shadow ${
+              className={`flex shrink-0 items-center gap-3 rounded-full px-4 py-2 text-sm font-medium transition duration-200 ${
                 i === active
                   ? "border border-[#E6E6E8] bg-white text-black shadow-sm"
                   : "border border-[#E6E6E8] bg-white/55 text-gray-500 opacity-70 blur-[0.2px]"
@@ -147,16 +148,22 @@ export default function TestCoverageTabs() {
 
         <div className="mt-6">
           <div className="rounded-lg bg-white p-4 shadow-sm">
-            <ul className="space-y-3">
+            <ul key={TAB_DATA[active].key} className="space-y-3">
               {TAB_DATA[active].items.map((it, idx) => (
-                <li key={idx} className="text-sm text-gray-800">
+                <motion.li
+                  key={idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: Math.min(idx * 0.02, 0.35), ease: [0.22, 1, 0.36, 1] }}
+                  className="text-sm text-gray-800"
+                >
                   <span>{typeof it === "string" ? it : it.label}</span>
                   {typeof it === "object" && it.advanced && (
                     <span className="ml-3 rounded-md bg-[#E8E0F0] px-2 py-0.5 text-[11px] font-semibold text-[#6A2CA0]">
                       Advanced Panel
                     </span>
                   )}
-                </li>
+                </motion.li>
               ))}
             </ul>
           </div>

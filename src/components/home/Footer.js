@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "motion/react";
 
 // Accordion sections + their links.
 const FOOTER_SECTIONS = [
@@ -99,11 +100,23 @@ export default function Footer() {
         />
         <div className="-z-10 absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
         <div className="relative mx-auto flex min-h-screen w-full max-w-[1180px] flex-col justify-end px-6 pb-12 pt-28 text-white md:min-h-[520px] md:px-10 md:pb-16 lg:min-h-screen lg:max-w-[1400px] lg:px-12 lg:pb-20">
-          <h2 className="max-w-[14ch] text-[clamp(2.1rem,8.5vw,4rem)] font-bold leading-[1.05] tracking-[-0.02em]">
+          <motion.h2
+            initial={{ opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "0px 0px -20% 0px" }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-[14ch] text-[clamp(2.1rem,8.5vw,4rem)] font-bold leading-[1.05] tracking-[-0.02em]"
+          >
             Health is your greatest power. It’s time to unlock it
-          </h2>
+          </motion.h2>
 
-          <div className="mt-8">
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "0px 0px -20% 0px" }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+            className="mt-8"
+          >
             <Link
               href="/login"
               className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-base font-semibold text-black transition hover:bg-white/90"
@@ -113,13 +126,13 @@ export default function Footer() {
                 <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Link sections */}
       <div className="mx-auto w-full max-w-[1180px] px-6 pb-12 pt-10 md:px-10 md:pt-14 lg:max-w-[1400px] lg:px-12 lg:pb-20 lg:pt-20">
-        <h2 className="text-[clamp(2.4rem,11vw,3.25rem)] font-extrabold tracking-[-0.03em] text-black lg:text-[72px]">
+        <h2 className="wordmark-shimmer select-none text-[clamp(2.4rem,11vw,3.25rem)] font-extrabold tracking-[-0.03em] lg:text-[72px]">
           CYBORG
         </h2>
 

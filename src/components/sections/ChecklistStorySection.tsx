@@ -19,7 +19,7 @@ interface StoryCardData {
 const CARDS: StoryCardData[] = [
   {
     id: 1,
-    image: "/assets/check-list/check-list1.png",
+    image: "/assets/check-list/check-list1.webp",
     step: "01",
     label: "A new health check",
     title: "Every membership starts with 100+ biomarkers",
@@ -28,7 +28,7 @@ const CARDS: StoryCardData[] = [
   },
   {
     id: 2,
-    image: "/assets/check-list/check-list2.png",
+    image: "/assets/check-list/check-list2.webp",
     step: "02",
     label: "All your health data",
     title: "All your health data, in one place",
@@ -37,7 +37,7 @@ const CARDS: StoryCardData[] = [
   },
   {
     id: 3,
-    image: "/assets/check-list/check-list3.png",
+    image: "/assets/check-list/check-list3.webp",
     step: "03",
     label: "A custom action plan",
     title: "Get a personalized health protocol",
@@ -46,7 +46,7 @@ const CARDS: StoryCardData[] = [
   },
   {
     id: 4,
-    image: "/assets/check-list/check-list4.png",
+    image: "/assets/check-list/check-list4.webp",
     step: "04",
     label: "24/7 care team",
     title: "Message your private care team 24/7",
@@ -61,14 +61,16 @@ const TONE = {
     muted: "text-neutral-900/40",
     title: "text-neutral-900",
     body: "text-neutral-600",
-    scrim: "from-white/80 via-white/30 to-transparent",
+    scrim: "from-white/90 via-white/45 to-white/0",
+    shadow: "",
   },
   light: {
     active: "text-white",
     muted: "text-white/50",
     title: "text-white",
     body: "text-white/80",
-    scrim: "from-black/60 via-black/25 to-transparent",
+    scrim: "from-black/70 via-black/35 to-black/0",
+    shadow: "text-scrim-shadow",
   },
 } as const;
 
@@ -121,7 +123,7 @@ function StoryCard({
         {/* legibility scrim */}
         <div
           aria-hidden
-          className={`pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b ${t.scrim}`}
+          className={`pointer-events-none absolute inset-x-0 top-0 h-2/3 bg-gradient-to-b ${t.scrim}`}
         />
 
         {/* overlay content */}
@@ -137,11 +139,11 @@ function StoryCard({
               className="mt-8 max-w-[340px] md:mt-12 md:max-w-[460px]"
             >
               <h2
-                className={`text-[28px] font-semibold leading-[1.08] tracking-[-0.02em] md:text-5xl ${t.title}`}
+                className={`text-[28px] font-semibold leading-[1.08] tracking-[-0.02em] md:text-5xl ${t.title} ${t.shadow}`}
               >
                 {card.title}
               </h2>
-              <p className={`mt-4 text-[15px] leading-relaxed md:mt-6 md:text-lg ${t.body}`}>
+              <p className={`mt-4 text-[15px] leading-relaxed md:mt-6 md:text-lg ${t.body} ${t.shadow}`}>
                 {card.body}
               </p>
             </motion.div>

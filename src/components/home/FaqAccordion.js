@@ -37,6 +37,28 @@ const FAQ_ITEMS = [
   },
 ];
 
+function FaqItem({ item, open, onToggle }) {
+  return (
+    <div className="border-t last:border-b border-[#E6E6E8]">
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-4 py-4 text-left"
+        aria-expanded={open}
+      >
+        <span className="text-base font-medium text-black">{item.q}</span>
+        <svg className={`h-5 w-5 text-[#717178] transition-transform duration-300 ${open ? "rotate-180" : "rotate-0"}`} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <div aria-hidden={!open} className={`grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+        <div className="overflow-hidden">
+          <div className={`px-4 pb-4 text-gray-700 transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0"}`}>{item.a}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FaqAccordion() {
   const [open, setOpen] = useState(null);
 
@@ -57,21 +79,7 @@ export default function FaqAccordion() {
           <div className="rounded-lg bg-white">
             {firstGroup.map((it, idx) => {
               const i = idx;
-              return (
-                <div key={i} className="border-t last:border-b border-[#E6E6E8]">
-                  <button
-                    onClick={() => setOpen(open === i ? null : i)}
-                    className="flex w-full items-center justify-between px-4 py-4 text-left"
-                    aria-expanded={open === i}
-                  >
-                    <span className="text-base font-medium text-black">{it.q}</span>
-                    <svg className={`h-5 w-5 text-[#717178] transition-transform ${open === i ? "rotate-180" : "rotate-0"}`} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  {open === i && <div className="px-4 pb-4 text-gray-700">{it.a}</div>}
-                </div>
-              );
+              return <FaqItem key={i} item={it} open={open === i} onToggle={() => setOpen(open === i ? null : i)} />;
             })}
           </div>
 
@@ -79,21 +87,7 @@ export default function FaqAccordion() {
           <div className="rounded-lg bg-white">
             {secondGroup.map((it, idx) => {
               const i = idx + firstGroup.length;
-              return (
-                <div key={i} className="border-t last:border-b border-[#E6E6E8]">
-                  <button
-                    onClick={() => setOpen(open === i ? null : i)}
-                    className="flex w-full items-center justify-between px-4 py-4 text-left"
-                    aria-expanded={open === i}
-                  >
-                    <span className="text-base font-medium text-black">{it.q}</span>
-                    <svg className={`h-5 w-5 text-[#717178] transition-transform ${open === i ? "rotate-180" : "rotate-0"}`} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  {open === i && <div className="px-4 pb-4 text-gray-700">{it.a}</div>}
-                </div>
-              );
+              return <FaqItem key={i} item={it} open={open === i} onToggle={() => setOpen(open === i ? null : i)} />;
             })}
           </div>
         </div>

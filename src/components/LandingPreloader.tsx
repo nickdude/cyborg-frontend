@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Full-screen branded preloader for the landing page. It stays up until the hero
@@ -8,9 +8,11 @@ import { useEffect, useState } from "react";
  * video downloads), then near-instant once the browser has it cached. A minimum
  * show time avoids a jarring flash, and a hard cap means it can never get stuck.
  */
-export function LandingPreloader() {
+export function LandingPreloader({ onDone }: { onDone?: () => void }) {
   const [ready, setReady] = useState(false);
   const [gone, setGone] = useState(false);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
     const started = Date.now();
@@ -24,6 +26,8 @@ export function LandingPreloader() {
       const wait = Math.max(0, MIN_MS - (Date.now() - started));
       window.setTimeout(() => {
         setReady(true);
+        // Signal as the fade *starts* so the hero entrance plays under the cross-fade.
+        onDoneRef.current?.();
         window.setTimeout(() => setGone(true), 600); // unmount after the fade
       }, wait);
     };
@@ -55,12 +59,11 @@ export function LandingPreloader() {
   return (
     <div
       aria-hidden={ready}
-      className={`fixed inset-0 z-[300] flex flex-col items-center justify-center gap-6 bg-black transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[300] flex flex-col items-center justify-center bg-black transition-opacity duration-500 ${
         ready ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
-      <span className="text-2xl font-bold tracking-tight text-white">CYBORG</span>
-      <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/25 border-t-white" />
+      <span className="wordmark-shimmer-light text-2xl font-bold tracking-tight">CYBORG</span>
     </div>
   );
 }

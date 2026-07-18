@@ -1,13 +1,15 @@
 const COLUMNS = [
-  "VS-01™",
-  "Leading Oral Probiotic for Vaginal Health",
-  "Certain Prescriptions",
+  "CYBORG membership",
+  "Typical annual checkup",
+  "Standalone health apps",
 ];
 
 const ROWS = [
-  { label: "Establishes an optimal, resilient vaginal microbiome", marks: [true, false, false] },
-  { label: "Increases abundance of L. crispatus", marks: [true, false, false] },
-  { label: "Safely interacts directly with epithelial cells in the vagina", marks: [true, false, false] },
+  { label: "100+ biomarkers tested", marks: [true, false, false] },
+  { label: "Personalized action protocol, reviewed by doctors", marks: [true, false, false] },
+  { label: "24/7 care team in your pocket", marks: [true, false, false] },
+  { label: "Wearable + CGM integration", marks: [true, false, true] },
+  { label: "Regular retesting to track what's working", marks: [true, false, false] },
 ];
 
 function Mark({ filled }) {
@@ -23,11 +25,11 @@ export default function VsDifferenceSection() {
     <section className="bg-white px-5 py-12 text-black md:px-8 md:py-16 lg:py-40">
       <div className="mx-auto w-full max-w-[430px] md:max-w-[820px] lg:max-w-[1040px]">
         <h2 className="max-w-[12ch] text-[clamp(1.7rem,7vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em] lg:text-[44px]">
-          The VS-01™ Difference
+          The CYBORG Difference
         </h2>
 
         <p className="mt-4 max-w-[46ch] text-[15px] leading-[1.5] text-black/80 lg:mt-5 lg:max-w-[60ch] lg:text-[17px] lg:leading-[1.6] lg:text-black/65">
-          Many existing products and certain prescriptions for vaginal health only target the symptoms and can disrupt the vaginal microbiome. VS-01™ offers a new approach that outperforms on efficacy and safety.
+          A yearly checkup tests a handful of markers and leaves you to figure out the rest. Health apps show you numbers without care behind them. CYBORG puts clinical-grade testing, doctors and daily guidance behind one membership — so every result comes with a next step.
         </p>
 
         <div className="mt-8 lg:mt-12">

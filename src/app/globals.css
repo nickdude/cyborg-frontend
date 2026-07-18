@@ -47,6 +47,19 @@
       background-position: -50% 0;
     }
   }
+  /* Preloader wordmark — light shimmer variant for dark backgrounds */
+  .wordmark-shimmer-light {
+    background: linear-gradient(100deg, #fff 0%, #fff 30%, #a14ff1 45%, #cb86ff 55%, #fff 70%, #fff 100%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: wordmark-sweep 2.6s linear infinite;
+  }
+  /* Legibility shadow for headlines sitting on busy photos */
+  .text-scrim-shadow {
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+  }
 }
 
 /* Protocol mockup (Material 3) card + pill shadows. */
