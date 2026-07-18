@@ -39,7 +39,7 @@ const CARDS: CardData[] = [
   { img: "/assets/sm/sub-main.webp", label: "Biomarker Tracking", top: "48%", left: "11%", rotate: -6, widthClass: "w-[150px] md:w-[190px]", depth: 0.9 },
   { img: "/assets/sm/test5.webp", label: "Grail Cancer Test", top: "47%", left: "87%", rotate: 6, widthClass: "w-[150px] md:w-[190px]", depth: 0.9 },
   { img: "/assets/sm/test4.webp", label: "Intestinal Permeability Panel", top: "80%", left: "19%", rotate: 8, widthClass: "w-[160px] md:w-[210px]", depth: 1.1 },
-  { img: "/assets/product-3.png", label: "Prescriptions", top: "86%", left: "45%", rotate: -6, widthClass: "w-[110px] md:w-[140px]", depth: 0.5, desktopOnly: true },
+  { img: "/assets/product-3.webp", label: "Prescriptions", top: "86%", left: "45%", rotate: -6, widthClass: "w-[110px] md:w-[140px]", depth: 0.5, desktopOnly: true },
   { img: "/assets/sm/test6.webp", label: "MRIs", top: "79%", left: "63%", rotate: 5, widthClass: "w-[120px] md:w-[150px]", depth: 0.7 },
   { img: "/assets/sm/mobile-image-2.webp", label: "DEXA Scan", top: "82%", left: "82%", rotate: -8, widthClass: "w-[160px] md:w-[200px]", depth: 1.0 },
 ];

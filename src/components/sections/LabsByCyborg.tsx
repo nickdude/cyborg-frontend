@@ -54,7 +54,7 @@ export function LabsByCyborg() {
           className="mt-6 md:mt-10"
         >
           <motion.img
-            src="/assets/lab-by-cyborg/lab-by-cyborg.png"
+            src="/assets/lab-by-cyborg/lab-by-cyborg.webp"
             alt="Labs by Cyborg app preview showing your CYBORG biomarker score"
             width={156}
             height={140}
