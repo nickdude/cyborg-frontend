@@ -48,9 +48,7 @@ function getNotificationDisplay(notification) {
         title: "Action Plan Ready",
         message: "Your personalized action plan has been generated. View it now.",
         Icon: ClipboardList,
-        navigateTo: planId
-          ? `/action-plan/${notification.userId}?planId=${planId}`
-          : null,
+        navigateTo: planId ? `/action-plan?planId=${planId}` : "/action-plan",
       };
     }
     case "goals:awaiting_review":
@@ -66,9 +64,7 @@ function getNotificationDisplay(notification) {
         title: "Health Plan Approved",
         message: "Your doctor has approved your health goals. View them now.",
         Icon: CheckCircle,
-        navigateTo: pid
-          ? `/action-plan/${notification.userId}?planId=${pid}`
-          : "/protocol",
+        navigateTo: pid ? `/action-plan?planId=${pid}` : "/protocol?tab=goals",
       };
     }
     default:

@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { goalsAPI, actionPlanAPI, userAPI } from "@/services/api";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 import ProtocolIntro from "@/components/protocol/ProtocolIntro";
-import ActionPlan from "@/components/protocol/ActionPlan";
 import GoalStepCard from "@/components/protocol/GoalStepCard";
 import ConsiderAdding from "@/components/protocol/ConsiderAdding";
 import { supplementInfo } from "@/utils/supplementInfo";
@@ -367,7 +366,9 @@ export default function Protocol() {
   const [retrying, setRetrying] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
-  const [mainTab, setMainTab] = useState("protocol"); // protocol | actionplan
+  // The full Action Plan report moved to its own /action-plan route (reached from
+  // the dashboard); this page now tabs between the daily protocol and goals.
+  const [mainTab, setMainTab] = useState(searchParams.get("tab") === "goals" ? "goals" : "protocol"); // protocol | goals
   const [openItem, setOpenItem] = useState(null);
   const [takenSet, setTakenSet] = useState(() => new Set());
 
@@ -620,9 +621,9 @@ export default function Protocol() {
           )
         ) : (
           <>
-            {/* Top tabs: Protocol (products/goals) · Action Plan (full report) */}
+            {/* Top tabs: Protocol (daily checklist) · Goals */}
             <div className="mb-8 flex items-center gap-6 border-b border-borderColor lg:gap-8">
-              {[["protocol", "Protocol"], ["actionplan", "Action Plan"]].map(([k, l]) => (
+              {[["protocol", "Protocol"], ["goals", "Goals"]].map(([k, l]) => (
                 <button
                   key={k}
                   type="button"
@@ -636,9 +637,33 @@ export default function Protocol() {
               ))}
             </div>
 
-            {mainTab === "actionplan" ? (
-              <div className="animate-fade-in">
-                <ActionPlan plan={plan} userName={firstName} />
+            {mainTab === "goals" ? (
+              <div className="animate-fade-in mx-auto w-full max-w-[760px]">
+                <section className="mb-stack-lg">
+                  <h1 className="font-headline-lg text-headline-lg text-on-surface">Goals</h1>
+                </section>
+
+                {/* What we are working on — goals as numbered step cards */}
+                <section className="mb-section-gap">
+                  <h2 className="mb-stack-md font-title-md text-title-md text-on-surface">What we are working on</h2>
+                  <div className="space-y-gutter">
+                    {goals.length === 0 ? (
+                      <div className="rounded-xl bg-surface-container-lowest p-8 text-center custom-shadow">
+                        <h3 className="font-title-md text-title-md text-on-surface">No health goals yet</h3>
+                        <p className="mt-1 font-body-md text-body-md text-on-surface-variant">They unlock once your results are processed.</p>
+                      </div>
+                    ) : (
+                      // Order highest-priority first so the numbered steps (1,2,3…) match priority.
+                      [...goals]
+                        .sort((a, b) => ({ High: 0, Medium: 1, Low: 2 }[a.priority] ?? 3) - ({ High: 0, Medium: 1, Low: 2 }[b.priority] ?? 3))
+                        .map((goal, index) => (
+                          <div key={goal.goalId || index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.06}s both` }}>
+                            <GoalStepCard goal={goal} index={index} onOpen={() => router.push(`/protocol/goals/${encodeURIComponent(goal.goalId)}`)} />
+                          </div>
+                        ))
+                    )}
+                  </div>
+                </section>
               </div>
             ) : (
               <div className="animate-fade-in mx-auto w-full max-w-[760px]">
@@ -689,29 +714,7 @@ export default function Protocol() {
                   )}
                 </section>
 
-                {/* (b) What we are working on — goals as numbered step cards */}
-                <section className="mb-section-gap">
-                  <h2 className="mb-stack-md font-title-md text-title-md text-on-surface">What we are working on</h2>
-                  <div className="space-y-gutter">
-                    {goals.length === 0 ? (
-                      <div className="rounded-xl bg-surface-container-lowest p-8 text-center custom-shadow">
-                        <h3 className="font-title-md text-title-md text-on-surface">No health goals yet</h3>
-                        <p className="mt-1 font-body-md text-body-md text-on-surface-variant">They unlock once your results are processed.</p>
-                      </div>
-                    ) : (
-                      // Order highest-priority first so the numbered steps (1,2,3…) match priority.
-                      [...goals]
-                        .sort((a, b) => ({ High: 0, Medium: 1, Low: 2 }[a.priority] ?? 3) - ({ High: 0, Medium: 1, Low: 2 }[b.priority] ?? 3))
-                        .map((goal, index) => (
-                          <div key={goal.goalId || index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.06}s both` }}>
-                            <GoalStepCard goal={goal} index={index} onOpen={() => router.push(`/protocol/goals/${encodeURIComponent(goal.goalId)}`)} />
-                          </div>
-                        ))
-                    )}
-                  </div>
-                </section>
-
-                {/* (c) Consider adding — resolved add-to-cart recommendations */}
+                {/* (b) Consider adding — resolved add-to-cart recommendations */}
                 <ConsiderAdding plan={plan} />
               </div>
             )}

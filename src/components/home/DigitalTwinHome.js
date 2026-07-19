@@ -12,6 +12,8 @@ import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory } from "@/components/data/organStatus";
 import { actionPlanAPI, timelineAPI } from "@/services/api";
 import ActionButtons from "@/components/home/ActionButtons";
+import { LiveBetterCards } from "@/components/home/LiveBetterSection";
+import { homeScheduledData } from "@/data/homeScheduledData";
 import TimelineMealCard from "@/components/home/TimelineMealCard";
 import TimelineActivityCard from "@/components/home/TimelineActivityCard";
 
@@ -470,7 +472,7 @@ function ResultsReadyCard({ loading, readyReport, processingReport, hasAnyReport
 
 function ActionPlanCard({ planReady }) {
     return (
-        <Link href="/protocol" className="group relative flex min-h-[196px] flex-col overflow-hidden rounded-3xl border border-borderColor bg-white transition hover:border-blue/20">
+        <Link href="/action-plan" className="group relative flex min-h-[196px] flex-col overflow-hidden rounded-3xl border border-borderColor bg-white transition hover:border-blue/20">
             <div className="p-5">
                 <p className="text-[16px] font-semibold text-blue">Action plan</p>
                 {!planReady && <p className="mt-1 text-[12px] text-secondary">Unlocks after your labs</p>}
@@ -798,7 +800,7 @@ function ProtocolChecklist({ items, planReady }) {
                                 >
                                     <Check className="h-3.5 w-3.5" strokeWidth={3} />
                                 </button>
-                                <Link href="/protocol" className="group flex flex-1 items-center gap-3 rounded-2xl border border-borderColor bg-white p-2.5 transition hover:border-blue/20">
+                                <Link href="/protocol" className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-borderColor bg-white p-2.5 transition hover:border-blue/20">
                                     <ProtocolThumb item={it} index={i} />
                                     <div className="min-w-0 flex-1">
                                         <p className="text-sm font-medium leading-snug text-blue">{it.productName}</p>
@@ -894,26 +896,8 @@ function TimelineSection({ userId, router }) {
 function LiveBetterCard() {
     return (
         <div className="flex flex-col gap-3">
-            <h3 className="px-1 text-[17px] font-semibold tracking-tight text-blue">Live better, longer together</h3>
-            <Link href="/invite" className="group relative flex min-h-[120px] items-center overflow-hidden rounded-3xl p-5 text-white">
-                <Image src="/assets/family-insights.webp" alt="" fill className="absolute inset-0 object-cover" />
-                <div className="absolute inset-0 bg-black/40" />
-                <div className="relative z-10 flex w-full items-center justify-between gap-3">
-                    <p className="max-w-[75%] text-[18px] font-semibold leading-snug">Review family health insights from your intake</p>
-                    <ChevronRight className="h-6 w-6 shrink-0" />
-                </div>
-            </Link>
-            <Link href="/invite" className="group relative flex min-h-[120px] items-center overflow-hidden rounded-3xl p-5 text-white">
-                <Image src="/assets/refer-earn.webp" alt="" fill className="absolute inset-0 object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-600/80 to-orange-500/40" />
-                <div className="relative z-10 flex w-full items-center justify-between gap-3">
-                    <div>
-                        <p className="text-[15px] font-medium leading-snug">Refer your friends and<br />earn ₹299</p>
-                        <p className="mt-2 text-[13px] text-white/85">Get ₹299 each</p>
-                    </div>
-                    <span className="shrink-0 rounded-lg bg-white px-4 py-2 text-[13px] font-semibold text-blue">Earn ₹299</span>
-                </div>
-            </Link>
+            <h3 className="px-1 text-[17px] font-semibold tracking-tight text-blue">{homeScheduledData.liveBetter.title}</h3>
+            <LiveBetterCards cards={homeScheduledData.liveBetter.cards} />
         </div>
     );
 }

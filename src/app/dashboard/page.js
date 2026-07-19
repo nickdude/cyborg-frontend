@@ -143,7 +143,7 @@ export default function Dashboard() {
     // ── Insights branch (only when a report is genuinely ready) ───────────────
     const forcedView = searchParams.get("view");
     const showInsightsDashboard = forcedView === "insights";
-    const actionPlanHref = userId ? `/action-plan/${userId}` : "/dashboard";
+    const actionPlanHref = "/action-plan";
 
     const [insightsData, setInsightsData] = useState(null);
     const [insightsLoading, setInsightsLoading] = useState(false);
@@ -324,7 +324,7 @@ export default function Dashboard() {
           status: hasAnyReport ? "complete" : "active",
           note: hasAnyReport ? "Complete" : "Upload your first panel" },
         { key: "plan", tone: "purple", Icon: FileText, title: "Your Action Plan", img: "/assets/timeline/roadmap.webp",
-          date: planDate, href: "/protocol",
+          date: planDate, href: "/action-plan",
           status: planReady ? "active" : "locked",
           note: planReady ? "Tap to open" : "Unlocks after your labs" },
         { key: "review", tone: "blue", Icon: Stethoscope, title: "1-1 Advisory call", img: "/assets/timeline/advisory.webp",

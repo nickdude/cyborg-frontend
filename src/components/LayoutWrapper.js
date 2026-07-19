@@ -13,6 +13,7 @@ const PATIENT_ONLY_PAGES = [
   "/market-place",
   "/data",
   "/protocol",
+  "/action-plan",
   "/settings",
   "/orders",
   "/invite",
