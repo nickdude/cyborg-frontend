@@ -7,7 +7,7 @@ import { ArrowRight, Heart, Activity, Watch, Footprints, Moon, Bike, Dumbbell, S
 // store OAuth connections, so every device is shown in its real, unconnected
 // state — no fabricated "connected" accounts.
 const WEARABLES = [
-  { name: "Apple Health", icon: Heart, status: "Download the mobile app to connect", action: "download" },
+  { name: "Apple Health", icon: Heart, status: "Coming soon — download our mobile app", action: "soon" },
   { name: "Oura", icon: Activity, status: "Not connected", action: "soon" },
   { name: "Whoop", icon: Watch, status: "For now, you can connect Whoop through Apple Health.", action: "soon" },
   { name: "Withings", icon: Heart, status: "Not connected", action: "soon" },

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { ArrowDown, Sparkles } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 import { useConciergeStore } from "@/stores/concierge";
 import { useStickyScroll } from "@/hooks/useStickyScroll";
 import Message from "./Message";
@@ -73,9 +73,6 @@ export default function MessageList({ chatId, firstName }) {
 
           {isEmpty ? (
             <div className="m-auto flex max-w-md flex-col items-center text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-cyborg-purple-light shadow-lg shadow-primary/20">
-                <Sparkles className="h-6 w-6 text-white" />
-              </div>
               <h1 className="mb-1 text-xl font-semibold text-blue">
                 How can I help, {firstName || "there"}?
               </h1>

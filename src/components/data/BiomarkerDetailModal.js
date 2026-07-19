@@ -210,20 +210,24 @@ function WhyMatters({ bm }) {
   const ranRef = useRef(false);
 
   useEffect(() => {
+    // ranRef makes the FIRST effect invocation the only one that streams. That
+    // means we must NOT cancel it from the cleanup: under dev StrictMode the
+    // mount→unmount→remount cycle would mute the only live run and strand the
+    // UI on the loading dots. setState after a real unmount is a safe no-op in
+    // React 18, so no cancelled flag is needed.
     if (ranRef.current) return;
     ranRef.current = true;
-    let cancelled = false;
     let acc = "";
 
     (async () => {
+      let chatId = null;
       try {
         // Use the app's real AI via the concierge chat SSE pipeline.
         const res = await conciergeAPI.createChat();
-        const chatId = res?.data?._id || res?.data?.id || res?._id || res?.id;
+        chatId = res?.data?._id || res?.data?.id || res?._id || res?.id;
         if (!chatId) throw new Error("Could not start an AI session");
 
         await streamMessage(chatId, buildEducationPrompt(bm), (evt) => {
-          if (cancelled) return;
           if (evt.type === "textDelta" && typeof evt.text === "string") {
             acc += evt.text;
             setPhase("streaming");
@@ -238,15 +242,17 @@ function WhyMatters({ bm }) {
             }
           }
         });
-        if (!cancelled) setPhase((p) => (p === "error" ? "error" : "done"));
+        setPhase((p) => (p === "error" ? "error" : "done"));
       } catch (err) {
-        if (!cancelled && !acc) setPhase("error");
+        if (!acc) setPhase("error");
+      } finally {
+        // This chat is internal plumbing for the explainer — its "user" message
+        // is our raw prompt. Delete it so it never appears in the user's
+        // concierge history/sidebar. streamMessage resolves only after the SSE
+        // stream fully ends, so the backend is done writing by this point.
+        if (chatId) conciergeAPI.deleteChat(chatId).catch(() => {});
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, [bm]);
 
   return (
