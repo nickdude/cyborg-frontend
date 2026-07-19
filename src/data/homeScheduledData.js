@@ -36,12 +36,14 @@ export const homeScheduledData = {
     title: "Live better, longer together",
     cards: [
       {
-        image: "/assets/family-insights.webp",
+        image: "/assets/refer.webp",
+        imagePos: "center 30%",
         text: "Review family health insights from your intake",
         action: { type: "chevron" },
       },
       {
-        image: "/assets/refer-earn.webp",
+        image: "/assets/refer-friend.webp",
+        imagePos: "center 35%",
         href: "/invite",
         textLines: ["Refer your friends and", "earn ₹299"],
         subtext: "Get ₹299 each",
