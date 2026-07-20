@@ -44,6 +44,23 @@ function scoreLabel(score) {
   return "Stable Response";
 }
 
+/* Classify the glucose response from the *predicted peak* against the chart's
+   70–110 target band — NOT from the food-composition score and NOT from the
+   ?variant=stable story-flow param. This is what keeps the caption honest: a
+   meal the model predicts will peak at 142 mg/dL breaks above the target band,
+   so it can never read "Stable Response". Both the headline label and the
+   curve variant (green in-band vs purple spike) are derived from one source. */
+const TARGET_CEILING_MGDL = 110; // top of the chart's TARGET RANGE band
+const SPIKE_THRESHOLD_MGDL = 140; // common post-meal spike line; above → large spike
+
+function classifyGlucoseResponse(predicted) {
+  const peak = predicted?.peakMgDl;
+  if (!Number.isFinite(peak)) return null;
+  if (peak <= TARGET_CEILING_MGDL) return { label: "Stable Response", variant: "stable" };
+  if (peak <= SPIKE_THRESHOLD_MGDL) return { label: "Moderate Rise", variant: "spike" };
+  return { label: "Large Spike", variant: "spike" };
+}
+
 function verdictFor(score) {
   if (score == null) return "shapes your glucose response.";
   if (score <= 4) return "is a glucose spiker. Enjoy it infrequently.";
@@ -284,7 +301,6 @@ function MealReviewContent() {
       <main className="flex-1 pb-6 pt-2">
         {step === 1 && (
           <StepGlucoseResponse
-            stable={stable}
             foodScore={foodScore}
             predicted={predicted}
             items={items}
@@ -334,7 +350,7 @@ function StepEyebrow({ children, withInfo }) {
 
 /* ---------------------------- Step 1 ---------------------------- */
 
-function StepGlucoseResponse({ stable, foodScore, predicted, items, consumedAt, spikerName, onEditMeal }) {
+function StepGlucoseResponse({ foodScore, predicted, items, consumedAt, spikerName, onEditMeal }) {
   const cardItem = items.find((i) => sameName(i.name, spikerName)) || items[0] || null;
 
   // A prediction is only renderable when both numbers actually exist —
@@ -344,13 +360,18 @@ function StepGlucoseResponse({ stable, foodScore, predicted, items, consumedAt, 
     Number.isFinite(predicted.deltaMgDl) &&
     Number.isFinite(predicted.peakMgDl);
 
+  // Label + curve variant come from the predicted peak. Fall back to the
+  // composition-score label only when there is no prediction to judge.
+  const response = classifyGlucoseResponse(predicted);
+  const responseLabel = response ? response.label : scoreLabel(foodScore);
+
   return (
     <section>
       <StepEyebrow withInfo>1 of 3 - YOUR GLUCOSE RESPONSE</StepEyebrow>
 
       <h2 className="mt-2 text-[25px] font-bold leading-[35px] text-primary">
         {foodScore != null
-          ? `${foodScore}/10 - ${stable ? "Stable Response" : scoreLabel(foodScore)}`
+          ? `${foodScore}/10 - ${responseLabel}`
           : "Score unavailable"}
       </h2>
 
@@ -376,7 +397,7 @@ function StepGlucoseResponse({ stable, foodScore, predicted, items, consumedAt, 
       {hasPrediction ? (
         <div className="-mx-5 mt-5">
           <DayReviewChart
-            variant={stable ? "stable" : "spike"}
+            variant={response ? response.variant : "spike"}
             predicted={predicted}
             consumedAt={consumedAt}
           />
