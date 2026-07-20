@@ -104,6 +104,7 @@ function Register() {
   const [canResend, setCanResend] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [referralCode, setReferralCode] = useState("");
+  const [doctorCode, setDoctorCode] = useState(""); // required to register as a doctor
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, user, token } = useAuth();
@@ -237,6 +238,7 @@ function Register() {
       if (formData.email) payload.email = formData.email;
       if (!useOTP && formData.password) payload.password = formData.password;
       if (referralCode && formData.userType === "user") payload.referralCode = referralCode;
+      if (formData.userType === "doctor") payload.doctorSignupCode = doctorCode;
 
       const response = await authAPI.register(payload);
 
@@ -462,6 +464,24 @@ function Register() {
               disabledReason="Referral codes are for patient accounts."
             />
 
+            {formData.userType === "doctor" && (
+              <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Doctor Signup Code
+                </label>
+                <input
+                  type="text"
+                  value={doctorCode}
+                  onChange={(e) => setDoctorCode(e.target.value)}
+                  placeholder="Enter your clinician signup code"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Required to create a clinician account. Contact your Cyborg admin if you don&apos;t have one.
+                </p>
+              </div>
+            )}
+
             <Button fullWidth variant="primary" disabled={loading || !formData.email || !formData.password}>
               {loading ? "Creating Account..." : "Create Account"}
             </Button>
@@ -590,6 +610,24 @@ function Register() {
               disabled={!!referralCode}
               disabledReason="Referral codes are for patient accounts."
             />
+
+          {formData.userType === "doctor" && (
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Doctor Signup Code
+              </label>
+              <input
+                type="text"
+                value={doctorCode}
+                onChange={(e) => setDoctorCode(e.target.value)}
+                placeholder="Enter your clinician signup code"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm font-medium focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Required to create a clinician account. Contact your Cyborg admin if you don&apos;t have one.
+              </p>
+            </div>
+          )}
 
           <Button
             type="submit"
