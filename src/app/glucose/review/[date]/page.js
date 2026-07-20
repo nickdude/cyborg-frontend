@@ -68,9 +68,11 @@ export default function GlucoseDayReviewPage() {
   })();
 
   return (
-    <DayReviewWalkthrough
-      reviewData={reviewData ? { ...reviewData, date: formattedDate } : { date: formattedDate }}
-      onComplete={handleComplete}
-    />
+    <div className="lg:min-h-screen lg:bg-pageBackground">
+      <DayReviewWalkthrough
+        reviewData={reviewData ? { ...reviewData, date: formattedDate } : { date: formattedDate }}
+        onComplete={handleComplete}
+      />
+    </div>
   );
 }

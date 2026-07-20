@@ -152,7 +152,7 @@ export default function BloodReportAnalysis() {
     <div className="min-h-screen bg-pageBackground">
       <Navbar backHref="/dashboard" />
 
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-5xl lg:max-w-[1100px] mx-auto px-4 py-8 space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -209,7 +209,7 @@ export default function BloodReportAnalysis() {
         {analysis.biomarkers && analysis.biomarkers.length > 0 && (
           <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
             <h2 className="text-xl font-bold mb-4">Blood Biomarkers Analysis</h2>
-            <div className="space-y-4">
+            <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4">
               {analysis.biomarkers.map((biomarker, index) => (
                 <div
                   key={index}
@@ -256,7 +256,7 @@ export default function BloodReportAnalysis() {
         {analysis.biomarkers && analysis.biomarkers.length > 0 && (
           <div className="bg-white rounded-xl border border-tertiary p-6 shadow-sm">
             <h2 className="text-xl font-bold mb-4">Key Insights</h2>
-            <div className="space-y-3">
+            <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3">
               {/* Show problematic biomarkers */}
               {analysis.biomarkers
                 .filter((b) => b.status === "out_of_range" || b.status === "unknown")

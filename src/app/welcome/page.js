@@ -16,7 +16,7 @@ export default function WelcomeFlow() {
 
   return (
     <div className="min-h-screen bg-pageBackground flex items-center justify-center lg:p-6">
-      <div className="max-w-md w-full h-[100svh] bg-white shadow-lg p-4 relative overflow-hidden lg:max-w-[1120px] lg:h-[760px] lg:rounded-3xl lg:p-8 lg:shadow-[0_24px_70px_rgba(0,0,0,0.2)]">
+      <div className="max-w-md w-full h-[100svh] bg-white shadow-lg p-4 relative overflow-hidden lg:max-w-[1120px] lg:h-auto lg:max-h-[90vh] lg:overflow-y-auto lg:rounded-3xl lg:p-8 lg:shadow-[0_24px_70px_rgba(0,0,0,0.2)]">
         <div className="absolute inset-0 z-0">
           <Image
             src="/assets/welcome/welcome.webp"

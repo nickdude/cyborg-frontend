@@ -28,7 +28,7 @@ export default function ConsultsPage() {
         </h1>
 
         {/* Empty state */}
-        <div className="rounded-3xl border border-dashed border-borderColor bg-white px-6 py-16 text-center lg:py-20">
+        <div className="rounded-3xl border border-dashed border-borderColor bg-white px-6 py-16 text-center lg:mx-auto lg:max-w-2xl lg:px-10 lg:py-20">
           <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-pageBackground">
             <svg
               width="22"

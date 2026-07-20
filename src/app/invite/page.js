@@ -190,7 +190,7 @@ export default function InvitePage() {
     <div className="min-h-screen bg-pageBackground font-inter">
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 text-white">
-        <div className="mx-auto w-full max-w-5xl px-5 pt-12 pb-24 sm:pt-16 sm:pb-28">
+        <div className="mx-auto w-full max-w-5xl px-5 pt-12 pb-24 sm:pt-16 sm:pb-28 lg:max-w-[1100px] lg:px-10">
           <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
             Refer your friends
           </h1>
@@ -227,7 +227,7 @@ export default function InvitePage() {
 
       {/* Content card */}
       <div className="relative z-10 -mt-12 rounded-t-3xl bg-white">
-        <div className="mx-auto w-full max-w-3xl px-5 pb-28 pt-10 sm:pt-12 lg:pb-12">
+        <div className="mx-auto w-full max-w-3xl px-5 pb-28 pt-10 sm:pt-12 lg:pb-12 lg:max-w-[1100px] lg:px-10">
           {/* Referral block */}
           <h2 className="text-xl font-semibold text-black sm:text-2xl">
             Refer your friends and earn ₹299
@@ -239,7 +239,7 @@ export default function InvitePage() {
           </p>
 
           {/* Referral link + copy */}
-          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-borderColor p-3 sm:flex-row sm:items-center">
+          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-borderColor p-3 sm:flex-row sm:items-center lg:max-w-2xl">
             <p className="min-w-0 flex-1 truncate px-2 text-sm text-blue">
               {referralLink || "Generating your link…"}
             </p>
@@ -268,14 +268,14 @@ export default function InvitePage() {
           </div>
 
           {/* Divider */}
-          <div className="my-6 flex items-center gap-4">
+          <div className="my-6 flex items-center gap-4 lg:max-w-2xl">
             <span className="h-px flex-1 bg-borderColor" />
             <span className="text-xs text-secondary">or invite via email</span>
             <span className="h-px flex-1 bg-borderColor" />
           </div>
 
           {/* Email invite */}
-          <form onSubmit={handleInvite} className="flex gap-3">
+          <form onSubmit={handleInvite} className="flex gap-3 lg:max-w-2xl">
             <input
               type="email"
               value={email}
@@ -297,7 +297,7 @@ export default function InvitePage() {
             <h3 className="text-lg font-semibold text-black sm:text-xl">
               How it works
             </h3>
-            <ul className="mt-5 space-y-6">
+            <ul className="mt-5 space-y-6 lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-6 lg:space-y-0">
               {HOW_IT_WORKS.map((step, i) => (
                 <li key={step.title} className="flex gap-4">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-borderColor text-orange-500">
@@ -326,13 +326,13 @@ export default function InvitePage() {
             </p>
 
             {rewardItems.length > 0 && (
-              <div className="mt-5 overflow-hidden rounded-2xl border border-borderColor">
+              <div className="mt-5 overflow-hidden rounded-2xl border border-borderColor lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-visible lg:rounded-none lg:border-0">
                 {rewardItems.map((product, i) => {
                   const pname = product.name || product.title || "Product";
                   return (
                     <div
                       key={product._id || product.id || pname}
-                      className={`flex items-center gap-4 px-4 py-4 ${i !== 0 ? "border-t border-borderColor" : ""}`}
+                      className={`flex items-center gap-4 px-4 py-4 lg:rounded-2xl lg:border lg:border-borderColor ${i !== 0 ? "border-t border-borderColor" : ""}`}
                     >
                       {product.image || supplementImage(pname) ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -367,7 +367,7 @@ export default function InvitePage() {
             <h3 className="text-lg font-semibold text-black sm:text-xl">
               FAQ&apos;s
             </h3>
-            <div className="mt-4 divide-y divide-borderColor border-t border-borderColor">
+            <div className="mt-4 divide-y divide-borderColor border-t border-borderColor lg:max-w-2xl">
               {FAQS.map((faq, i) => {
                 const isOpen = openFaq === i;
                 return (

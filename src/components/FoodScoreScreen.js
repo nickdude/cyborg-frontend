@@ -156,7 +156,7 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
     );
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground pb-20 font-sans">
+    <div className="mx-auto min-h-screen w-full max-w-md lg:max-w-[900px] bg-pageBackground pb-20 font-sans">
       {/* Back arrow */}
       <div className="px-5 pt-7">
         <button type="button" onClick={onBack} aria-label="Go back">
@@ -165,7 +165,7 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
       </div>
 
       {/* Tab bar — spans the hero card width, one tab at each edge */}
-      <div className="mx-auto mt-3 flex w-[268px] max-w-full items-center justify-between">
+      <div className="mx-auto mt-3 flex w-[268px] max-w-full lg:w-[400px] items-center justify-between">
         {TABS.map((label, idx) => (
           <button
             key={label}
@@ -184,7 +184,7 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
           type="button"
           onClick={() => setOverlayOpen(true)}
           aria-label={tab === 1 ? "View predicted glucose peak" : "View zone score"}
-          className="relative block h-40 w-[268px] cursor-pointer overflow-hidden rounded-lg"
+          className="relative block h-40 w-[268px] lg:h-52 lg:w-[400px] cursor-pointer overflow-hidden rounded-lg"
         >
           <Image
             src={HERO_IMAGES[tab]}
@@ -231,7 +231,7 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
         )}
 
         <p className="mt-5 text-[12px] font-semibold uppercase leading-4 text-black">Your Meal</p>
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
           {items.map((item, idx) => (
             <ItemRow
               key={`${item.name}-${idx}`}
@@ -408,7 +408,7 @@ function ItemRow({ item, onUpdate, onRemove }) {
 
 function MacroGrid({ totals }) {
   return (
-    <div className="mt-3 grid grid-cols-3 gap-1">
+    <div className="mt-3 grid grid-cols-3 gap-1 lg:grid-cols-6">
       {MACRO_META.map(({ key, label, unit }) => {
         const raw = totals[key];
         const val = raw != null ? Math.round(raw) : "--";

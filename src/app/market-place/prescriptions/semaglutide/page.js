@@ -220,7 +220,7 @@ export default function SemaglutidePage() {
     <div className="min-h-screen bg-pageBackground">
       {/* Navbar Wrapper */}
       <div className="text-stepIndicator">
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 lg:mx-auto lg:max-w-[1200px]">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm font-inter font-medium">
             <Link href="/market-place" className="hover:text-blue-600">
@@ -237,7 +237,7 @@ export default function SemaglutidePage() {
       </div>
 
       {/* Main Content */}
-      <div className="px-6 max-w-6xl mx-auto">
+      <div className="px-6 max-w-[1200px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
           {/* Product Image Section */}
           <div className="flex flex-col items-center">
@@ -307,34 +307,37 @@ export default function SemaglutidePage() {
 
         {/* Plans Section */}
         <div className="mb-12">
-          <div className="rounded-2xl bg-white p-6 md:p-8 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
-            <div className="flex items-start justify-between mb-6">
-              <h3 className="text-xl font-semibold font-inter text-black">
-                {featuredPlan.name}
-              </h3>
-              <p className="text-2xl font-semibold font-inter text-black">
-                ₹{featuredPlan.price}/{featuredPlan.frequency}
-              </p>
+          {/* Single featured plan, centered on desktop (mobile unchanged — full width). */}
+          <div className="mx-auto lg:max-w-[600px]">
+            <div className="rounded-2xl bg-white p-6 md:p-8 shadow-[0_2px_10px_rgba(0,0,0,0.04)]">
+              <div className="flex items-start justify-between mb-6">
+                <h3 className="text-xl font-semibold font-inter text-black">
+                  {featuredPlan.name}
+                </h3>
+                <p className="text-2xl font-semibold font-inter text-black">
+                  ₹{featuredPlan.price}/{featuredPlan.frequency}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {featuredPlan.features.map((feature) => (
+                  <div
+                    key={feature}
+                    className="flex items-center gap-4 text-stepIndicator font-inter font-medium text-base"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-stepIndicator/25" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-4">
-              {featuredPlan.features.map((feature) => (
-                <div
-                  key={feature}
-                  className="flex items-center gap-4 text-stepIndicator font-inter font-medium text-base"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-stepIndicator/25" />
-                  <span>{feature}</span>
-                </div>
-              ))}
-            </div>
+            <Link href="/market-place/prescriptions/semaglutide/onboarding">
+              <button className="mt-8 w-full bg-black text-white py-4 rounded-lg font-semibold font-inter text-xl hover:bg-gray-900 transition-colors">
+                Get Started
+              </button>
+            </Link>
           </div>
-
-          <Link href="/market-place/prescriptions/semaglutide/onboarding">
-            <button className="mt-8 w-full bg-black text-white py-4 rounded-lg font-semibold font-inter text-xl hover:bg-gray-900 transition-colors">
-              Get Started
-            </button>
-          </Link>
         </div>
 
         <div className="mb-12">

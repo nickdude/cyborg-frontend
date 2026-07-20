@@ -40,7 +40,10 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${jakarta.variable} font-sans antialiased`}>
+      {/* lg:bg-pageBackground tints only the desktop margins around centered content
+          columns, killing the grey-on-white two-tone stripe. Mobile is untouched —
+          full-width columns cover the body, so no lg means no visible change. */}
+      <body className={`${inter.variable} ${jakarta.variable} font-sans antialiased lg:bg-pageBackground`}>
         <AuthProvider>
           <LayoutWrapper>{children}</LayoutWrapper>
           <PWAInstallPrompt />

@@ -67,14 +67,14 @@ export default function FaqAccordion() {
 
   return (
     <section className="bg-white px-5 py-12 md:px-8 lg:py-32">
-      <div className="mx-auto max-w-[720px] lg:max-w-[860px]">
+      <div className="mx-auto max-w-[720px] lg:max-w-[1200px]">
         <h2 className="text-center text-[28px] font-semibold lg:text-[44px] lg:tracking-[-0.02em]">Frequently Asked Questions</h2>
 
         <div className="mt-6 flex justify-center">
           <button className="rounded-2xl bg-white px-6 py-3 text-base shadow-sm border border-[#E6E6E8]">Read more</button>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 lg:mx-auto lg:max-w-[820px]">
           <h3 className="mb-4 text-lg font-semibold">How it works</h3>
           <div className="rounded-lg bg-white">
             {firstGroup.map((it, idx) => {

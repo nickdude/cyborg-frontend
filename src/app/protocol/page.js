@@ -638,16 +638,16 @@ export default function Protocol() {
             </div>
 
             {mainTab === "goals" ? (
-              <div className="animate-fade-in mx-auto w-full max-w-[760px]">
+              <div className="animate-fade-in mx-auto w-full max-w-[760px] lg:max-w-none">
                 <section className="mb-stack-lg">
                   <h1 className="font-headline-lg text-headline-lg text-on-surface">Goals</h1>
                 </section>
 
                 {/* Goal photo cards, stacked directly under the heading */}
                 <section className="mb-section-gap">
-                  <div className="space-y-4">
+                  <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
                     {goals.length === 0 ? (
-                      <div className="rounded-xl bg-surface-container-lowest p-8 text-center custom-shadow">
+                      <div className="rounded-xl bg-surface-container-lowest p-8 text-center custom-shadow lg:col-span-2">
                         <h3 className="font-title-md text-title-md text-on-surface">No health goals yet</h3>
                         <p className="mt-1 font-body-md text-body-md text-on-surface-variant">They unlock once your results are processed.</p>
                       </div>
@@ -665,7 +665,7 @@ export default function Protocol() {
                 </section>
               </div>
             ) : (
-              <div className="animate-fade-in mx-auto w-full max-w-[760px]">
+              <div className="animate-fade-in mx-auto w-full max-w-[760px] lg:max-w-none">
                 <section className="mb-stack-lg">
                   <h1 className="font-headline-lg text-headline-lg text-on-surface">Protocol</h1>
                 </section>

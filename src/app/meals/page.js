@@ -94,40 +94,42 @@ export default function MealsHistoryPage() {
   return (
     <div className="min-h-screen bg-[#f4f5f9] pb-28">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-[#e4e6ef] bg-white px-4 py-3">
-        <button
-          type="button"
-          onClick={() => router.push("/dashboard")}
-          aria-label="Back"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f4f5f9] text-[#1e2027]"
-        >
-          <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
-            <path
-              d="M15 18l-6-6 6-6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        <h1 className="text-base font-semibold text-[#14151a]">Your meals</h1>
+        <div className="mx-auto flex w-full items-center gap-3 lg:max-w-[900px]">
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            aria-label="Back"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f4f5f9] text-[#1e2027]"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+              <path
+                d="M15 18l-6-6 6-6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <h1 className="text-base font-semibold text-[#14151a]">Your meals</h1>
+        </div>
       </header>
 
       {error && (
-        <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 lg:mx-auto lg:w-full lg:max-w-[900px]">
           {error}
         </div>
       )}
 
       {!error && groups.length === 0 && (
-        <div className="px-4 pt-16 text-center">
+        <div className="px-4 pt-16 text-center mx-auto w-full lg:max-w-[900px]">
           <p className="text-sm text-[#6d6f7b]">
             No meals yet. Tap the + button on the dashboard to log one.
           </p>
         </div>
       )}
 
-      <div className="px-4 pt-4 space-y-6">
+      <div className="px-4 pt-4 space-y-6 mx-auto w-full lg:max-w-[900px]">
         {groups.map((g) => (
           <section key={g.key}>
             <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#6d6f7b]">

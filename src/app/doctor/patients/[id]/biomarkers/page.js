@@ -233,7 +233,7 @@ export default function BiomarkersPage() {
 
       <div className="mx-auto w-full max-w-[1240px] px-4 pt-6 lg:px-8 lg:pt-10">
         {/* Bio Age + Pace of Aging Cards */}
-        <div className="space-y-3 mb-6">
+        <div className="space-y-3 mb-6 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           <div className="rounded-2xl p-5 bg-[#1e1e2a] text-white relative overflow-hidden min-h-[140px]">
             <div className="relative z-10">
               <div className="flex items-start justify-between">

@@ -165,9 +165,9 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground pb-24 font-sans">
+    <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground pb-24 font-sans lg:relative lg:grid lg:min-h-0 lg:max-w-[1000px] lg:grid-cols-2 lg:items-start lg:gap-x-10">
       {/* Header: back + centered date */}
-      <div className="flex items-center justify-between px-3 pb-1 pt-[max(env(safe-area-inset-top,0px),12px)]">
+      <div className="flex items-center justify-between px-3 pb-1 pt-[max(env(safe-area-inset-top,0px),12px)] lg:col-span-2 lg:row-start-1">
         <button
           type="button"
           onClick={onBack}
@@ -181,7 +181,7 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
       </div>
 
       {/* Time range + duration */}
-      <div className="flex items-center gap-2 px-5 pt-2 text-xs text-secondary">
+      <div className="flex items-center gap-2 px-5 pt-2 text-xs text-secondary lg:col-start-1 lg:row-start-2">
         <Clock size={11} strokeWidth={2.25} />
         <span className="tracking-[-0.15px]">
           {formatTime(startTime)}-{formatTime(endTime)} • {formatDuration(durationMin)}
@@ -189,10 +189,10 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
       </div>
 
       {/* Activity name */}
-      <h2 className="px-5 pt-1 text-2xl font-medium leading-8 text-black">{name}</h2>
+      <h2 className="px-5 pt-1 text-2xl font-medium leading-8 text-black lg:col-start-1 lg:row-start-3">{name}</h2>
 
       {/* Average HR */}
-      <div className="flex items-baseline px-5 pt-2">
+      <div className="flex items-baseline px-5 pt-2 lg:col-start-1 lg:row-start-4">
         <span className="text-[60px] font-medium leading-[72px] tracking-[-1.68px] text-black">
           {avgHR}
         </span>
@@ -201,7 +201,7 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
       </div>
 
       {/* Heart Rate chart — directly on the page background, per Figma */}
-      <div className="px-4 pt-8">
+      <div className="px-4 pt-8 lg:col-start-2 lg:row-start-2 lg:row-span-4">
         <p className="pb-3 text-center text-sm font-medium text-black">HEART RATE</p>
         <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -248,7 +248,7 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
       </div>
 
       {/* Post-Workout Hydration Summary */}
-      <div className="px-5 pt-6">
+      <div className="px-5 pt-6 lg:col-start-1 lg:row-start-5">
         <h3 className="text-base font-medium leading-6 text-black">
           Post-Workout Hydration Summary
         </h3>
@@ -267,7 +267,7 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
       </div>
 
       {/* Remove */}
-      <div className="px-5 pb-8 pt-10">
+      <div className="px-5 pb-8 pt-10 lg:col-span-2 lg:row-start-6">
         <button
           type="button"
           onClick={handleRemove}
@@ -284,7 +284,7 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
         type="button"
         onClick={() => setShowAI(true)}
         aria-label="Post-workout recovery insights"
-        className="fixed bottom-6 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0px_0px_7.5px_rgba(0,0,0,0.1)] transition hover:scale-105 active:scale-95"
+        className="fixed lg:absolute bottom-6 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0px_0px_7.5px_rgba(0,0,0,0.1)] transition hover:scale-105 active:scale-95"
       >
         {/* Composite of the Figma gemini-logo assets (see design refs) */}
         <img src="/assets/insights/gemini-ai.webp" alt="" className="h-6 w-6" />

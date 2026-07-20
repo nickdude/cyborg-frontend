@@ -159,7 +159,7 @@ function OrdersContent() {
 
   return (
     <div className="min-h-screen bg-pageBackground pb-24 font-inter lg:pb-10">
-      <div className="mx-auto w-full max-w-[820px] px-4 py-8 lg:px-8">
+      <div className="mx-auto w-full max-w-[820px] px-4 py-8 lg:px-8 lg:max-w-[1100px]">
         <h1 className="text-3xl font-semibold tracking-tight text-blue">Your tests</h1>
 
         {/* Tabs */}
@@ -200,7 +200,7 @@ function OrdersContent() {
                     subtitle="You have no active orders right now."
                   />
                 ) : (
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-4 space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
                     {active.map((o) => (
                       <OrderCard key={o.id} order={o} />
                     ))}
@@ -221,7 +221,7 @@ function OrdersContent() {
                     subtitle="You have no completed orders."
                   />
                 ) : (
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-4 space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
                     {past.map((o) => (
                       <OrderCard key={o.id} order={o} />
                     ))}
@@ -241,7 +241,7 @@ export default function OrdersPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-pageBackground font-inter">
-          <div className="mx-auto w-full max-w-[820px] px-4 py-8 lg:px-8">
+          <div className="mx-auto w-full max-w-[820px] px-4 py-8 lg:px-8 lg:max-w-[1100px]">
             <div className="mt-16 text-center text-secondary">Loading…</div>
           </div>
         </div>

@@ -50,7 +50,7 @@ export default function TopNavbar() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 hidden border-b border-borderColor/70 bg-pageBackground/90 backdrop-blur lg:block">
-      <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6 md:px-10">
         {/* Left: wordmark */}
         <Link href="/dashboard" className="flex shrink-0 items-center" aria-label="Cyborg home">
           <CyborgLogo width={108} height={28} />

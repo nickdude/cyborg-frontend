@@ -109,7 +109,7 @@ export default function ActionPlanHome() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-pageBackground pb-24 font-inter lg:pb-16">
-      <div className="mx-auto w-full max-w-[1240px] px-4 pt-6 lg:px-8 lg:pt-10">
+      <div className="mx-auto w-full max-w-[1240px] px-4 pt-6 lg:max-w-[704px] lg:px-8 lg:pt-10">
         <button
           type="button"
           onClick={goBack}

@@ -500,7 +500,7 @@ export default function Onboarding() {
         );
       case "single":
         return (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
             {step.options.map((opt) => (
               <button
                 key={opt}
@@ -519,7 +519,7 @@ export default function Onboarding() {
         );
       case "multi":
         return (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
             {step.options.map((opt) => {
               const selected = (answers[step.code] || []).includes(opt);
               return (
@@ -626,7 +626,7 @@ export default function Onboarding() {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-pageBackground font-inter lg:h-auto lg:min-h-screen lg:flex-row lg:items-center lg:justify-center lg:p-8">
-      <div className="max-w-md flex flex-col justify-between min-h-0 flex-1 mx-auto bg-pageBackground rounded-xl relative w-full lg:max-w-[1180px] lg:flex-initial lg:min-h-[760px] lg:grid lg:grid-cols-[360px_1fr] lg:gap-8 lg:p-0">
+      <div className="max-w-md flex flex-col justify-between min-h-0 flex-1 mx-auto bg-pageBackground rounded-xl relative w-full lg:max-w-[1120px] lg:flex-initial lg:min-h-[760px] lg:grid lg:grid-cols-[360px_1fr] lg:gap-8 lg:p-0">
         <aside className="hidden lg:flex lg:flex-col lg:justify-between lg:rounded-2xl lg:bg-primary lg:p-8 lg:text-white">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">CYBORG</h1>

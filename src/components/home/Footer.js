@@ -99,7 +99,7 @@ export default function Footer() {
           className="-z-10 object-cover object-center"
         />
         <div className="-z-10 absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
-        <div className="relative mx-auto flex min-h-screen w-full max-w-[1180px] flex-col justify-end px-6 pb-12 pt-28 text-white md:min-h-[520px] md:px-10 md:pb-16 lg:min-h-screen lg:max-w-[1400px] lg:px-12 lg:pb-20">
+        <div className="relative mx-auto flex min-h-screen w-full max-w-[1180px] flex-col justify-end px-6 pb-12 pt-28 text-white md:min-h-[520px] md:px-10 md:pb-16 lg:min-h-screen lg:max-w-[1200px] lg:px-12 lg:pb-20">
           <motion.h2
             initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -131,7 +131,7 @@ export default function Footer() {
       </section>
 
       {/* Link sections */}
-      <div className="mx-auto w-full max-w-[1180px] px-6 pb-12 pt-10 md:px-10 md:pt-14 lg:max-w-[1400px] lg:px-12 lg:pb-20 lg:pt-20">
+      <div className="mx-auto w-full max-w-[1180px] px-6 pb-12 pt-10 md:px-10 md:pt-14 lg:max-w-[1200px] lg:px-12 lg:pb-20 lg:pt-20">
         <h2 className="wordmark-shimmer select-none text-[clamp(2.4rem,11vw,3.25rem)] font-extrabold tracking-[-0.03em] lg:text-[72px]">
           CYBORG
         </h2>

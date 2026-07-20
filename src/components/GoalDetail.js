@@ -104,8 +104,8 @@ function sliderPosition(marker) {
 // Sticky "Goals" header shared by the loaded and error states.
 function GoalsHeader({ onBack }) {
   return (
-    <header className="sticky top-0 z-50 border-b border-borderColor bg-white">
-      <div className="mx-auto flex w-full max-w-[520px] items-center px-4 py-3 lg:max-w-[760px]">
+    <header className="sticky top-0 z-40 border-b border-borderColor bg-white lg:top-16">
+      <div className="mx-auto flex w-full max-w-[520px] items-center px-4 py-3 lg:max-w-[900px]">
         <button
           type="button"
           onClick={onBack}
@@ -185,7 +185,7 @@ export default function GoalDetail({ goal, onBack }) {
     <div className="min-h-screen bg-pageBackground">
       <GoalsHeader onBack={onBack} />
 
-      <div className="mx-auto w-full max-w-[520px] px-4 pb-32 pt-4 lg:max-w-[760px] lg:pb-16">
+      <div className="mx-auto w-full max-w-[520px] px-4 pb-32 pt-4 lg:max-w-[900px] lg:pb-16">
         {/* Hero — per-goal background art + title */}
         <section className="relative mb-6 min-h-[320px] overflow-hidden rounded-2xl shadow-lg">
           <div className="absolute inset-0 bg-ink" aria-hidden="true" />
@@ -204,7 +204,7 @@ export default function GoalDetail({ goal, onBack }) {
 
         {/* Metrics grid */}
         {(priority || details.healthImpact || recovery) && (
-          <div className="mb-6 grid grid-cols-2 gap-3">
+          <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
             {priority && (
               <div className="rounded-xl border border-borderColor bg-white p-4 shadow-sm">
                 <span className="mb-1 block text-xs font-medium text-secondary">Priority</span>
@@ -233,7 +233,7 @@ export default function GoalDetail({ goal, onBack }) {
         {biomarkers.length > 0 && (
           <section className="mb-6">
             <h3 className="mb-2 text-lg font-bold text-ink">Biomarkers to improve:</h3>
-            <div className="space-y-3">
+            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
               {biomarkers.map((b, i) => {
                 const status = biomarkerStatus(b.flag);
                 const styles = STATUS_STYLES[status];
@@ -281,7 +281,7 @@ export default function GoalDetail({ goal, onBack }) {
         {actions.length > 0 && (
           <section>
             <h3 className="mb-2 text-lg font-bold text-ink">Recommended actions</h3>
-            <div className="space-y-3">
+            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
               {actions.map((a, i) => (
                 <div key={i} className="flex gap-3 rounded-xl border border-borderColor bg-white p-4 shadow-sm">
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-pageBackground text-sm font-bold text-ink">

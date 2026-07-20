@@ -171,7 +171,7 @@ export default function Profile() {
     <div className="min-h-screen bg-pageBackground text-gray-900">
       <Navbar backHref="/dashboard" />
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-2xl mx-auto px-4 py-8 lg:max-w-4xl lg:py-10">
         {/* Logo */}
         {/* <div className="mb-8 flex justify-center">
           <Image
@@ -184,7 +184,7 @@ export default function Profile() {
         </div> */}
 
         {/* Title */}
-        <h1 className="text-xl font-medium text-black mb-2 text-left">
+        <h1 className="text-xl font-medium text-black mb-2 text-left lg:text-2xl">
           Let&apos;s set up your Cyborg account
         </h1>
 
@@ -203,7 +203,7 @@ export default function Profile() {
         )}
 
         {editing ? (
-          <form onSubmit={handleUpdate} className="space-y-6">
+          <form onSubmit={handleUpdate} className="space-y-6 lg:mx-auto lg:max-w-2xl">
             {/* First Name */}
             <Input
               label="First Name"
@@ -314,7 +314,7 @@ export default function Profile() {
         ) : (
           <div className="space-y-8">
             {/* Profile Display */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:grid-cols-3">
               <div className="border border-tertiary rounded-xl p-4">
                 <p className="text-gray-600 text-sm font-medium">First Name</p>
                 <p className="font-semibold text-lg mt-1">
@@ -349,7 +349,7 @@ export default function Profile() {
                     : "—"}
                 </p>
               </div>
-              <div className="md:col-span-2 border border-tertiary rounded-xl p-4">
+              <div className="md:col-span-2 border border-tertiary rounded-xl p-4 lg:col-span-3">
                 <p className="text-gray-600 text-sm font-medium">Address</p>
                 <p className="font-semibold text-lg mt-1">
                   {profile?.addressLine1 || "—"}

@@ -286,7 +286,7 @@ export default function MealReviewScreen({
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground px-5 pb-24 pt-[max(env(safe-area-inset-top,0px),20px)]">
+    <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground px-5 pb-24 pt-[max(env(safe-area-inset-top,0px),20px)] lg:max-w-[1040px] lg:px-8 lg:pb-10">
       {/* Top bar: back arrow + Save pill */}
       <div className="flex items-center justify-between">
         <button
@@ -352,6 +352,13 @@ export default function MealReviewScreen({
         </div>
       )}
 
+      {/* On desktop, split into an items/details main column and a sticky
+          macro-summary rail. The macro group stays FIRST in source so the
+          MOBILE stacking order (summary → items → details) is byte-identical;
+          explicit lg:col-start/row-start place it in column 2 on desktop. */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
+        {/* Macro summary — right rail on desktop (col 2), first on mobile */}
+        <div className="lg:col-start-2 lg:row-start-1 lg:sticky lg:top-6 lg:self-start">
       {/* MACRO SPLIT heading (populated only, per the frames) + score chip */}
       {hasItems && (
         <div className="mt-5 flex items-center justify-between">
@@ -397,6 +404,10 @@ export default function MealReviewScreen({
         </p>
       )}
 
+        </div>
+
+        {/* Items + details — main column on desktop (col 1) */}
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
       {/* Empty state: the two black CTAs, centered */}
       {!hasItems && editable && (
         <div className="mt-12 flex items-center justify-center gap-2.5">
@@ -589,6 +600,9 @@ export default function MealReviewScreen({
           </button>
         </div>
       )}
+
+        </div>
+      </div>
 
       {/* Item editor — built in parallel; integration surface is exactly
           { item, index, onSave(nextItem), onRemove(), onClose() }. */}
