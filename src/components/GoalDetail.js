@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { goalsAPI } from "@/services/api";
 import { goalBackground } from "@/utils/goalBackgrounds";
 import { humanizeBiomarkerName } from "@/utils/biomarkerAdapter";
+import { supplementImage } from "@/utils/supplementImage";
+import { SourceChips } from "./concierge/Sources";
 
 // Map a persisted biomarker flag (optimal / suboptimal / normal / high / low /
 // critical_* / "Normal") to a display status. Case-insensitive so optimal
@@ -121,10 +125,51 @@ function GoalsHeader({ onBack }) {
   );
 }
 
+// Biomarker card with the tinted slider viz — shared by the Findings tab.
+function BiomarkerRow({ b }) {
+  const status = biomarkerStatus(b.flag);
+  const styles = STATUS_STYLES[status];
+  const pos = sliderPosition(b);
+  const hasValue = b.value != null && b.value !== "";
+  return (
+    <div className="flex flex-col gap-1 rounded-xl border border-borderColor bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${styles.dot}`} aria-hidden="true" />
+          <span className="font-semibold text-ink">{humanizeBiomarkerName(b.name || b.canonicalName)}</span>
+        </div>
+        {/* Slider viz: tinted track, current-value dot, green target tick.
+            Legacy docs persisted no value — no position to plot, so omit. */}
+        {hasValue && (
+          <div className="relative flex h-8 w-32 shrink-0 items-center" aria-hidden="true">
+            <div className={`h-1 w-full rounded-full bg-gradient-to-r ${styles.track}`} />
+            {Number.isFinite(Number(b.value)) && (
+              <span
+                className={`absolute h-2 w-2 rounded-full ${styles.dot}`}
+                style={{ left: `calc(${(pos * 100).toFixed(1)}% - 4px)` }}
+              />
+            )}
+            <span className="absolute right-0 h-4 w-1 rounded-sm bg-biomarkerOptimal" />
+          </div>
+        )}
+      </div>
+      {hasValue && (
+        <p className="text-sm font-bold text-ink">
+          {b.value}
+          {b.unit ? <span className="font-normal text-secondary"> {b.unit}</span> : null}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function GoalDetail({ goal, onBack }) {
+  const router = useRouter();
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [tab, setTab] = useState("findings"); // findings | actions
+  const [askText, setAskText] = useState("");
 
   const goalId = goal?.goalId || goal?.id;
 
@@ -181,6 +226,28 @@ export default function GoalDetail({ goal, onBack }) {
     (a) => a && (a.label || a.detail)
   );
 
+  // "How you might be feeling" pills — humanized symptoms from the goal doc.
+  const symptoms = (Array.isArray(details.symptoms) ? details.symptoms : []).filter((s) => s && s.label);
+  // Peer-reviewed citations (Perplexity Sonar), when the goal carries them.
+  const citations = (Array.isArray(details.citations) ? details.citations : [])
+    .filter((c) => c?.url)
+    .map((c) => ({ url: c.url, title: c.title || c.source || c.domain || c.url }));
+  // Supplement items attached to this goal → Actions tab.
+  const protocolItems = (Array.isArray(details.protocolItems) ? details.protocolItems : []).filter(
+    (p) => p && p.productName
+  );
+
+  const askAI = (e) => {
+    e?.preventDefault?.();
+    const q = askText.trim() || `Tell me more about my goal: ${details.title || ""}`;
+    router.push(`/concierge?q=${encodeURIComponent(q)}`);
+  };
+
+  const TABS = [
+    ["findings", "Findings"],
+    ["actions", "Actions"],
+  ];
+
   return (
     <div className="min-h-screen bg-pageBackground">
       <GoalsHeader onBack={onBack} />
@@ -226,75 +293,172 @@ export default function GoalDetail({ goal, onBack }) {
           </div>
         )}
 
-        <NarrativeSection title="What this means:" text={whatThisMeans} />
-        <NarrativeSection title="Potential Causes:" text={potentialCauses} />
+        {/* Findings · Actions tabs */}
+        <div className="mb-6 flex items-center gap-6 border-b border-borderColor lg:gap-8">
+          {TABS.map(([k, l]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setTab(k)}
+              className={`-mb-px border-b-2 pb-3 text-base font-medium transition-colors duration-300 lg:text-lg ${
+                tab === k ? "border-black text-black" : "border-transparent text-secondary hover:text-black"
+              }`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
 
-        {/* Biomarkers to improve */}
-        {biomarkers.length > 0 && (
-          <section className="mb-6">
-            <h3 className="mb-2 text-lg font-bold text-ink">Biomarkers to improve:</h3>
-            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
-              {biomarkers.map((b, i) => {
-                const status = biomarkerStatus(b.flag);
-                const styles = STATUS_STYLES[status];
-                const pos = sliderPosition(b);
-                const hasValue = b.value != null && b.value !== "";
-                return (
-                  <div
-                    key={b.canonicalName || b.name || i}
-                    className="flex flex-col gap-1 rounded-xl border border-borderColor bg-white p-4 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className={`h-2 w-2 shrink-0 rounded-full ${styles.dot}`} aria-hidden="true" />
-                        <span className="font-semibold text-ink">{humanizeBiomarkerName(b.name || b.canonicalName)}</span>
-                      </div>
-                      {/* Slider viz: tinted track, current-value dot, green target tick.
-                          Legacy docs persisted no value — no position to plot, so omit. */}
-                      {hasValue && (
-                        <div className="relative flex h-8 w-32 shrink-0 items-center" aria-hidden="true">
-                          <div className={`h-1 w-full rounded-full bg-gradient-to-r ${styles.track}`} />
-                          {Number.isFinite(Number(b.value)) && (
-                            <span
-                              className={`absolute h-2 w-2 rounded-full ${styles.dot}`}
-                              style={{ left: `calc(${(pos * 100).toFixed(1)}% - 4px)` }}
-                            />
-                          )}
-                          <span className="absolute right-0 h-4 w-1 rounded-sm bg-biomarkerOptimal" />
-                        </div>
+        {tab === "findings" ? (
+          <div>
+            {/* How you might be feeling — symptom pills (only when the goal carries them) */}
+            {symptoms.length > 0 && (
+              <section className="mb-6">
+                <h3 className="mb-2 text-lg font-bold text-ink">How you might be feeling</h3>
+                <div className="flex flex-wrap gap-2">
+                  {symptoms.map((s, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-2 rounded-full border border-borderColor bg-white px-4 py-2 text-sm text-secondary shadow-sm"
+                    >
+                      {s.source === "reported" && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
                       )}
-                    </div>
-                    {hasValue && (
-                      <p className="text-sm font-bold text-ink">
-                        {b.value}
-                        {b.unit ? <span className="font-normal text-secondary"> {b.unit}</span> : null}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Recommended actions — placeholder cards; final design arrives later */}
-        {actions.length > 0 && (
-          <section>
-            <h3 className="mb-2 text-lg font-bold text-ink">Recommended actions</h3>
-            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
-              {actions.map((a, i) => (
-                <div key={i} className="flex gap-3 rounded-xl border border-borderColor bg-white p-4 shadow-sm">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-pageBackground text-sm font-bold text-ink">
-                    {i + 1}
-                  </span>
-                  <div>
-                    {a.label && <p className="font-semibold text-ink">{a.label}</p>}
-                    {a.detail && <p className="text-sm text-secondary">{a.detail}</p>}
-                  </div>
+                      {s.label}
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
+              </section>
+            )}
+
+            <NarrativeSection title="What this means:" text={whatThisMeans} />
+            <NarrativeSection title="Potential Causes:" text={potentialCauses} />
+
+            {/* Citations — peer-reviewed sources, when present on the goal */}
+            {citations.length > 0 && (
+              <section className="mb-6">
+                <div className="rounded-xl border border-borderColor bg-white p-4 shadow-sm">
+                  <h3 className="text-base font-bold text-ink">
+                    {citations.length} {citations.length === 1 ? "Citation" : "Citations"}
+                  </h3>
+                  <SourceChips sources={citations} label="" />
+                </div>
+              </section>
+            )}
+
+            {/* Biomarkers to improve */}
+            {biomarkers.length > 0 && (
+              <section className="mb-6">
+                <h3 className="mb-2 text-lg font-bold text-ink">Biomarkers to improve:</h3>
+                <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
+                  {biomarkers.map((b, i) => (
+                    <BiomarkerRow key={b.canonicalName || b.name || i} b={b} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Ask Cyborg AI */}
+            <section>
+              <h3 className="mb-2 text-lg font-bold text-ink">Ask Cyborg AI</h3>
+              <form onSubmit={askAI} className="relative">
+                <input
+                  type="text"
+                  value={askText}
+                  onChange={(e) => setAskText(e.target.value)}
+                  placeholder="Ask anything about this goal…"
+                  className="w-full rounded-xl border border-borderColor bg-white px-4 py-4 pr-14 text-sm text-ink shadow-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
+                />
+                <button
+                  type="submit"
+                  aria-label="Ask Cyborg AI"
+                  className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-primary text-white transition hover:opacity-90 active:scale-95"
+                >
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+              </form>
+            </section>
+          </div>
+        ) : (
+          <div>
+            {/* Recommended actions */}
+            {actions.length > 0 && (
+              <section className="mb-6">
+                <h3 className="mb-2 text-lg font-bold text-ink">Recommended actions</h3>
+                <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
+                  {actions.map((a, i) => (
+                    <div key={i} className="flex gap-3 rounded-xl border border-borderColor bg-white p-4 shadow-sm">
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-pageBackground text-sm font-bold text-ink">
+                        {a.number || i + 1}
+                      </span>
+                      <div className="min-w-0">
+                        {a.label && <p className="font-semibold text-ink">{a.label}</p>}
+                        {a.detail && <p className="mt-0.5 text-sm leading-relaxed text-secondary">{a.detail}</p>}
+                        {i === 0 && a.label && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push(`/concierge?q=${encodeURIComponent(`Tell me more about: ${a.label}`)}`)
+                            }
+                            className="group mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                          >
+                            Learn more
+                            <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Additional Actions — supplement items attached to this goal */}
+            {protocolItems.length > 0 && (
+              <section className="mb-6">
+                <h3 className="mb-2 text-lg font-bold text-ink">Additional Actions</h3>
+                <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
+                  {protocolItems.map((item, i) => {
+                    const img = supplementImage(item.productName);
+                    return (
+                      <div key={i} className="flex flex-col rounded-xl border border-borderColor bg-white p-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          {img ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={img}
+                              alt=""
+                              className="h-12 w-10 shrink-0 object-contain"
+                              onError={(ev) => (ev.currentTarget.style.visibility = "hidden")}
+                            />
+                          ) : (
+                            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-pageBackground text-sm font-bold text-ink">
+                              {i + 1}
+                            </span>
+                          )}
+                          <p className="font-semibold text-ink">{item.productName}</p>
+                        </div>
+                        {item.dosing && <p className="mt-2 text-sm leading-relaxed text-secondary">{item.dosing}</p>}
+                        <Link
+                          href="/market-place"
+                          className="group mt-3 inline-flex items-center gap-1 self-start text-sm font-semibold text-primary hover:underline"
+                        >
+                          View in marketplace
+                          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {actions.length === 0 && protocolItems.length === 0 && (
+              <div className="rounded-xl border border-borderColor bg-white p-10 text-center text-sm text-secondary shadow-sm">
+                Actions for this goal will appear here once your plan is ready.
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

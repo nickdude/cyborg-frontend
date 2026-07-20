@@ -643,8 +643,9 @@ export default function Protocol() {
                   <h1 className="font-headline-lg text-headline-lg text-on-surface">Goals</h1>
                 </section>
 
-                {/* Goal photo cards, stacked directly under the heading */}
+                {/* What we are working on — goal photo cards */}
                 <section className="mb-section-gap">
+                  <h2 className="mb-stack-md font-title-md text-title-md text-on-surface">What we are working on</h2>
                   <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
                     {goals.length === 0 ? (
                       <div className="rounded-xl bg-surface-container-lowest p-8 text-center custom-shadow lg:col-span-2">
