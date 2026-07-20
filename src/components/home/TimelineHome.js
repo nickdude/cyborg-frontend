@@ -543,8 +543,8 @@ export default function TimelineHome({
             </div>
 
             <div className="mt-6 flex flex-col gap-6 lg:col-span-5 lg:mt-0">
-              <LiveBetter data={data.liveBetter} />
               <DayLogSection userId={userId} />
+              <LiveBetter data={data.liveBetter} />
             </div>
           </div>
         </div>

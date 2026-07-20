@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Flame, Clock } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { activityAPI } from "@/services/api";
-import { MACRO_META } from "@/components/food/macros";
 
 // No weight on the profile yet — estimates assume 70 kg (calories = MET × kg × hours).
 const DEFAULT_WEIGHT_KG = 70;
-const CALORIES_COLOR = MACRO_META.find((m) => m.key === "calories").color;
 
 function toLocalDatetimeString(date) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -20,6 +18,46 @@ function formatDuration(minutes) {
   if (h && m) return `${h}h ${m}m`;
   if (h) return `${h}h`;
   return `${m} min`;
+}
+
+// The pill shows "12:24 PM" like the frame; a short date prefix appears only
+// when the picked date isn't today (the hidden datetime-local input can move it).
+function formatPillTime(value) {
+  const d = new Date(value);
+  if (!value || isNaN(d.getTime())) return "--:--";
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const today = new Date();
+  const sameDay =
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate();
+  if (sameDay) return time;
+  return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${time}`;
+}
+
+// Label row + white pill control per the frame; the pill is a real
+// datetime-local input laid invisibly over it so the native picker opens.
+function TimeRow({ id, label, value, onChange }) {
+  return (
+    <div className="flex items-center justify-between">
+      <label htmlFor={id} className="text-sm font-medium text-black">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          type="datetime-local"
+          value={value}
+          onChange={onChange}
+          onClick={(e) => e.currentTarget.showPicker?.()}
+          className="peer absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+        />
+        <div className="flex h-8 min-w-[78px] items-center justify-center rounded-full border border-borderColor bg-white px-3 text-xs font-semibold text-black peer-focus:border-black">
+          {formatPillTime(value)}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function ActivityDetailScreen({ activity, userId, onSave, onBack }) {
@@ -71,91 +109,70 @@ export default function ActivityDetailScreen({ activity, userId, onSave, onBack 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),12px)]">
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Go back"
-          className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-pageBackground"
-        >
-          <ArrowLeft size={20} className="text-black" />
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || durationMinutes == null}
-          className="rounded-xl bg-black px-5 py-2 text-sm font-semibold text-white transition hover:bg-black/85 disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save"}
-        </button>
-      </div>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-pageBackground">
+      <div className="mx-auto w-full max-w-md pb-8">
+        {/* Header: back + black Save pill */}
+        <div className="flex items-center justify-between px-3 pt-[max(env(safe-area-inset-top,0px),12px)]">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Go back"
+            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/60"
+          >
+            <ChevronLeft size={22} className="text-black" />
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || durationMinutes == null}
+            className="mr-2 flex h-8 items-center justify-center rounded-[5px] bg-black px-4 text-sm font-medium text-white transition hover:bg-black/85 disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
+        </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-6">
-        <h1 className="mt-2 text-2xl font-bold text-black">{activity.name}</h1>
-        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-secondary">
-          Edit Activity
-        </p>
+        <div className="px-5">
+          {/* Activity name + eyebrow */}
+          <h1 className="mt-10 text-base font-medium leading-6 text-black">
+            {activity.name}
+          </h1>
+          <p className="mt-1 text-xs font-semibold uppercase text-secondary">
+            EDIT ACTIVITY
+          </p>
 
-        <div className="mt-8 space-y-5">
-          <div>
-            <label
-              htmlFor="start-time"
-              className="mb-1.5 block text-sm font-medium text-secondary"
-            >
-              Select Start Time
-            </label>
-            <input
+          {/* Time rows */}
+          <div className="mt-7 space-y-3">
+            <TimeRow
               id="start-time"
-              type="datetime-local"
+              label="Select Start Time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full rounded-xl border border-borderColor bg-pageBackground px-3 py-2.5 text-sm text-black outline-none focus:border-black"
             />
-          </div>
-
-          <div>
-            <label
-              htmlFor="end-time"
-              className="mb-1.5 block text-sm font-medium text-secondary"
-            >
-              Select End Time
-            </label>
-            <input
+            <TimeRow
               id="end-time"
-              type="datetime-local"
+              label="Select End Time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="w-full rounded-xl border border-borderColor bg-pageBackground px-3 py-2.5 text-sm text-black outline-none focus:border-black"
             />
           </div>
 
+          {/* Retained duration + calorie estimate, compacted to fit the frame */}
           {durationMinutes != null ? (
-            <div className="flex items-center gap-4 rounded-xl bg-pageBackground px-3 py-3">
-              <span className="flex items-center gap-1.5 text-sm text-ink">
-                <Clock size={15} className="text-secondary" />
-                {formatDuration(durationMinutes)}
-              </span>
-              {estKcal != null && (
-                <span className="flex items-center gap-1.5 text-sm text-ink">
-                  <Flame size={15} color={CALORIES_COLOR} />
-                  ~{estKcal} kcal
-                </span>
-              )}
-            </div>
+            <p className="mt-5 text-xs font-medium text-secondary">
+              {formatDuration(durationMinutes)}
+              {estKcal != null && <> · ~{estKcal} kcal</>}
+            </p>
           ) : startTime && endTime ? (
             // Only a genuine bad range — not the pre-hydration empty fields.
-            <p className="text-sm text-biomarkerOutOfRange">
+            <p className="mt-5 text-xs text-biomarkerOutOfRange">
               End time must be after the start time.
             </p>
           ) : null}
-        </div>
 
-        {error && (
-          <p className="mt-4 text-center text-sm text-biomarkerOutOfRange">{error}</p>
-        )}
+          {error && (
+            <p className="mt-4 text-sm text-biomarkerOutOfRange">{error}</p>
+          )}
+        </div>
       </div>
     </div>
   );

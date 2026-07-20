@@ -195,6 +195,9 @@ export const mealAPI = {
     API.delete(`/api/users/${userId}/meals/${mealId}`),
   insights: (userId, mealId) =>
     API.get(`/api/users/${userId}/meals/${mealId}/insights`),
+  // Deterministic engine score for an unsaved draft basket (no persistence).
+  scorePreview: (userId, body) =>
+    API.post(`/api/users/${userId}/meals/score-preview`, body),
 };
 
 // Notification endpoints
@@ -259,6 +262,12 @@ export const activityAPI = {
     API.get(`/api/users/${userId}/activities`, { params: { date } }),
   get: (userId, activityId) =>
     API.get(`/api/users/${userId}/activities/${activityId}`),
+  // AI post-workout recovery analysis (cached server-side; pass
+  // { refresh: true } to force a regeneration).
+  recovery: (userId, activityId, { refresh } = {}) =>
+    API.get(`/api/users/${userId}/activities/${activityId}/recovery`, {
+      params: refresh ? { refresh: 1 } : {},
+    }),
   update: (userId, activityId, body) =>
     API.patch(`/api/users/${userId}/activities/${activityId}`, body),
   delete: (userId, activityId) =>
@@ -293,6 +302,9 @@ export const glucoseAPI = {
 export const foodSearchAPI = {
   search: (userId, q) =>
     API.get(`/api/users/${userId}/foods/search`, { params: { q } }),
+  // Deterministic single-item insight: engine score + GI + community stats.
+  itemInsight: (userId, payload) =>
+    API.post(`/api/users/${userId}/foods/insight`, payload),
 };
 
 export default API;

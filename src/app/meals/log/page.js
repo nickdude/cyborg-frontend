@@ -7,6 +7,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import FoodLogHub from "@/components/food/FoodLogHub";
 
+/**
+ * /meals/log — the Log Food flow. Lands on the review shell (draft basket +
+ * macro grid, per the Figma frames); search/scan/quick-add live inside
+ * FoodLogHub as in-route views and sheets.
+ */
+
 export default function LogFoodPage() {
   const router = useRouter();
   // Where the user came from (e.g. the Insights view) — preserved through the flow.

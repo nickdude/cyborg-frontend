@@ -71,6 +71,9 @@ export default function FoodSearchResults({ userId, query, onAdd, onDescribe }) 
             key={food.refId || `${food.name}-${idx}`}
             food={food}
             onAdd={onAdd}
+            // userId makes the row body expand the inline details card
+            // (macros + AI insight); the + still quick-adds.
+            userId={userId}
           />
         ))}
 

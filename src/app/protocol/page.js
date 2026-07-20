@@ -85,12 +85,12 @@ function ProtocolRow({ item, index = 0, onOpen, taken, onToggle }) {
       </button>
       {imgOk ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={PROTOCOL_IMG} alt={item.productName} onError={() => setImgOk(false)} className="h-14 w-14 shrink-0 rounded-xl border border-borderColor bg-white object-contain p-1 lg:h-16 lg:w-16" />
+        <img src={PROTOCOL_IMG} alt={item.productName} onError={() => setImgOk(false)} className={`h-14 w-14 shrink-0 rounded-xl border border-borderColor bg-white object-contain p-1 lg:h-16 lg:w-16 ${taken ? "opacity-50 grayscale" : ""}`} />
       ) : (
         <SupplementBottle index={index} />
       )}
-      <div className="min-w-0 flex-1">
-        <h3 className={`truncate text-sm font-medium lg:text-base ${taken ? "text-secondary" : "text-black"}`}>{item.productName}</h3>
+      <div className={`min-w-0 flex-1 ${taken ? "opacity-60" : ""}`}>
+        <h3 className={`truncate text-sm font-medium lg:text-base ${taken ? "text-secondary line-through" : "text-black"}`}>{item.productName}</h3>
         <div className="mt-0.5 flex items-center gap-x-2 text-xs text-secondary lg:text-sm">
           {price && <span className="shrink-0 font-medium text-blue">{price}</span>}
           {price && subtitle && <span className="shrink-0 text-borderColor">·</span>}
@@ -101,7 +101,7 @@ function ProtocolRow({ item, index = 0, onOpen, taken, onToggle }) {
       <Link
         href="/market-place"
         onClick={(e) => e.stopPropagation()}
-        className="flex-shrink-0 rounded-full bg-black px-5 py-2 text-xs font-medium text-white transition-colors hover:bg-gray-900 lg:px-6 lg:py-2.5 lg:text-sm"
+        className={`flex-shrink-0 rounded-full bg-black px-5 py-2 text-xs font-medium text-white transition-colors hover:bg-gray-900 lg:px-6 lg:py-2.5 lg:text-sm ${taken ? "opacity-50" : ""}`}
       >
         Buy
       </Link>
@@ -643,19 +643,18 @@ export default function Protocol() {
                   <h1 className="font-headline-lg text-headline-lg text-on-surface">Goals</h1>
                 </section>
 
-                {/* What we are working on — goals as numbered step cards */}
+                {/* Goal photo cards, stacked directly under the heading */}
                 <section className="mb-section-gap">
-                  <h2 className="mb-stack-md font-title-md text-title-md text-on-surface">What we are working on</h2>
-                  <div className="space-y-gutter">
+                  <div className="space-y-4">
                     {goals.length === 0 ? (
                       <div className="rounded-xl bg-surface-container-lowest p-8 text-center custom-shadow">
                         <h3 className="font-title-md text-title-md text-on-surface">No health goals yet</h3>
                         <p className="mt-1 font-body-md text-body-md text-on-surface-variant">They unlock once your results are processed.</p>
                       </div>
                     ) : (
-                      // Order highest-priority first so the numbered steps (1,2,3…) match priority.
+                      // Order highest-priority first (High → Medium → Low).
                       [...goals]
-                        .sort((a, b) => ({ High: 0, Medium: 1, Low: 2 }[a.priority] ?? 3) - ({ High: 0, Medium: 1, Low: 2 }[b.priority] ?? 3))
+                        .sort((a, b) => ({ high: 0, medium: 1, low: 2 }[String(a.priority || "").toLowerCase()] ?? 3) - ({ high: 0, medium: 1, low: 2 }[String(b.priority || "").toLowerCase()] ?? 3))
                         .map((goal, index) => (
                           <div key={goal.goalId || index} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.06}s both` }}>
                             <GoalStepCard goal={goal} index={index} onOpen={() => router.push(`/protocol/goals/${encodeURIComponent(goal.goalId)}`)} />
@@ -683,30 +682,32 @@ export default function Protocol() {
                       <p className="mb-stack-md font-body-md text-body-md text-on-surface-variant">Tap the circle as you take each one — tap the row for how &amp; why.</p>
                       <div className="overflow-hidden rounded-xl bg-surface-container-lowest custom-shadow">
                         {(() => {
-                          const remaining = protocolItems.filter((it) => !takenSet.has(it.productName));
-                          if (remaining.length === 0) {
-                            return (
-                              <div className="p-10 text-center">
-                                <p className="text-2xl">🎉</p>
-                                <p className="mt-2 font-title-md text-title-md text-on-surface">All done for today</p>
-                                <p className="mt-1 font-body-md text-body-md text-on-surface-variant">Your plan refreshes tomorrow.</p>
-                              </div>
-                            );
-                          }
+                          // Checked items stay in the list, struck through and grayed;
+                          // once every item is taken the celebration sits above them.
+                          const allDone = protocolItems.every((it) => takenSet.has(it.productName));
                           return (
-                            <div className="divide-y divide-surface-container">
-                              {remaining.map((item, index) => (
-                                <div key={item.productName} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
-                                  <ProtocolRow
-                                    item={item}
-                                    index={index}
-                                    onOpen={setOpenItem}
-                                    taken={false}
-                                    onToggle={toggleItem}
-                                  />
+                            <>
+                              {allDone && (
+                                <div className="border-b border-surface-container p-10 text-center">
+                                  <p className="text-2xl">🎉</p>
+                                  <p className="mt-2 font-title-md text-title-md text-on-surface">All done for today</p>
+                                  <p className="mt-1 font-body-md text-body-md text-on-surface-variant">Your plan refreshes tomorrow.</p>
                                 </div>
-                              ))}
-                            </div>
+                              )}
+                              <div className="divide-y divide-surface-container">
+                                {protocolItems.map((item, index) => (
+                                  <div key={item.productName} style={{ animation: `fadeIn 0.4s ease-out ${index * 0.05}s both` }}>
+                                    <ProtocolRow
+                                      item={item}
+                                      index={index}
+                                      onOpen={setOpenItem}
+                                      taken={takenSet.has(item.productName)}
+                                      onToggle={toggleItem}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </>
                           );
                         })()}
                       </div>

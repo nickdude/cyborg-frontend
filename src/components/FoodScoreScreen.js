@@ -1,22 +1,56 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  ReferenceLine,
-  Tooltip,
-} from "recharts";
+import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { mealAPI, foodScoreAPI } from "@/services/api";
 import { computeTotals } from "@/utils/mealDraft";
-import { MACRO_META } from "@/components/food/macros";
-import MealItemRow from "@/components/MealItemRow";
+import { MACRO_META, portionText } from "@/components/food/macros";
+import ZoneScoreOverlay from "@/components/insights/ZoneScoreOverlay";
+
+const TABS = ["Food Score", "Predicted Glucose Peak"];
+
+// Figma hero art per tab: red bokeh for Food Score, teal water for Predicted
+// Glucose Peak (assets exported from the reference frames).
+const HERO_IMAGES = [
+  "/assets/insights/hero-food-score.webp",
+  "/assets/insights/hero-glucose.webp",
+];
+
+// Figma macro icons keyed by MACRO_META keys (colored circular glyphs).
+const MACRO_ICONS = {
+  calories: "/assets/insights/macro-calories.svg",
+  fiberG: "/assets/insights/macro-fiber.svg",
+  carbsG: "/assets/insights/macro-carbs.svg",
+  proteinG: "/assets/insights/macro-protein.svg",
+  fatG: "/assets/insights/macro-fat.svg",
+  sugarG: "/assets/insights/macro-sugar.svg",
+};
+
+// Mirrors the backend's computeGlucoseScore (src/services/glucoseScoring.js):
+// the Predicted Glucose Peak tab scores the predicted rise itself (1-10),
+// which is a different number from the meal's food score (Figma: 3 vs 8).
+const GLUCOSE_SCORE_STEPS = [
+  [15, 10],
+  [20, 9],
+  [25, 8],
+  [30, 7],
+  [40, 6],
+  [50, 5],
+  [60, 4],
+  [70, 3],
+  [80, 2],
+];
+
+function glucoseScoreFromDelta(deltaMgDl) {
+  if (typeof deltaMgDl !== "number") return null;
+  const delta = Math.abs(deltaMgDl);
+  for (const [limit, score] of GLUCOSE_SCORE_STEPS) {
+    if (delta < limit) return score;
+  }
+  return 1;
+}
 
 function formatMealDateTime(iso) {
   const d = new Date(iso);
@@ -32,17 +66,6 @@ function formatMealDateTime(iso) {
   }).toLowerCase();
 }
 
-function buildGlucoseCurve(predictedPeakDelta = 26) {
-  const baseline = 90;
-  const points = [];
-  for (let m = 0; m <= 180; m += 10) {
-    const t = m / 180;
-    const y = baseline + predictedPeakDelta * Math.sin(Math.PI * t) * Math.exp(-0.5 * t);
-    points.push({ minute: m, glucose: Math.round(y) });
-  }
-  return { points, baseline, peak: baseline + predictedPeakDelta };
-}
-
 export default function FoodScoreScreen({ meal: initialMeal, score: initialScore, userId, onBack }) {
   const router = useRouter();
   const [tab, setTab] = useState(0);
@@ -50,6 +73,7 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
   const [score, setScore] = useState(initialScore);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState("");
+  const [overlayOpen, setOverlayOpen] = useState(false);
   // Rapid stepper taps: serialize PATCHes so they can't land out of order,
   // and drop score responses that a newer edit has superseded.
   const editQueueRef = useRef(Promise.resolve());
@@ -58,19 +82,18 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
   const mealId = meal?._id || meal?.id;
   const scoreVal = score?.score ?? score?.foodScore ?? null;
   const predicted = score?.predictedGlucosePeak;
-  // No fabricated numbers: without a prediction there is no delta and no curve.
+  // No fabricated numbers: without a prediction there is no delta.
   const predictedDelta =
     typeof predicted?.deltaMgDl === "number" ? predicted.deltaMgDl : null;
+  // Per the Figma frames the hero number differs by tab: food score on tab 0,
+  // glucose (predicted-rise) score on tab 1 — the delta line is shared.
+  const glucoseScore = glucoseScoreFromDelta(predictedDelta);
+  const heroScore = tab === 1 ? glucoseScore ?? scoreVal : scoreVal;
 
   const totals = meal?.totals || {};
   const items = meal?.items || [];
   const consumedAt = meal?.consumedAt;
   const mealTitle = items.map((i) => i.name).filter(Boolean).join(", ") || meal?.title || "Meal";
-
-  const glucoseCurve = useMemo(
-    () => (predictedDelta != null ? buildGlucoseCurve(predictedDelta) : null),
-    [predictedDelta]
-  );
 
   /* Persist an items change, then re-score in the background. */
   const applyItems = (nextItems) => {
@@ -122,21 +145,28 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
   };
 
   const handleEditMeal = () => router.push(`/meals/${mealId}`);
-
-  const shared = { items, totals, consumedAt, mealTitle, updateItem, removeItem };
+  // The stable story is only truthful for genuinely stable responses — gate on
+  // the same score the tab-1 overlay displays (glucose score), so Details
+  // never contradicts the overlay's own headline.
+  const handleOverlayDetails = () =>
+    router.push(
+      tab === 1 && heroScore != null && heroScore >= 8
+        ? `/meals/${mealId}/review?variant=stable`
+        : `/meals/${mealId}/review`
+    );
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground pb-20 font-sans">
       {/* Back arrow */}
-      <div className="px-5 pt-4 pb-2">
+      <div className="px-5 pt-7">
         <button type="button" onClick={onBack} aria-label="Go back">
           <ChevronLeft size={20} strokeWidth={2.5} className="text-black" />
         </button>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex items-center gap-6 px-5">
-        {["Food Score", "Predicted Glucose Peak"].map((label, idx) => (
+      {/* Tab bar — spans the hero card width, one tab at each edge */}
+      <div className="mx-auto mt-3 flex w-[268px] max-w-full items-center justify-between">
+        {TABS.map((label, idx) => (
           <button
             key={label}
             type="button"
@@ -148,182 +178,256 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
         ))}
       </div>
 
-      <ScoreHero scoreVal={scoreVal} predictedDelta={predictedDelta} variant={tab} onSwitch={setTab} />
-
-      {tab === 0 ? (
-        <FoodScoreTab
-          {...shared}
-          removing={removing}
-          onEditMeal={handleEditMeal}
-          onRemoveMeal={handleRemoveMeal}
-        />
-      ) : (
-        <PredictedGlucoseTab {...shared} glucoseCurve={glucoseCurve} />
-      )}
-
-      {error && <p className="mt-3 px-5 text-sm text-biomarkerOutOfRange">{error}</p>}
-    </div>
-  );
-}
-
-/* Score hero + pagination dots (tap a dot to switch page). */
-function ScoreHero({ scoreVal, predictedDelta, variant, onSwitch }) {
-  return (
-    <div className="px-5">
-      <div className="relative mt-4 overflow-hidden rounded-lg" style={{ height: 160 }}>
-        <Image
-          src="/images/food-score/score-hero-bg.webp"
-          alt=""
-          fill
-          className="object-cover"
-          style={variant === 1 ? { filter: "hue-rotate(200deg) saturate(1.3)" } : undefined}
-          priority
-        />
-        <div className={`absolute inset-0 ${variant === 1 ? "bg-indigo-900/40" : "bg-black/20"}`} />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <p className="text-[55px] font-bold text-white" style={{ fontFamily: "var(--font-arimo), Inter, sans-serif" }}>
-            {scoreVal ?? "--"}
-          </p>
-          {predictedDelta != null && (
-            <p className="text-[15px] font-medium text-white">
-              +{Math.round(predictedDelta)} mg/dL
-            </p>
-          )}
-        </div>
+      {/* Score hero — tappable, opens the zone overlay for the active tab */}
+      <div className="mt-[17px] flex justify-center px-5">
+        <button
+          type="button"
+          onClick={() => setOverlayOpen(true)}
+          aria-label={tab === 1 ? "View predicted glucose peak" : "View zone score"}
+          className="relative block h-40 w-[268px] cursor-pointer overflow-hidden rounded-lg"
+        >
+          <Image
+            src={HERO_IMAGES[tab]}
+            alt=""
+            fill
+            sizes="268px"
+            className="object-cover"
+            priority
+          />
+          <span className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[55px] font-bold leading-none text-white">
+              {heroScore ?? "--"}
+            </span>
+            {predictedDelta != null && (
+              <span className="mt-1.5 text-[15px] font-medium leading-none text-white">
+                {predictedDelta >= 0 ? "+" : ""}
+                {Math.round(predictedDelta)} mg/dL
+              </span>
+            )}
+          </span>
+        </button>
       </div>
 
-      <div className="mt-3 flex items-center justify-center gap-2">
+      {/* Pagination dots (tap a dot to switch page) */}
+      <div className="mt-4 flex items-center justify-center gap-1">
         {[0, 1].map((idx) => (
           <button
             key={idx}
             type="button"
             aria-label={idx === 0 ? "Food score" : "Predicted glucose"}
-            onClick={() => onSwitch(idx)}
-            className={`h-1 rounded-full transition-all ${variant === idx ? "w-4 bg-black" : "w-2 bg-borderColor"}`}
+            onClick={() => setTab(idx)}
+            className={`h-1 rounded-full transition-all ${tab === idx ? "w-4 bg-black" : "w-2 bg-lightGray"}`}
           />
         ))}
       </div>
-    </div>
-  );
-}
 
-function MealInfo({ mealTitle, consumedAt }) {
-  return (
-    <>
-      <p className="mt-3 text-center text-[16px] font-medium leading-6 text-black">{mealTitle}</p>
-      {consumedAt && (
-        <p className="mt-1 text-center text-[12px] font-medium leading-4 text-secondary">
-          {formatMealDateTime(consumedAt)}
-        </p>
-      )}
-    </>
-  );
-}
+      {/* Both tabs share the same body per the Figma frames */}
+      <div className="px-5">
+        <p className="mt-6 text-center text-[16px] font-medium leading-6 text-black">{mealTitle}</p>
+        {consumedAt && (
+          <p className="mt-1 text-center text-[12px] font-medium leading-4 text-secondary">
+            {formatMealDateTime(consumedAt)}
+          </p>
+        )}
 
-function ItemList({ items, updateItem, removeItem }) {
-  return (
-    <div className="mt-2 space-y-2">
-      {items.map((item, idx) => (
-        <MealItemRow
-          key={`${item.name}-${idx}`}
-          item={item}
-          onUpdate={(next) => updateItem(idx, next)}
-          onRemove={() => removeItem(idx)}
+        <p className="mt-5 text-[12px] font-semibold uppercase leading-4 text-black">Your Meal</p>
+        <div className="mt-3 space-y-2">
+          {items.map((item, idx) => (
+            <ItemRow
+              key={`${item.name}-${idx}`}
+              item={item}
+              onUpdate={(next) => updateItem(idx, next)}
+              onRemove={() => removeItem(idx)}
+            />
+          ))}
+        </div>
+
+        <p className="mt-5 text-[12px] font-semibold uppercase leading-4 text-black">Macro Split</p>
+        <MacroGrid totals={totals} />
+
+        {/* Actions */}
+        <button
+          type="button"
+          onClick={handleEditMeal}
+          className="mt-10 block text-[16px] font-semibold leading-6 text-black transition hover:opacity-70"
+        >
+          Edit Meal
+        </button>
+        <button
+          type="button"
+          onClick={handleRemoveMeal}
+          disabled={removing}
+          className="mt-4 block text-[16px] font-semibold leading-6 text-biomarkerOutOfRange transition hover:opacity-70 disabled:opacity-50"
+        >
+          {removing ? "Removing…" : "Remove the Meal"}
+        </button>
+
+        {error && <p className="mt-3 text-sm text-biomarkerOutOfRange">{error}</p>}
+      </div>
+
+      {overlayOpen && (
+        <ZoneScoreOverlay
+          entry={{
+            id: mealId,
+            time: consumedAt,
+            data: { foodScore: heroScore, deltaMgDl: predictedDelta },
+          }}
+          userId={userId}
+          variant={tab === 1 ? "glucose" : undefined}
+          onClose={() => setOverlayOpen(false)}
+          onDetails={handleOverlayDetails}
         />
-      ))}
+      )}
     </div>
   );
 }
 
-function FoodScoreTab({ items, totals, consumedAt, mealTitle, updateItem, removeItem, removing, onEditMeal, onRemoveMeal }) {
-  return (
-    <div className="px-5">
-      <MealInfo mealTitle={mealTitle} consumedAt={consumedAt} />
-
-      <p className="mt-5 text-[12px] font-semibold uppercase text-black">Your Meal</p>
-      <ItemList items={items} updateItem={updateItem} removeItem={removeItem} />
-
-      <p className="mt-5 text-[12px] font-semibold uppercase text-black">Macro Split</p>
-      <MacroGrid totals={totals} />
-
-      {/* Actions */}
-      <button
-        type="button"
-        onClick={onEditMeal}
-        className="mt-8 block text-[16px] font-semibold leading-6 text-black transition hover:opacity-70"
-      >
-        Edit Meal
-      </button>
-      <button
-        type="button"
-        onClick={onRemoveMeal}
-        disabled={removing}
-        className="mt-3 block text-[16px] font-semibold leading-6 text-biomarkerOutOfRange transition hover:opacity-70 disabled:opacity-50"
-      >
-        {removing ? "Removing…" : "Remove the Meal"}
-      </button>
-    </div>
-  );
+/* Linear scaling from the item as it was when editing began, so repeated
+ * +/- taps don't accumulate rounding drift. (Mirrors MealItemRow.) */
+function scaleItem(base, factor) {
+  const r = (v) => Math.round((Number(v) || 0) * factor * 10) / 10;
+  return {
+    ...base,
+    portion: {
+      ...base.portion,
+      quantity:
+        base.portion?.quantity != null
+          ? Math.round(base.portion.quantity * factor * 100) / 100
+          : null,
+      grams: base.portion?.grams != null ? Math.round(base.portion.grams * factor) : null,
+    },
+    calories: r(base.calories),
+    proteinG: r(base.proteinG),
+    carbsG: r(base.carbsG),
+    fatG: r(base.fatG),
+    fiberG: r(base.fiberG),
+    sugarG: r(base.sugarG),
+  };
 }
 
-function PredictedGlucoseTab({ items, totals, consumedAt, mealTitle, updateItem, removeItem, glucoseCurve }) {
+/* Figma-styled meal item row: utensil tile, name + portion/macro line, and
+ * circular edit (serving stepper) / remove buttons. */
+function ItemRow({ item, onUpdate, onRemove }) {
+  const [expanded, setExpanded] = useState(false);
+  const baseRef = useRef(null);
+  const factorRef = useRef(1);
+
+  if (!item) return null;
+
+  const toggleEdit = () => {
+    if (!expanded) {
+      baseRef.current = JSON.parse(JSON.stringify(item));
+      factorRef.current = 1;
+    }
+    setExpanded((v) => !v);
+  };
+
+  const step = (dir) => {
+    const nextFactor = Math.max(0.25, Math.round((factorRef.current + dir * 0.25) * 100) / 100);
+    if (nextFactor === factorRef.current) return;
+    factorRef.current = nextFactor;
+    onUpdate(scaleItem(baseRef.current, nextFactor));
+  };
+
+  const r = (v) => Math.round(v || 0);
+  const pText = portionText(item.portion);
+
   return (
-    <div className="px-5">
-      {/* Glucose chart — only drawn from a real prediction */}
-      {glucoseCurve ? (
-      <div className="mt-4 rounded-lg border border-borderColor bg-white p-4 shadow-sm">
-        <p className="mb-3 text-[12px] font-semibold uppercase text-black">Predicted Response</p>
-        <div className="h-40 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={glucoseCurve.points} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="glucFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#541D7A" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#541D7A" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="minute" tick={{ fontSize: 10, fill: "#717178" }} tickFormatter={(v) => `${v}m`} axisLine={{ stroke: "#E6E6E8" }} tickLine={false} />
-              <YAxis domain={["dataMin - 5", "dataMax + 5"]} tick={{ fontSize: 10, fill: "#717178" }} axisLine={false} tickLine={false} />
-              <ReferenceLine y={glucoseCurve.baseline} stroke="#E6E6E8" strokeDasharray="4 4" />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E6E6E8" }} formatter={(val) => [`${val} mg/dL`, "Glucose"]} labelFormatter={(v) => `${v} min`} />
-              <Area type="monotone" dataKey="glucose" stroke="#541D7A" strokeWidth={2} fill="url(#glucFill)" />
-            </AreaChart>
-          </ResponsiveContainer>
+    <div className="rounded-lg border border-borderColor bg-white shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)]">
+      <div className="flex h-[60px] items-center gap-3 px-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/assets/insights/meal-item.svg" alt="" className="h-[30px] w-[30px] shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-medium leading-4 text-black">{item.name}</p>
+          <div className="mt-1 flex items-center gap-2 overflow-hidden whitespace-nowrap text-[12px] font-medium leading-4 text-secondary">
+            {pText && (
+              <>
+                <span className="shrink-0">{pText}</span>
+                <span aria-hidden="true" className="shrink-0 text-[8px] leading-none">•</span>
+              </>
+            )}
+            <span className="shrink-0">{r(item.calories)} Cal</span>
+            <span className="shrink-0">{r(item.proteinG)}P</span>
+            <span>{r(item.fatG)}F</span>
+            <span>{r(item.carbsG)}C</span>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={toggleEdit}
+            aria-label={`Edit ${item.name}`}
+            className="flex h-8 w-8 items-center justify-center transition hover:opacity-70"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/insights/row-edit.svg" alt="" className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={`Remove ${item.name}`}
+            className="-mr-1 flex h-8 w-8 items-center justify-center transition hover:opacity-70"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/insights/row-remove.svg" alt="" className="h-4 w-4" />
+          </button>
         </div>
       </div>
-      ) : (
-      <div className="mt-4 rounded-lg border border-borderColor bg-white p-6 text-center text-sm text-secondary">
-        No glucose prediction is available for this meal yet.
-      </div>
+
+      {expanded && (
+        <div className="flex items-center justify-between border-t border-borderColor px-3 py-2.5">
+          <span className="text-xs font-medium uppercase tracking-wide text-secondary">
+            Serving size
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              aria-label="Decrease serving"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-borderColor text-black active:scale-95"
+            >
+              <Minus size={14} />
+            </button>
+            <span className="min-w-[52px] text-center text-sm font-semibold text-black">
+              {factorRef.current}×
+            </span>
+            <button
+              type="button"
+              onClick={() => step(1)}
+              aria-label="Increase serving"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-borderColor text-black active:scale-95"
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+        </div>
       )}
-
-      <MealInfo mealTitle={mealTitle} consumedAt={consumedAt} />
-
-      <p className="mt-5 text-[12px] font-semibold uppercase text-black">Your Meal</p>
-      <ItemList items={items} updateItem={updateItem} removeItem={removeItem} />
-
-      <p className="mt-5 text-[12px] font-semibold uppercase text-black">Macro Split</p>
-      <MacroGrid totals={totals} />
     </div>
   );
 }
 
 function MacroGrid({ totals }) {
   return (
-    <div className="mt-2 grid grid-cols-3 gap-1.5">
-      {MACRO_META.map(({ key, label, unit, Icon, color }) => {
+    <div className="mt-3 grid grid-cols-3 gap-1">
+      {MACRO_META.map(({ key, label, unit }) => {
         const raw = totals[key];
         const val = raw != null ? Math.round(raw) : "--";
         return (
-          <div key={key} className="rounded-lg border border-borderColor bg-white px-2.5 py-2 shadow-sm">
-            <div className="flex items-center gap-1.5">
-              <Icon size={12} color={color} className="shrink-0" />
-              <span className="text-[9px] font-medium uppercase text-secondary">{label}</span>
+          <div
+            key={key}
+            className="flex h-[50px] gap-2 rounded-lg border border-borderColor bg-white px-[7px] pt-2 shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={MACRO_ICONS[key]} alt="" className="h-5 w-5 shrink-0" />
+            <div className="min-w-0">
+              <p className="truncate text-[10px] font-medium uppercase leading-3 text-black">
+                {label}
+              </p>
+              <p className="mt-1 text-[14px] font-semibold leading-[18px] text-black">
+                {val}
+                {unit}
+              </p>
             </div>
-            <p className="mt-0.5 text-[14px] font-semibold leading-5 text-black">
-              {val}
-              {unit}
-            </p>
           </div>
         );
       })}

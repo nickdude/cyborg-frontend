@@ -1,39 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
+  CircleEllipsis,
   Info,
   Loader2,
-  MoreHorizontal,
-  Utensils,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  ReferenceArea,
-  ReferenceDot,
-} from "recharts";
 import { useAuth } from "@/contexts/AuthContext";
 import { mealAPI } from "@/services/api";
 import { portionText } from "@/components/food/macros";
+import DayReviewChart from "@/components/insights/DayReviewChart";
+import StorySlide from "@/components/insights/StorySlide";
+import { insightFoodImage, STORY_SLIDE_IMAGES } from "@/components/insights/foodImages";
 
 /* Chart/data-viz values live in JS constants (MACRO_META pattern) — named
-   Tailwind tokens can't reach recharts props or per-bar styles. */
-const BRAND_PURPLE = "#541D7A";
-const BAND_FILL = "#F2F2F2"; // pageBackground token value
-const AXIS_GREY = "#71717B"; // secondary token value
-const AXIS_LINE = "#E6E6E8"; // borderColor token value
-
-// Community score distribution, one color per score bucket 1..10.
+   Tailwind tokens can't reach per-bar styles. */
+// Community score distribution, one color per score bucket 1..10 (Figma frame).
 const HISTOGRAM_COLORS = [
-  "#E93B81", "#A151A3", "#7267B9", "#4A79B6", "#3B7DA6",
-  "#4290B5", "#51A2B5", "#49A79E", "#39B390", "#3DC8A8",
+  "#DE348A", "#9F50A5", "#6A67BA", "#4170B8", "#3877A5",
+  "#338BB5", "#469CB2", "#35A5A2", "#2DA897", "#23AC89",
 ];
 
 // Soft pastel gradients for the photo-less food cards, indexed by position.
@@ -50,18 +38,10 @@ function formatDayTitle(iso) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function formatClock(iso) {
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return "";
-  return d
-    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
-    .toLowerCase();
-}
-
 function scoreLabel(score) {
   if (score <= 4) return "Large Spike";
   if (score <= 7) return "Moderate Rise";
-  return "Steady Response";
+  return "Stable Response";
 }
 
 function verdictFor(score) {
@@ -69,6 +49,10 @@ function verdictFor(score) {
   if (score <= 4) return "is a glucose spiker. Enjoy it infrequently.";
   if (score <= 7) return "raises glucose moderately. Pair it with protein or fiber.";
   return "is glucose-friendly. A solid staple.";
+}
+
+function titleCase(text = "") {
+  return String(text).replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function sameName(a, b) {
@@ -109,24 +93,78 @@ function formatDelta(delta) {
   return `${r >= 0 ? "+" : ""}${r} mg/dL`;
 }
 
-// Same synthetic curve as FoodScoreScreen's buildGlucoseCurve.
-function buildCurve(baseline, delta) {
-  const points = [];
-  for (let m = 0; m <= 180; m += 10) {
-    const t = m / 180;
-    points.push({
-      minute: m,
-      glucose: Math.round(baseline + delta * Math.sin(Math.PI * t) * Math.exp(-0.5 * t)),
-    });
-  }
-  return points;
+function splitSentences(text = "") {
+  return String(text).match(/[^.!?]+[.!?]+["”]?|[^.!?]+$/g)?.map((s) => s.trim()) || [];
+}
+
+// Split a slide's sentences into at most two paragraphs (Figma slides show
+// two short paragraphs separated by a blank line).
+function toParagraphs(sentences) {
+  if (!sentences.length) return [];
+  if (sentences.length === 1) return [sentences[0]];
+  const mid = Math.ceil(sentences.length / 2);
+  return [sentences.slice(0, mid).join(" "), sentences.slice(mid).join(" ")];
+}
+
+// Educational story content for the stable variant, derived from the
+// insights payload (AI explanation split across the two slides).
+function buildStorySlides(spikerName, explanation) {
+  const name = spikerName || "this meal";
+  const sentences = splitSentences(explanation);
+  const mid = Math.ceil(sentences.length / 2);
+  const first = sentences.slice(0, mid);
+  const second = sentences.slice(mid);
+
+  const fallback1 = [
+    `${titleCase(name)} kept your glucose steady this time.`,
+    "Meals rich in protein, fiber and healthy fats digest slowly, so glucose rises gently and stays in your target range.",
+  ];
+  const fallback2 = [
+    "Responses this stable mean steadier energy and fewer cravings through the day.",
+    "Keep logging meals to learn which foods work best for your body.",
+  ];
+
+  return [
+    {
+      image: STORY_SLIDE_IMAGES[0],
+      headline: `Is ${name} good for you?`,
+      paragraphs: first.length ? toParagraphs(first) : fallback1,
+    },
+    {
+      image: STORY_SLIDE_IMAGES[1],
+      headline: `Why ${name} works for you`,
+      paragraphs: second.length ? toParagraphs(second) : fallback2,
+    },
+  ];
 }
 
 export default function MealReviewPage() {
+  return (
+    <Suspense fallback={<ReviewLoader />}>
+      <MealReviewContent />
+    </Suspense>
+  );
+}
+
+function ReviewLoader() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white">
+      <Loader2 size={28} className="animate-spin text-primary" />
+      <p className="text-sm text-secondary">Analyzing your meal...</p>
+    </div>
+  );
+}
+
+function MealReviewContent() {
   const { mealId } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const userId = user?._id || user?.id;
+
+  // ?variant=stable → step 1 wears the stable styling and steps 2-3 become
+  // full-bleed educational story slides. Default (no param) is unchanged.
+  const stable = searchParams.get("variant") === "stable";
 
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -166,16 +204,18 @@ export default function MealReviewPage() {
   }, [authLoading, userId, mealId]);
 
   const handleBack = () => (step > 1 ? setStep(step - 1) : router.back());
-  const handleNext = () => (step < 3 ? setStep(step + 1) : router.back());
+  const handleNext = () => {
+    if (step < 3) {
+      setStep(step + 1);
+    } else if (stable) {
+      // Story flow exits back to the meal score screen.
+      router.push(`/meals/${mealId}/score`);
+    } else {
+      router.back();
+    }
+  };
 
-  if (authLoading || loading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white">
-        <Loader2 size={28} className="animate-spin text-primary" />
-        <p className="text-sm text-secondary">Analyzing your meal...</p>
-      </div>
-    );
-  }
+  if (authLoading || loading) return <ReviewLoader />;
 
   if (!insights) {
     return (
@@ -207,9 +247,25 @@ export default function MealReviewPage() {
 
   const dayLabel = formatDayTitle(meal?.consumedAt);
 
+  // Stable variant, steps 2-3: full-bleed story slides replace the shell.
+  if (stable && step > 1) {
+    const slides = buildStorySlides(spikerName, analysis?.explanation);
+    const slide = slides[step - 2] || slides[0];
+    return (
+      <StorySlide
+        image={slide.image}
+        dayLabel={dayLabel}
+        headline={slide.headline}
+        paragraphs={slide.paragraphs}
+        onBack={handleBack}
+        onNext={handleNext}
+      />
+    );
+  }
+
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-white px-6 font-sans">
-      <header className="sticky top-0 z-10 -mx-6 bg-white px-6 pb-3 pt-5">
+    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-white px-5 font-sans">
+      <header className="sticky top-0 z-10 -mx-5 bg-white px-5 pb-3 pt-5">
         <div className="relative flex items-center justify-center">
           <button
             type="button"
@@ -219,7 +275,7 @@ export default function MealReviewPage() {
           >
             <ChevronLeft size={22} strokeWidth={2.5} />
           </button>
-          <h1 className="text-base font-semibold text-ink">
+          <h1 className="text-base font-medium text-ink">
             Day Review{dayLabel ? ` - ${dayLabel}` : ""}
           </h1>
         </div>
@@ -228,6 +284,7 @@ export default function MealReviewPage() {
       <main className="flex-1 pb-6 pt-2">
         {step === 1 && (
           <StepGlucoseResponse
+            stable={stable}
             foodScore={foodScore}
             predicted={predicted}
             items={items}
@@ -253,13 +310,13 @@ export default function MealReviewPage() {
         )}
       </main>
 
-      <footer className="sticky bottom-0 -mx-6 mt-auto bg-white px-6 pb-6 pt-3">
+      <footer className="sticky bottom-0 -mx-5 mt-auto bg-white px-5 pb-6 pt-3">
         <button
           type="button"
           onClick={handleNext}
-          className="w-full rounded-xl bg-black py-4 text-base font-semibold text-white transition active:scale-[0.99]"
+          className="h-12 w-full rounded-lg bg-black text-base font-medium text-white transition active:scale-[0.99]"
         >
-          {step === 3 ? "Done" : "Next"}
+          Next
         </button>
       </footer>
     </div>
@@ -268,7 +325,7 @@ export default function MealReviewPage() {
 
 function StepEyebrow({ children, withInfo }) {
   return (
-    <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-secondary">
+    <p className="flex items-center gap-2 text-sm tracking-[0.14px] text-secondary">
       <span>{children}</span>
       {withInfo && <Info size={16} className="shrink-0 text-secondary" />}
     </p>
@@ -277,31 +334,37 @@ function StepEyebrow({ children, withInfo }) {
 
 /* ---------------------------- Step 1 ---------------------------- */
 
-function StepGlucoseResponse({ foodScore, predicted, items, consumedAt, spikerName, onEditMeal }) {
+function StepGlucoseResponse({ stable, foodScore, predicted, items, consumedAt, spikerName, onEditMeal }) {
   const cardItem = items.find((i) => sameName(i.name, spikerName)) || items[0] || null;
-  const portion = cardItem ? portionText(cardItem.portion) : "";
-  const calLine = cardItem ? `${Math.round(cardItem.calories || 0)} Cal` : "";
+
+  // A prediction is only renderable when both numbers actually exist —
+  // MealScore leaves them optional and Math.round(undefined) paints "NaN".
+  const hasPrediction =
+    predicted != null &&
+    Number.isFinite(predicted.deltaMgDl) &&
+    Number.isFinite(predicted.peakMgDl);
 
   return (
     <section>
-      <StepEyebrow withInfo>1 of 3 - Your glucose response</StepEyebrow>
+      <StepEyebrow withInfo>1 of 3 - YOUR GLUCOSE RESPONSE</StepEyebrow>
 
-      <h2 className="mt-3 text-3xl font-extrabold leading-tight text-primary">
-        {foodScore != null ? `${foodScore}/10 - ${scoreLabel(foodScore)}` : "Score unavailable"}
+      <h2 className="mt-2 text-[25px] font-bold leading-[35px] text-primary">
+        {foodScore != null
+          ? `${foodScore}/10 - ${stable ? "Stable Response" : scoreLabel(foodScore)}`
+          : "Score unavailable"}
       </h2>
 
-      <p className="mt-3 text-lg leading-relaxed text-secondary">
-        {predicted ? (
+      <p className="mt-2 text-sm leading-[22px] text-secondary">
+        {hasPrediction ? (
           <>
-            Glucose is predicted to rise{" "}
-            <span className="font-semibold text-primary">
+            Glucose increased{" "}
+            <span className="font-medium text-primary">
               {Math.round(predicted.deltaMgDl)} mg/dL
             </span>{" "}
-            and peak at{" "}
-            <span className="font-semibold text-primary">
+            and peaked at{" "}
+            <span className="font-medium text-primary">
               {Math.round(predicted.peakMgDl)} mg/dL
             </span>
-            .
           </>
         ) : (
           "Prediction unavailable"
@@ -310,102 +373,61 @@ function StepGlucoseResponse({ foodScore, predicted, items, consumedAt, spikerNa
 
       {/* Only draw a curve when a prediction actually exists — a fabricated
           default under a "predicted" caption would be dishonest. */}
-      {predicted ? (
-        <>
-          <GlucoseChart predicted={predicted} consumedAt={consumedAt} />
-          <p className="mt-2 text-[10px] italic text-secondary">
-            Predicted from your meal&apos;s composition — connect a wearable for measured
-            glucose.
-          </p>
-        </>
+      {hasPrediction ? (
+        <div className="-mx-5 mt-5">
+          <DayReviewChart
+            variant={stable ? "stable" : "spike"}
+            predicted={predicted}
+            consumedAt={consumedAt}
+          />
+        </div>
       ) : (
         <div className="mt-6 rounded-xl border border-borderColor bg-pageBackground p-6 text-center text-sm text-secondary">
           No glucose prediction is available for this meal yet.
         </div>
       )}
 
-      {cardItem && (
-        <div className="mt-6 flex items-center gap-4 rounded-xl border border-borderColor p-4">
-          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-pageBackground text-secondary">
-            <Utensils size={22} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-bold text-ink">{cardItem.name}</p>
-            <p className="truncate text-sm text-secondary">
-              {portion ? `${portion} · ${calLine}` : calLine}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onEditMeal}
-            aria-label="Edit meal"
-            className="flex-shrink-0 text-secondary transition hover:text-ink"
-          >
-            <MoreHorizontal size={20} />
-          </button>
-        </div>
-      )}
+      {cardItem && <MealItemCard item={cardItem} onEditMeal={onEditMeal} />}
     </section>
   );
 }
 
-function GlucoseChart({ predicted, consumedAt }) {
-  const baseline = Math.round(predicted?.baselineMgDl ?? 90);
-  const delta = predicted?.deltaMgDl ?? 26;
-  const points = buildCurve(baseline, delta);
-  const timeLabel = formatClock(consumedAt) || "meal";
+function MealItemCard({ item, onEditMeal }) {
+  const portion = portionText(item.portion);
+  const r = (v) => Math.round(v || 0);
 
   return (
-    <div className="relative mt-6 h-64 w-full">
-      {/* Baseline annotation at meal time */}
-      <div className="pointer-events-none absolute left-2 top-0 z-10">
-        <p className="text-[10px] font-semibold text-secondary">{timeLabel}</p>
-        <p className="text-xs font-bold text-ink">{baseline} mg/dL</p>
+    <div className="mt-4 flex h-[60px] items-center gap-3 rounded-lg border border-borderColor bg-white px-3 shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)]">
+      {/* Figma-exported icon tile (node 1867:4674) — solid utensils glyph */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/assets/insights/utensils-tile.svg"
+        alt=""
+        className="h-[30px] w-[30px] flex-shrink-0"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium leading-4 text-ink">{item.name}</p>
+        <p className="mt-1 flex items-center gap-2 text-xs font-medium leading-4 text-stepIndicator">
+          {portion && (
+            <>
+              <span className="min-w-0 truncate">{portion}</span>
+              <span aria-hidden>&middot;</span>
+            </>
+          )}
+          <span className="whitespace-nowrap">{r(item.calories)} Cal</span>
+          <span>{r(item.proteinG)}P</span>
+          <span>{r(item.fatG)}F</span>
+          <span>{r(item.carbsG)}C</span>
+        </p>
       </div>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={points} margin={{ top: 34, right: 10, left: 10, bottom: 0 }}>
-          <defs>
-            <linearGradient id="reviewGlucoseFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor={BRAND_PURPLE} stopOpacity={0.18} />
-              <stop offset="95%" stopColor={BRAND_PURPLE} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <ReferenceArea
-            y1={70}
-            y2={110}
-            fill={BAND_FILL}
-            fillOpacity={0.6}
-            ifOverflow="extendDomain"
-            label={{
-              value: "TARGET RANGE",
-              position: "insideRight",
-              fontSize: 9,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              fill: AXIS_GREY,
-            }}
-          />
-          <XAxis
-            dataKey="minute"
-            type="number"
-            domain={[0, 180]}
-            ticks={[0, 60, 120, 180]}
-            tickFormatter={(m) => (m === 0 ? timeLabel : `+${m / 60}h`)}
-            tick={{ fontSize: 10, fill: AXIS_GREY }}
-            axisLine={{ stroke: AXIS_LINE }}
-            tickLine={false}
-          />
-          <YAxis hide domain={[60, (dataMax) => Math.max(dataMax + 12, 120)]} />
-          <Area
-            type="monotone"
-            dataKey="glucose"
-            stroke={BRAND_PURPLE}
-            strokeWidth={3}
-            fill="url(#reviewGlucoseFill)"
-          />
-          <ReferenceDot x={0} y={baseline} r={5} fill="#FFFFFF" stroke={BRAND_PURPLE} strokeWidth={2} />
-        </AreaChart>
-      </ResponsiveContainer>
+      <button
+        type="button"
+        onClick={onEditMeal}
+        aria-label="Edit meal"
+        className="flex-shrink-0 text-stepIndicator transition hover:text-ink"
+      >
+        <CircleEllipsis size={16} />
+      </button>
     </div>
   );
 }
@@ -414,51 +436,42 @@ function GlucoseChart({ predicted, consumedAt }) {
 
 function StepCause({ spikerName, spikerIng, others }) {
   const stats = spikerIng?.stats;
-  const typical = spikerIng?.typical;
   const hasStats = !!stats && stats.count > 0;
 
   return (
     <section>
-      <StepEyebrow>2 of 3 - What caused this response</StepEyebrow>
+      <StepEyebrow>2 of 3 - WHAT CAUSED THIS RESPONSE</StepEyebrow>
 
-      <h2 className="mt-3 text-[26px] font-bold leading-snug text-ink">
+      <h2 className="mt-2 text-2xl font-bold leading-8 text-ink">
         The largest influence on your score was{" "}
-        &ldquo;<span className="text-primary">{spikerName || "this meal"}</span>&rdquo;
+        <span className="block text-primary">
+          &ldquo;{spikerName || "this meal"}&rdquo;
+        </span>
       </h2>
 
-      {hasStats ? (
+      {/* Only Figma elements render here: the histogram appears once the
+          ingredient has community logs; until then step 2 is headline + the
+          ingredient table below (both on-design, both engine-backed). */}
+      {hasStats && (
         <CommunityHistogram
           histogram={stats.histogram || []}
           count={stats.count}
           spiker={spikerName}
         />
-      ) : (
-        <div className="mt-6 rounded-xl border border-borderColor p-4 text-sm leading-relaxed text-secondary">
-          No community logs for &ldquo;{spikerName}&rdquo; yet
-          {typical ? (
-            <>
-              {" "}— typical engine score{" "}
-              <span className="font-semibold text-ink">{typical.score}/10</span>, ~+
-              {Math.round(typical.deltaMgDl)} mg/dL.
-            </>
-          ) : (
-            "."
-          )}
-        </div>
       )}
 
-      <div className="mt-8">
-        <h3 className="text-lg font-bold text-ink">How other ingredients typically score</h3>
-        {others.length ? (
+      {others.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-lg font-bold leading-tight text-ink">
+            How other ingredients typically score
+          </h3>
           <div className="mt-1 divide-y divide-borderColor">
             {others.map((ing, idx) => (
               <IngredientRow key={ing.name || idx} ing={ing} />
             ))}
           </div>
-        ) : (
-          <p className="mt-3 text-sm text-secondary">This was a single-ingredient meal.</p>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -467,43 +480,50 @@ function CommunityHistogram({ histogram, count, spiker }) {
   const bars = Array.from({ length: 10 }, (_, i) => Number(histogram[i]) || 0);
   const max = Math.max(...bars, 1);
   const maxIndex = bars.indexOf(Math.max(...bars));
+  const calloutColor = HISTOGRAM_COLORS[maxIndex];
   // Keep the callout text inside the padding while the connector stays on the bar.
-  const calloutLeft = Math.min(Math.max((maxIndex + 0.5) * 10, 24), 76);
+  const calloutLeft = Math.min(Math.max((maxIndex + 0.5) * 10, 18), 82);
 
   return (
-    <div className="mt-8">
-      <div className="relative h-11">
+    <div className="mt-6">
+      <div className="relative h-[72px]">
         <span
-          className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold text-primary"
-          style={{ left: `${calloutLeft}%` }}
+          className="absolute top-0 w-[114px] -translate-x-1/2 text-center text-xs font-medium leading-4"
+          style={{ left: `${calloutLeft}%`, color: calloutColor }}
         >
           The most common meal score
         </span>
         <span
-          className="absolute top-5 h-5 border-l border-dotted border-primary"
-          style={{ left: `${(maxIndex + 0.5) * 10}%` }}
+          className="absolute top-9 h-7 border-l border-dotted"
+          style={{ left: `${(maxIndex + 0.5) * 10}%`, borderColor: calloutColor }}
         />
       </div>
-      <div className="flex h-48 items-end gap-1.5">
+      <div className="flex h-[158px] items-end gap-1.5">
         {bars.map((c, i) => (
-          <div key={i} className="flex h-full flex-1 flex-col items-center justify-end">
-            <div className="flex h-40 w-full items-end">
-              <div
-                className="w-full rounded-t-sm"
-                style={{
-                  backgroundColor: HISTOGRAM_COLORS[i],
-                  height: `${Math.max((c / max) * 100, 2)}%`,
-                }}
-              />
-            </div>
-            <span className="mt-1.5 text-[10px] font-bold" style={{ color: HISTOGRAM_COLORS[i] }}>
-              {i + 1}
-            </span>
-          </div>
+          <div
+            key={i}
+            className="flex-1 rounded-t"
+            style={{
+              backgroundColor: HISTOGRAM_COLORS[i],
+              height: `${Math.max((c / max) * 100, 1.5)}%`,
+            }}
+          />
         ))}
       </div>
-      <p className="mt-4 text-center text-[11px] text-secondary">
-        Based on {count} Cyborg community {count === 1 ? "log" : "logs"} with &ldquo;{spiker}&rdquo;
+      <div className="mt-1.5 flex gap-1.5">
+        {bars.map((_, i) => (
+          <span
+            key={i}
+            className="flex-1 text-center text-xs font-bold"
+            style={{ color: HISTOGRAM_COLORS[i] }}
+          >
+            {i + 1}
+          </span>
+        ))}
+      </div>
+      <p className="mt-4 text-xs text-secondary">
+        Based on {Number(count).toLocaleString("en-US")} Community{" "}
+        {count === 1 ? "Log" : "Logs"} with &ldquo;{titleCase(spiker || "")}&rdquo;
       </p>
     </div>
   );
@@ -516,13 +536,13 @@ function IngredientRow({ ing }) {
   const delta = ing.stats?.avgDeltaMgDl ?? ing.typical?.deltaMgDl ?? null;
 
   return (
-    <div className="flex items-center justify-between py-3.5">
-      <p className="min-w-0 flex-1 truncate pr-3 font-semibold text-ink">{ing.name}</p>
-      <div className="flex flex-shrink-0 items-center gap-3">
-        <span className="text-sm font-semibold text-ink">{scoreText}</span>
-        <span className="text-sm text-secondary">{formatDelta(delta)}</span>
-        <ChevronRight size={18} className="text-borderColor" />
-      </div>
+    <div className="flex items-center py-[15px]">
+      {/* 33/18 keeps the delta column on the frame's x while giving typical
+          ingredient names room to render untruncated. */}
+      <p className="w-[33%] truncate pr-2 text-sm font-medium text-ink">{ing.name}</p>
+      <span className="w-[18%] text-sm text-secondary">{scoreText}</span>
+      <span className="flex-1 text-sm text-secondary">{formatDelta(delta)}</span>
+      <ChevronRight size={16} className="flex-shrink-0 text-secondary" />
     </div>
   );
 }
@@ -540,22 +560,18 @@ function StepTakeaway({ spikerName, spikerIng, foodScore, analysis }) {
 
   return (
     <section>
-      <StepEyebrow>3 of 3 - The takeaway</StepEyebrow>
+      <StepEyebrow>3 of 3 - WHAT CAUSED THIS RESPONSE</StepEyebrow>
 
-      <h2 className="mt-3 text-3xl font-extrabold leading-tight text-ink">
+      <h2 className="mt-2 text-2xl font-bold leading-8 text-ink">
         <span className="text-primary">&ldquo;{spikerName || "This meal"}&rdquo;</span>{" "}
         {verdictFor(verdictScore)}
       </h2>
 
-      {analysis?.explanation && (
-        <p className="mt-3 leading-relaxed text-secondary">{analysis.explanation}</p>
-      )}
-
       {analysis ? (
         <>
-          <FoodCardGrid title="Popular alternatives" items={analysis.alternatives} />
+          <FoodCardGrid first title="POPULAR ALTERNATIVES" items={analysis.alternatives} />
           <FoodCardGrid
-            title={<>Spike &ldquo;Blunters&rdquo;</>}
+            title={<>SPIKE &ldquo;BLUNTERS&rdquo;</>}
             items={analysis.blunters}
           />
         </>
@@ -568,12 +584,12 @@ function StepTakeaway({ spikerName, spikerIng, foodScore, analysis }) {
   );
 }
 
-function FoodCardGrid({ title, items }) {
+function FoodCardGrid({ title, items, first }) {
   if (!items?.length) return null;
   return (
-    <div className="mt-8">
-      <h3 className="text-xs font-bold uppercase tracking-widest text-secondary">{title}</h3>
-      <div className="mt-3 grid grid-cols-2 gap-3">
+    <div className={first ? "mt-8" : "mt-6"}>
+      <h3 className="text-sm tracking-[0.14px] text-ink">{title}</h3>
+      <div className="mt-4 grid grid-cols-2 gap-3">
         {items.slice(0, 4).map((item, idx) => (
           <FoodCard key={item.name || idx} item={item} index={idx} />
         ))}
@@ -583,22 +599,36 @@ function FoodCardGrid({ title, items }) {
 }
 
 function FoodCard({ item, index }) {
+  const photo = insightFoodImage(item.name);
   const [from, to] = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
+
   return (
     <div
-      className="relative aspect-square overflow-hidden rounded-xl"
-      style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
+      className="relative aspect-[154/135] overflow-hidden rounded"
+      style={photo ? undefined : { background: `linear-gradient(135deg, ${from}, ${to})` }}
     >
-      <div className="flex h-full items-center justify-center text-5xl" aria-hidden>
-        {foodEmoji(item.name)}
-      </div>
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-10">
-        <p className="text-sm font-bold text-white">{item.name}</p>
-        {item.description && (
-          <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/80">
-            {item.description}
-          </p>
-        )}
+      {photo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full items-center justify-center text-5xl" aria-hidden>
+          {foodEmoji(item.name)}
+        </div>
+      )}
+      {/* Full-height scrim: long AI food names can rise above the lower band,
+          so keep the whole text zone legible while the top stays clear.
+          Pastel fallback cards need a stronger wash than real photos. */}
+      <div
+        className={`absolute inset-0 rounded bg-gradient-to-b ${
+          photo
+            ? "from-transparent via-black/30 to-black/70"
+            : "from-black/20 via-black/45 to-black/75"
+        }`}
+      />
+      <div className="absolute bottom-3 left-3 right-3">
+        <p className="text-sm font-semibold leading-[18px] tracking-[0.14px] text-white">
+          {titleCase(item.name)}
+        </p>
       </div>
     </div>
   );

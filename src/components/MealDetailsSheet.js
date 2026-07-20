@@ -121,6 +121,18 @@ export default function MealDetailsSheet({ open, initialFiles, onClose }) {
         throw new Error("Unexpected response from server");
       }
 
+      // Nothing edible in the shot — stay in the sheet and say so, instead of
+      // pushing the user to an empty Review with no explanation. Mirrors
+      // QuickAddSheet's guard, surfacing the model's own note when it gave one.
+      if (data.estimate.notFood || !(data.estimate.items || []).length) {
+        setError(
+          data.estimate.notes ||
+            "Couldn't find any food in that — try another photo, or add a description."
+        );
+        setAnalyzing(false);
+        return;
+      }
+
       // Pre-encode previews as data URLs for the review route.
       const dataUrls = await Promise.all(files.map((f) => fileToDataUrl(f)));
 
@@ -128,8 +140,14 @@ export default function MealDetailsSheet({ open, initialFiles, onClose }) {
       // (search/recents/quick-add) instead of clobbering them.
       mergeAnalysis(data.estimate, data.imageKeys || [], dataUrls);
 
+      // Carry the entry context (?from=timeline|insights) onto the review
+      // route so its back arrow and post-save redirect land on the tab the
+      // user came from. The nav "+" opens this sheet from routes with no
+      // ?from=, which correctly yields a plain /meals/new.
+      const from = new URLSearchParams(window.location.search).get("from");
+
       onClose?.();
-      router.push("/meals/new");
+      router.push(from ? `/meals/new?from=${encodeURIComponent(from)}` : "/meals/new");
     } catch (err) {
       const serverMsg = err?.response?.data?.message || err?.message;
       setError(serverMsg || "Couldn't analyze this meal. Try again in a moment.");

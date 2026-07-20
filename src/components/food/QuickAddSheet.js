@@ -101,7 +101,7 @@ export default function QuickAddSheet({ open, initialText = "", onClose, onAdded
       <div className="absolute bottom-6 left-0 right-0 flex justify-center px-4">
         <div className="w-full max-w-md rounded-3xl bg-white px-5 pt-5 pb-6 shadow-2xl animate-[slideUp_200ms_ease-out]">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-base font-semibold tracking-tight text-blue">Quick add</h2>
+            <h2 className="text-base font-medium tracking-tight text-black">Quick add</h2>
             <button
               type="button"
               onClick={() => !analyzing && onClose?.()}
@@ -120,7 +120,7 @@ export default function QuickAddSheet({ open, initialText = "", onClose, onAdded
             placeholder="e.g. 2 rotis with dal and a glass of buttermilk"
             rows={3}
             autoFocus
-            className="mb-4 w-full resize-none rounded-xl border border-borderColor bg-white px-4 py-3 text-sm text-blue placeholder:text-secondary focus:border-primary focus:outline-none disabled:opacity-60"
+            className="mb-4 w-full resize-none rounded-lg border border-borderColor bg-white px-4 py-3 text-sm text-black placeholder:text-secondary focus:border-primary focus:outline-none disabled:opacity-60"
           />
 
           {error && (
@@ -136,7 +136,7 @@ export default function QuickAddSheet({ open, initialText = "", onClose, onAdded
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-black" />
               </span>
               <div className="flex-1">
-                <div className="text-sm font-medium text-blue">{phaseLabel(elapsedSec)}…</div>
+                <div className="text-sm font-medium text-black">{phaseLabel(elapsedSec)}…</div>
                 <div className="text-xs text-secondary">{elapsedSec}s elapsed · keep this open</div>
               </div>
             </div>
@@ -146,7 +146,7 @@ export default function QuickAddSheet({ open, initialText = "", onClose, onAdded
             type="button"
             onClick={handleContinue}
             disabled={!canContinue}
-            className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-black text-sm font-medium text-white disabled:opacity-50"
+            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-black text-sm font-medium text-white disabled:opacity-50"
           >
             {analyzing ? `${phaseLabel(elapsedSec)}…` : "Add to meal"}
           </button>

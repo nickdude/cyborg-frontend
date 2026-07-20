@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Flame, Info, UtensilsCrossed } from "lucide-react";
 import { timelineAPI } from "@/services/api";
+import { MACRO_META } from "@/components/food/macros";
 
 function todayUTC() {
   return new Date().toISOString().slice(0, 10);
@@ -57,6 +58,19 @@ export default function DayLogSection({ userId }) {
 
   const list = Array.isArray(entries) ? entries : [];
 
+  // Day-level macro totals across every logged meal (Figma "MACRO SPLIT" grid
+  // under the day cards) — activities don't contribute.
+  const dayTotals = list.reduce((acc, entry) => {
+    if (entry.type !== "meal") return acc;
+    const totals = entry.data?.totals;
+    if (!totals) return acc;
+    MACRO_META.forEach(({ key }) => {
+      if (totals[key] != null) acc[key] = (acc[key] || 0) + totals[key];
+    });
+    return acc;
+  }, {});
+  const hasMacros = Object.keys(dayTotals).length > 0;
+
   return (
     <div>
       {/* Compact action pills */}
@@ -87,6 +101,7 @@ export default function DayLogSection({ userId }) {
           Couldn&apos;t load today&apos;s logs — try again later.
         </p>
       ) : list.length > 0 ? (
+        <>
         <div className="mt-4 space-y-3">
           {list.map((entry) => {
             const id = entry.id || entry._id;
@@ -129,12 +144,14 @@ export default function DayLogSection({ userId }) {
                     entry.data?.durationMinutes != null
                       ? ` • ${entry.data.durationMinutes} min`
                       : ""
+                  }${
+                    Number.isFinite(entry.data?.caloriesBurned) && entry.data.caloriesBurned > 0
+                      ? ` • ~${Math.round(entry.data.caloriesBurned)} kcal`
+                      : ""
                   }`}
                   bottom={
                     <>
-                      <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-[2px] bg-borderColor">
-                        <Flame size={9} className="text-black" fill="currentColor" />
-                      </span>
+                      <Flame size={14} className="shrink-0 text-black" fill="currentColor" />
                       <span className="truncate">{entry.title || "Activity"}</span>
                     </>
                   }
@@ -145,6 +162,43 @@ export default function DayLogSection({ userId }) {
             return null;
           })}
         </div>
+
+        {/* Day macro split — appears once at least one meal is logged */}
+        {hasMacros && (
+          <div className="mt-5">
+            <p className="text-[14px] font-semibold uppercase leading-5 text-black">
+              Macro Split
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {MACRO_META.map(({ key, label, unit, Icon, color }) => {
+                const raw = dayTotals[key];
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center gap-2 rounded-lg border border-borderColor bg-white px-2 py-2 shadow-sm"
+                  >
+                    <span
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                      style={{ backgroundColor: `${color}1A` }}
+                    >
+                      <Icon size={11} color={color} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-medium uppercase leading-3 text-black">
+                        {label}
+                      </p>
+                      <p className="truncate text-[14px] font-semibold leading-[18px] text-black">
+                        {raw != null ? Math.round(raw) : "--"}
+                        {unit}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        </>
       ) : (
         <p className="mt-4 text-sm text-secondary">
           Nothing logged today yet — add a meal or an activity.
@@ -170,7 +224,7 @@ function CompactLogCard({ Icon, iconFilled, timeLine, bottom, onClick }) {
         <Info size={13} className="shrink-0 text-secondary" />
       </div>
       <div className="mx-3 border-t border-borderColor" />
-      <div className="flex items-center gap-2 px-3.5 py-3 text-sm font-medium leading-5 text-secondary">
+      <div className="flex items-center gap-2 px-3.5 py-3 text-sm font-medium leading-5 text-black">
         {bottom}
       </div>
     </button>

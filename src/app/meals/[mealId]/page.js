@@ -6,10 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { mealAPI } from "@/services/api";
 import MealReviewScreen from "@/components/MealReviewScreen";
 
-function todayUTC() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export default function SavedMealPage() {
   const { mealId } = useParams();
   const router = useRouter();
@@ -18,7 +14,6 @@ export default function SavedMealPage() {
 
   const [meal, setMeal] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dailySummary, setDailySummary] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -60,24 +55,6 @@ export default function SavedMealPage() {
     };
   }, [authLoading, userId, mealId]);
 
-  // Fetch today's summary (for the counter strip on the meal's consumed day).
-  useEffect(() => {
-    if (!userId) return;
-    const dateForSummary = meal?.consumedAt
-      ? new Date(meal.consumedAt).toISOString().slice(0, 10)
-      : todayUTC();
-    let cancelled = false;
-    mealAPI
-      .summary(userId, dateForSummary)
-      .then((resp) => {
-        if (!cancelled) setDailySummary(resp?.data || null);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, meal?.consumedAt]);
-
   const handleSave = async (payload) => {
     if (!userId || !mealId) return;
     setBusy(true);
@@ -114,8 +91,8 @@ export default function SavedMealPage() {
   const handleBack = () => router.replace("/dashboard");
 
   // Memoized on the stable meal object — a fresh object every render would
-  // make MealReviewScreen's reset effect wipe in-progress edits whenever the
-  // summary fetch or busy flag re-rendered this page.
+  // make MealReviewScreen's reset effect wipe in-progress edits whenever an
+  // unrelated re-render (e.g. the busy flag) hit this page.
   const initialData = useMemo(
     () =>
       meal
@@ -166,7 +143,6 @@ export default function SavedMealPage() {
       mode="saved"
       initialData={initialData}
       imagePreviews={[]}
-      dailySummary={dailySummary}
       onSave={handleSave}
       onDelete={handleDelete}
       onBack={handleBack}

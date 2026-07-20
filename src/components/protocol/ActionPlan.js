@@ -78,19 +78,25 @@ function BiomarkerRow({ b }) {
   );
 }
 
-function GradientSection({ n, title, grad, open, onToggle, children }) {
+function GradientSection({ n, title, grad, img, open, onToggle, children }) {
   return (
     <div>
       <button
         type="button"
         onClick={onToggle}
-        className={`flex w-full items-center justify-between rounded-2xl bg-gradient-to-br ${grad} px-5 py-5 text-left shadow-sm transition active:scale-[0.995]`}
+        className={`relative flex min-h-[110px] w-full items-center justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${grad} px-5 py-5 text-left shadow-sm transition active:scale-[0.995]`}
       >
-        <div>
+        {img && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={img} alt="" onError={(ev) => ev.currentTarget.remove()} className="absolute inset-0 h-full w-full object-cover" />
+        )}
+        {/* legibility scrim over the banner art */}
+        <span className="absolute inset-0 bg-gradient-to-r from-black/35 to-black/10" aria-hidden="true" />
+        <div className="relative z-10">
           <span className="text-[11px] font-medium uppercase tracking-wide text-white/75">{n} of 5</span>
           <h2 className="mt-1 text-2xl font-bold text-white">{title}</h2>
         </div>
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/20 text-white">
+        <span className="relative z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/20 text-white">
           <svg className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </span>
       </button>
@@ -414,12 +420,13 @@ export default function ActionPlan({ plan, userName = "Your" }) {
   const toggle = (k) => setOpen((cur) => (cur === k ? null : k));
 
   const date = plan?.createdAt ? new Date(plan.createdAt) : null;
+  // Banner art per section (gradient stays as the load/error fallback).
   const sections = [
-    { key: "overview", n: 1, title: "Overview", grad: "from-orange-400 to-orange-600", body: <Overview /> },
-    { key: "health", n: 2, title: "Health Report", grad: "from-purple-400 to-stone-300", body: <HealthReport hr={plan?.healthReport} thesis={plan?.clinicalThesis} /> },
-    { key: "issues", n: 3, title: "Monitored Issues", grad: "from-emerald-800 to-emerald-950", body: <MonitoredIssues issues={plan?.monitoredIssues || []} /> },
-    { key: "protocol", n: 4, title: "Protocol", grad: "from-red-500 to-red-900", body: <ProtocolSection protocol={plan?.protocol} thesis={plan?.clinicalThesis} issues={plan?.monitoredIssues} /> },
-    { key: "next", n: 5, title: "Next Steps", grad: "from-amber-300 to-amber-500", body: <NextSteps next={plan?.nextSteps ? { ...plan.nextSteps, checkpoints: plan.checkpoints } : { checkpoints: plan?.checkpoints }} /> },
+    { key: "overview", n: 1, title: "Overview", grad: "from-orange-400 to-orange-600", img: "/assets/action-plan/banner-overview.webp", body: <Overview /> },
+    { key: "health", n: 2, title: "Health Report", grad: "from-purple-400 to-stone-300", img: "/assets/action-plan/banner-health-report.webp", body: <HealthReport hr={plan?.healthReport} thesis={plan?.clinicalThesis} /> },
+    { key: "issues", n: 3, title: "Monitored Issues", grad: "from-emerald-800 to-emerald-950", img: "/assets/action-plan/banner-issues.webp", body: <MonitoredIssues issues={plan?.monitoredIssues || []} /> },
+    { key: "protocol", n: 4, title: "Protocol", grad: "from-red-500 to-red-900", img: "/assets/action-plan/banner-protocol.webp", body: <ProtocolSection protocol={plan?.protocol} thesis={plan?.clinicalThesis} issues={plan?.monitoredIssues} /> },
+    { key: "next", n: 5, title: "Next Steps", grad: "from-amber-300 to-amber-500", img: "/assets/action-plan/banner-next-steps.webp", body: <NextSteps next={plan?.nextSteps ? { ...plan.nextSteps, checkpoints: plan.checkpoints } : { checkpoints: plan?.checkpoints }} /> },
   ];
 
   return (
@@ -428,7 +435,7 @@ export default function ActionPlan({ plan, userName = "Your" }) {
       {date && <p className="mt-1 text-sm text-secondary">{date.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}</p>}
       <div className="mt-5 space-y-3">
         {sections.map((s) => (
-          <GradientSection key={s.key} n={s.n} title={s.title} grad={s.grad} open={open === s.key} onToggle={() => toggle(s.key)}>
+          <GradientSection key={s.key} n={s.n} title={s.title} grad={s.grad} img={s.img} open={open === s.key} onToggle={() => toggle(s.key)}>
             {s.body}
           </GradientSection>
         ))}

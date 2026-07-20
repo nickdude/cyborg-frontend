@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft, Search } from "lucide-react";
+import { ChevronLeft, Search } from "lucide-react";
 import { activityAPI } from "@/services/api";
 import { normalize, tokenize, bestFuzzyScore, tokenSimilarity } from "@/utils/fuzzy";
 
@@ -59,7 +59,8 @@ export default function ActivitySearchSheet({ userId, onSelect, onClose }) {
   // finds Badminton, "kabadi" finds Kabaddi).
   const results = useMemo(() => {
     const qn = normalize(query);
-    if (!qn) return catalog;
+    // Idle shows the prompt, not the full A-Z catalog (see render below).
+    if (!qn) return [];
     const qToks = qn.split(" ").filter(Boolean);
     const scored = [];
     for (const { a, names } of indexed) {
@@ -96,91 +97,103 @@ export default function ActivitySearchSheet({ userId, onSelect, onClose }) {
         x.a.name.length - y.a.name.length
     );
     return scored.map((s) => s.a);
-  }, [query, catalog, indexed]);
+  }, [query, indexed]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),12px)]">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Go back"
-          className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-pageBackground"
-        >
-          <ArrowLeft size={20} className="text-black" />
-        </button>
-        <h1 className="text-lg font-semibold text-black">Add an Activity</h1>
-      </div>
-
-      {/* Search bar */}
-      <div className="px-4 pb-3">
-        <div className="flex items-center gap-2 rounded-xl border border-borderColor bg-pageBackground px-3 py-2.5">
-          <Search size={18} className="flex-shrink-0 text-secondary" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for activity"
-            className="w-full bg-transparent text-sm text-black placeholder:text-secondary outline-none"
-          />
+    <div className="fixed inset-0 z-50 bg-pageBackground">
+      <div className="mx-auto flex h-full w-full max-w-md flex-col">
+        {/* Header: back + centered title, per the Figma frame */}
+        <div className="flex items-center justify-between px-3 pb-2 pt-[max(env(safe-area-inset-top,0px),12px)]">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Go back"
+            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/60"
+          >
+            <ChevronLeft size={22} className="text-black" />
+          </button>
+          <h1 className="text-base font-medium text-black">Add Activity</h1>
+          <div className="w-9" aria-hidden="true" />
         </div>
-      </div>
 
-      {/* Results list */}
-      <div className="flex-1 overflow-y-auto px-4 pb-6">
-        {loading && (
-          <p className="mt-6 text-center text-sm text-secondary">Loading...</p>
-        )}
-
-        {!loading && error && catalog.length === 0 && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-secondary">
-              Couldn&apos;t load activities. Check your connection.
-            </p>
-            <button
-              type="button"
-              onClick={() => setAttempt((n) => n + 1)}
-              className="mt-3 rounded-xl border border-borderColor px-4 py-2 text-sm font-medium text-ink transition hover:bg-pageBackground"
-            >
-              Try again
-            </button>
+        {/* Search pill */}
+        <div className="px-5 pb-3 pt-2">
+          <div className="flex h-10 items-center gap-2 rounded-full border border-borderColor bg-white px-5 shadow-[0px_0px_10px_0px_rgba(0,0,0,0.05)]">
+            <Search size={14} className="flex-shrink-0 text-secondary" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search for activity"
+              className="w-full bg-transparent text-sm font-medium text-black outline-none placeholder:text-secondary"
+            />
           </div>
-        )}
+        </div>
 
-        {!loading && !error && results.length === 0 && (
-          <p className="mt-6 text-center text-sm text-secondary">
-            {query ? "No activities found" : "No activities available"}
-          </p>
-        )}
+        {/* Results populate the frame's blank canvas */}
+        <div className="flex-1 overflow-y-auto px-5 pb-6 pt-1">
+          {loading && (
+            <p className="mt-6 text-center text-sm text-secondary">Loading...</p>
+          )}
 
-        <ul className="space-y-1">
-          {results.map((activity) => (
-            <li key={activity.id || activity.name || activity._id}>
+          {!loading && error && catalog.length === 0 && (
+            <div className="mt-6 text-center">
+              <p className="text-sm text-secondary">
+                Couldn&apos;t load activities. Check your connection.
+              </p>
               <button
                 type="button"
-                onClick={() => onSelect(activity)}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-pageBackground active:bg-borderColor/60"
+                onClick={() => setAttempt((n) => n + 1)}
+                className="mt-3 rounded-full border border-borderColor bg-white px-4 py-2 text-sm font-medium text-ink transition hover:bg-white/70"
               >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-ink">
-                    {activity.name}
-                  </p>
-                  {activity.metPerHour != null && (
-                    <p className="mt-0.5 text-xs text-secondary">
-                      ~{Math.round(activity.metPerHour * DEFAULT_WEIGHT_KG)} kcal/hour
-                    </p>
-                  )}
-                </div>
-                {activity.category && (
-                  <span className="flex-shrink-0 rounded-full bg-pageBackground px-2.5 py-0.5 text-xs font-medium capitalize text-secondary">
-                    {String(activity.category).replace("_", " ")}
-                  </span>
-                )}
+                Try again
               </button>
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+
+          {/* The frame shows a blank canvas under the search pill, and an
+              A-Z dump of the whole catalog is a poor default — prompt instead,
+              mirroring the food search's idle state. */}
+          {!loading && !error && !query && (
+            <p className="mt-6 text-center text-sm text-secondary">
+              Search for an activity to log
+            </p>
+          )}
+
+          {!loading && !error && query && results.length === 0 && (
+            <p className="mt-6 text-center text-sm text-secondary">
+              No activities found
+            </p>
+          )}
+
+          <ul className="space-y-2">
+            {results.map((activity) => (
+              <li key={activity.id || activity.name || activity._id}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(activity)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-borderColor bg-white px-4 py-3 text-left transition hover:border-secondary/50 active:scale-[0.99]"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-ink">
+                      {activity.name}
+                    </p>
+                    {activity.metPerHour != null && (
+                      <p className="mt-0.5 text-xs text-secondary">
+                        ~{Math.round(activity.metPerHour * DEFAULT_WEIGHT_KG)} kcal/hour
+                      </p>
+                    )}
+                  </div>
+                  {activity.category && (
+                    <span className="flex-shrink-0 rounded-full bg-pageBackground px-2.5 py-0.5 text-xs font-medium capitalize text-secondary">
+                      {String(activity.category).replace("_", " ")}
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

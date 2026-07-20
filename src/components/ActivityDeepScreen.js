@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Clock, Sparkles, TriangleAlert } from "lucide-react";
+import { ChevronLeft, Clock } from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -10,7 +10,6 @@ import {
   XAxis,
   YAxis,
   ReferenceLine,
-  Tooltip,
 } from "recharts";
 import { activityAPI } from "@/services/api";
 import AIPostWorkoutSheet from "./AIPostWorkoutSheet";
@@ -34,18 +33,29 @@ const DUMMY_HR_WAVE = [
   88, 86, 87, 89, 90, 88, 85, 83, 81, 79,
 ];
 // Theme `primary` — recharts takes literal color values, not classes.
+// (Matches the Figma chart vector's stroke exactly.)
 const CHART_LINE_COLOR = "#541D7A";
+// Theme `secondary` — for axis/tick text inside recharts SVG.
+const CHART_MUTED_COLOR = "#717178";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
+/** "12:00 AM" — uppercase meridiem, per the Figma header row. */
 function formatTime(iso) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "";
-  return d
-    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
-    .toLowerCase();
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
+/** "12:00 am" — lowercase, per the Figma chart pills. */
+const formatPillTime = (iso) => formatTime(iso).toLowerCase();
+
+/** "12 am" — hour-only labels between the chart pills. */
+function formatHourLabel(date) {
+  if (isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString("en-US", { hour: "numeric", hour12: true }).toLowerCase();
 }
 
 function formatHeaderDate(iso) {
@@ -54,8 +64,16 @@ function formatHeaderDate(iso) {
   return d.toLocaleDateString("en-US", { weekday: "short", day: "2-digit", month: "short" });
 }
 
-/* Custom X-axis tick: black time pill for first & last, plain minutes between. */
-function PillTick({ x, y, payload, data, startLabel, endLabel }) {
+/** "30:00 m" — mm:ss per the Figma duration readout. */
+function formatDuration(durationMin) {
+  const totalSec = Math.round((Number(durationMin) || 0) * 60);
+  const mm = Math.floor(totalSec / 60);
+  const ss = String(totalSec % 60).padStart(2, "0");
+  return `${mm}:${ss} m`;
+}
+
+/* Custom X-axis tick: black time pill for first & last, hour labels between. */
+function PillTick({ x, y, payload, data, startLabel, endLabel, hourLabelFor }) {
   // Compare by value — with an explicit `ticks` array, payload.index counts
   // ticks (0..4), not data points, so an index check misses the last one.
   const isFirst = payload.value === data[0].minute;
@@ -63,8 +81,8 @@ function PillTick({ x, y, payload, data, startLabel, endLabel }) {
 
   if (isFirst || isLast) {
     const label = isFirst ? startLabel : endLabel;
-    const pillW = Math.max(52, label.length * 6 + 16);
-    const pillH = 22;
+    const pillW = Math.max(52, label.length * 6.5 + 16);
+    const pillH = 20;
     // Keep the edge pills inside the plot area.
     const shift = isFirst ? pillW / 2 - 10 : -(pillW / 2 - 10);
     return (
@@ -76,8 +94,8 @@ function PillTick({ x, y, payload, data, startLabel, endLabel }) {
           textAnchor="middle"
           dominantBaseline="central"
           fill="#fff"
-          fontSize={10}
-          fontWeight={600}
+          fontSize={11}
+          fontWeight={500}
         >
           {label}
         </text>
@@ -86,8 +104,8 @@ function PillTick({ x, y, payload, data, startLabel, endLabel }) {
   }
 
   return (
-    <text x={x} y={y + 14} textAnchor="middle" fill="#9ca3af" fontSize={10}>
-      {payload.value}m
+    <text x={x} y={y + 14} textAnchor="middle" fill={CHART_MUTED_COLOR} fontSize={12}>
+      {hourLabelFor(payload.value)}
     </text>
   );
 }
@@ -108,8 +126,8 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
   const durationMin = activity?.durationMinutes || 30;
   const avgHR = DUMMY_AVG_BPM;
 
-  const startLabel = formatTime(startTime) || "start";
-  const endLabel = formatTime(endTime) || "end";
+  const startLabel = formatPillTime(startTime) || "start";
+  const endLabel = formatPillTime(endTime) || "end";
 
   // Spread the fixed wave across the real workout duration.
   const hrData = useMemo(
@@ -124,6 +142,13 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
     const last = hrData.length - 1;
     return [0, 0.25, 0.5, 0.75, 1].map((f) => hrData[Math.round(f * last)].minute);
   }, [hrData]);
+
+  // "12 am"-style label for a minute offset into the workout.
+  const hourLabelFor = (minute) => {
+    const start = new Date(startTime);
+    if (isNaN(start.getTime())) return `${minute}m`;
+    return formatHourLabel(new Date(start.getTime() + minute * 60000));
+  };
 
   const handleRemove = async () => {
     if (removing) return;
@@ -142,105 +167,103 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
   return (
     <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground pb-24 font-sans">
       {/* Header: back + centered date */}
-      <div className="flex items-center justify-between px-4 pb-2 pt-[max(env(safe-area-inset-top,0px),12px)]">
+      <div className="flex items-center justify-between px-3 pb-1 pt-[max(env(safe-area-inset-top,0px),12px)]">
         <button
           type="button"
           onClick={onBack}
           aria-label="Go back"
           className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/60"
         >
-          <ArrowLeft size={20} className="text-black" />
+          <ChevronLeft size={22} className="text-black" />
         </button>
-        <h1 className="text-base font-bold text-black">{formatHeaderDate(startTime)}</h1>
+        <h1 className="text-base font-medium text-black">{formatHeaderDate(startTime)}</h1>
         <div className="w-9" aria-hidden="true" />
       </div>
 
       {/* Time range + duration */}
-      <div className="flex items-center gap-1.5 px-5 pt-1 text-xs text-secondary">
-        <Clock size={13} />
-        <span>
-          {startLabel}–{endLabel} · {durationMin} min
+      <div className="flex items-center gap-2 px-5 pt-2 text-xs text-secondary">
+        <Clock size={11} strokeWidth={2.25} />
+        <span className="tracking-[-0.15px]">
+          {formatTime(startTime)}-{formatTime(endTime)} • {formatDuration(durationMin)}
         </span>
       </div>
 
       {/* Activity name */}
-      <h2 className="px-5 pt-1 text-2xl font-semibold text-ink">{name}</h2>
+      <h2 className="px-5 pt-1 text-2xl font-medium leading-8 text-black">{name}</h2>
 
       {/* Average HR */}
-      <div className="flex items-baseline gap-2 px-5 pt-4">
-        <span className="text-6xl font-bold tracking-tighter text-black">{avgHR}</span>
-        <span className="text-2xl font-normal text-black">BPM</span>
-        <span className="ml-1 text-xs text-secondary">Average hr</span>
+      <div className="flex items-baseline px-5 pt-2">
+        <span className="text-[60px] font-medium leading-[72px] tracking-[-1.68px] text-black">
+          {avgHR}
+        </span>
+        <span className="ml-2 text-3xl font-normal tracking-[0.4px] text-black">BPM</span>
+        <span className="ml-2 text-xs text-secondary">Average hr</span>
       </div>
 
-      {/* Heart Rate chart */}
+      {/* Heart Rate chart — directly on the page background, per Figma */}
       <div className="px-4 pt-8">
-        <p className="pb-3 text-center text-xs font-bold uppercase tracking-[0.15em] text-black">
-          Heart Rate
-        </p>
-        <div className="rounded-2xl bg-white p-4">
-          <div className="h-52 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={hrData} margin={{ top: 10, right: 10, left: -4, bottom: 22 }}>
-                <XAxis
-                  dataKey="minute"
-                  tick={<PillTick data={hrData} startLabel={startLabel} endLabel={endLabel} />}
-                  axisLine={false}
-                  tickLine={false}
-                  ticks={tickMinutes}
-                />
-                <YAxis
-                  domain={[70, 100]}
-                  ticks={[70, 80, 90, 100]}
-                  tick={{ fontSize: 11, fill: "#9ca3af" }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={30}
-                />
-                <ReferenceLine y={avgHR} stroke="#9ca3af" strokeDasharray="6 4" strokeWidth={1} />
-                <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E6E6E8" }}
-                  formatter={(val) => [`${val} BPM`, "Heart Rate"]}
-                  labelFormatter={(v) => `${v} min`}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="bpm"
-                  stroke={CHART_LINE_COLOR}
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4, fill: CHART_LINE_COLOR, stroke: "#fff", strokeWidth: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+        <p className="pb-3 text-center text-sm font-medium text-black">HEART RATE</p>
+        <div className="h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={hrData} margin={{ top: 10, right: 8, left: 0, bottom: 22 }}>
+              <XAxis
+                dataKey="minute"
+                tick={
+                  <PillTick
+                    data={hrData}
+                    startLabel={startLabel}
+                    endLabel={endLabel}
+                    hourLabelFor={hourLabelFor}
+                  />
+                }
+                axisLine={false}
+                tickLine={false}
+                ticks={tickMinutes}
+              />
+              <YAxis
+                domain={[70, 100]}
+                ticks={[70, 80, 90, 100]}
+                tick={{ fontSize: 12, fill: CHART_MUTED_COLOR }}
+                axisLine={false}
+                tickLine={false}
+                width={30}
+              />
+              <ReferenceLine
+                y={avgHR}
+                stroke={CHART_MUTED_COLOR}
+                strokeOpacity={0.5}
+                strokeDasharray="2 3"
+                strokeWidth={1}
+              />
+              <Line
+                type="monotone"
+                dataKey="bpm"
+                stroke={CHART_LINE_COLOR}
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
       {/* Post-Workout Hydration Summary */}
-      <div className="px-5 pt-8">
-        <h3 className="text-base font-bold text-ink">Post-Workout Hydration Summary</h3>
-        <div className="mt-2 space-y-1 text-sm text-ink">
+      <div className="px-5 pt-6">
+        <h3 className="text-base font-medium leading-6 text-black">
+          Post-Workout Hydration Summary
+        </h3>
+        <div className="mt-2 space-y-0.5 text-xs font-medium leading-4 tracking-[-0.3px] text-black">
           <p>
-            <span className="font-bold">Sweat Loss :</span> {DUMMY_SWEAT_LOSS}
+            Sweat Loss : <span className="font-normal">{DUMMY_SWEAT_LOSS}</span>
           </p>
           <p>
-            <span className="font-bold">Recommended Water Intake :</span> {DUMMY_WATER_INTAKE}
+            Recommended Water Intake :{" "}
+            <span className="font-normal">{DUMMY_WATER_INTAKE}</span>
           </p>
         </div>
-        <p className="mt-4 text-xs leading-relaxed text-ink">
+        <p className="mt-3 text-xs font-normal leading-4 tracking-[-0.15px] text-black">
           Tip: Add electrolytes for better hydration and recovery!
         </p>
-        <div className="mt-5 flex items-start gap-1.5 text-[10px] italic text-secondary">
-          <TriangleAlert size={12} className="mt-0.5 shrink-0" />
-          <div>
-            <p className="font-bold not-italic">Disclaimer</p>
-            <p>
-              This is a predicted value and may not be 100% accurate. Individual hydration needs
-              may vary.
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Remove */}
@@ -249,11 +272,11 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
           type="button"
           onClick={handleRemove}
           disabled={removing}
-          className="text-lg font-semibold text-biomarkerOutOfRange transition hover:opacity-70 disabled:opacity-50"
+          className="text-base font-medium text-red-500 transition hover:opacity-70 disabled:opacity-50"
         >
           {removing ? "Removing…" : "Remove"}
         </button>
-        {error && <p className="mt-2 text-sm text-biomarkerOutOfRange">{error}</p>}
+        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
       </div>
 
       {/* Floating AI button */}
@@ -261,9 +284,10 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
         type="button"
         onClick={() => setShowAI(true)}
         aria-label="Post-workout recovery insights"
-        className="fixed bottom-6 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-borderColor bg-white shadow-lg transition hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0px_0px_7.5px_rgba(0,0,0,0.1)] transition hover:scale-105 active:scale-95"
       >
-        <Sparkles size={22} className="text-primary" fill="currentColor" />
+        {/* Composite of the Figma gemini-logo assets (see design refs) */}
+        <img src="/assets/insights/gemini-ai.webp" alt="" className="h-6 w-6" />
       </button>
 
       {showAI && (

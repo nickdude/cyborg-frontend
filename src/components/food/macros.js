@@ -3,6 +3,17 @@
 // TimelineMealCard — single source going forward.
 import { Flame, Leaf, Wheat, Beef, Droplet, Candy } from "lucide-react";
 
+// Figma-exported circular macro glyphs (public/assets/insights). Keyed by the
+// MACRO_META keys; used by the review shell + food-score surfaces.
+export const MACRO_ICONS = {
+  calories: "/assets/insights/macro-calories.svg",
+  fiberG: "/assets/insights/macro-fiber.svg",
+  carbsG: "/assets/insights/macro-carbs.svg",
+  proteinG: "/assets/insights/macro-protein.svg",
+  fatG: "/assets/insights/macro-fat.svg",
+  sugarG: "/assets/insights/macro-sugar.svg",
+};
+
 export const MACRO_META = [
   { key: "calories", label: "Calories", unit: "", Icon: Flame, color: "#EF1360" },
   { key: "fiberG", label: "Fiber", unit: "g", Icon: Leaf, color: "#34C759" },

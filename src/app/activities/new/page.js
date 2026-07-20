@@ -32,7 +32,7 @@ export default function NewActivityPage() {
 
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f4f5f9] text-sm text-[#6d6f7b]">
+      <div className="flex min-h-screen items-center justify-center bg-pageBackground text-sm text-secondary">
         Loading...
       </div>
     );

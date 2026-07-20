@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 1000007462">
+<circle id="Ellipse 2117" cx="8" cy="8" r="7.5" fill="var(--fill-0, white)" stroke="var(--stroke-0, #E6E6E8)"/>
+<g id="pen" clip-path="url(#clip0_0_19)">
+<path id="Primary" d="M9.51365 4.33125L8.81209 5.03281L10.9668 7.1875L11.6683 6.48594C11.8808 6.275 11.9996 5.9875 11.9996 5.6875C11.9996 5.3875 11.8808 5.1 11.6683 4.88906L11.1105 4.33125C10.8996 4.11875 10.6121 4 10.3121 4C10.0121 4 9.72459 4.11875 9.51365 4.33125ZM8.2824 5.5625L4.9199 8.92344C4.75272 9.09063 4.63084 9.3 4.56678 9.52813L4.01365 11.525C3.97772 11.6547 4.01365 11.7953 4.11053 11.8906C4.2074 11.9859 4.34647 12.0234 4.47615 11.9875L6.47303 11.4328C6.70115 11.3688 6.90896 11.2484 7.07771 11.0797L10.4371 7.71719L8.2824 5.5625Z" fill="var(--fill-0, black)"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_19">
+<rect width="8" height="8" fill="white" transform="translate(4 4)"/>
+</clipPath>
+</defs>
+</svg>

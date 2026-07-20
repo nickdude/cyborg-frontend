@@ -6,16 +6,13 @@ import { useState, useEffect, useCallback } from "react";
 import Cookie from "js-cookie";
 import {
     ArrowUpRight, ChevronRight, Check, Lock, FileText, Watch, Sparkles,
-    Flame, Leaf, Wheat, Beef, Droplet, Candy, CircleCheck, MessageSquareWarning,
+    CircleCheck, MessageSquareWarning,
 } from "lucide-react";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory } from "@/components/data/organStatus";
-import { actionPlanAPI, timelineAPI } from "@/services/api";
-import ActionButtons from "@/components/home/ActionButtons";
+import { actionPlanAPI } from "@/services/api";
 import { LiveBetterCards } from "@/components/home/LiveBetterSection";
 import { homeScheduledData } from "@/data/homeScheduledData";
-import TimelineMealCard from "@/components/home/TimelineMealCard";
-import TimelineActivityCard from "@/components/home/TimelineActivityCard";
 
 const CARD = "rounded-3xl border border-borderColor bg-white";
 
@@ -310,7 +307,6 @@ export default function DigitalTwinHome(props) {
 
                         <HigherPriorityGoalCard topGoal={topGoal} biomarkers={bms} />
                         <ProtocolChecklist items={protocolItems} planReady={planReady} />
-                        <TimelineSection userId={userId} router={router} />
                         <LiveBetterCard />
                     </div>
                 </div>
@@ -816,76 +812,6 @@ function ProtocolChecklist({ items, planReady }) {
                 <p className="mt-4 text-sm leading-relaxed text-secondary">
                     {planReady ? "Your protocol is ready — open it to see today's actions." : "Your protocol actions will appear here once your plan is ready."}
                 </p>
-            )}
-        </div>
-    );
-}
-
-/* ── timeline ───────────────────────────────────────────────────────────── */
-
-const TIMELINE_MACROS = [
-    { key: "calories", label: "Calories", unit: "", Icon: Flame, color: "#EF1360" },
-    { key: "fiberG", label: "Fiber", unit: "g", Icon: Leaf, color: "#34C759" },
-    { key: "carbsG", label: "Carbs", unit: "g", Icon: Wheat, color: "#DE8E4E" },
-    { key: "proteinG", label: "Protein", unit: "g", Icon: Beef, color: "#DD5F5F" },
-    { key: "fatG", label: "Fat", unit: "g", Icon: Droplet, color: "#548ADE" },
-    { key: "sugarG", label: "Sugar", unit: "g", Icon: Candy, color: "#4F378B" },
-];
-
-function TimelineSection({ userId, router }) {
-    const [entries, setEntries] = useState([]);
-    const [macros, setMacros] = useState(null);
-
-    useEffect(() => {
-        if (!userId) return;
-        // UTC date — the backend buckets days in UTC, and every other timeline
-        // surface queries UTC; the local date hid just-saved entries near
-        // midnight on this tab only.
-        const date = new Date().toISOString().slice(0, 10);
-        let active = true;
-        // One request — the timeline response bundles the day's macro totals.
-        timelineAPI.get(userId, date).then((r) => {
-            if (!active) return;
-            setEntries(r?.data?.entries || r?.data || []);
-            setMacros(r?.data?.summary?.macros || null);
-        }).catch(() => {});
-        return () => { active = false; };
-    }, [userId]);
-
-    const list = Array.isArray(entries) ? entries : [];
-    const hasMeals = list.some((e) => e.type === "meal");
-
-    return (
-        <div className={`${CARD} p-5 lg:p-6`}>
-            <h3 className="text-base font-semibold tracking-tight text-blue">Timeline</h3>
-            <ActionButtons actions={[{ label: "Log Food", href: "/meals/log" }, { label: "Add an activity", href: "/activities/new" }]} />
-
-            {list.length > 0 && (
-                <div className="mt-4 space-y-3">
-                    {list.map((entry) => {
-                        const id = entry.id || entry._id;
-                        if (entry.type === "meal") return <TimelineMealCard key={id} entry={entry} onClick={() => id && router.push(`/meals/${id}/score`)} />;
-                        if (entry.type === "activity") return <TimelineActivityCard key={id} entry={entry} onClick={() => id && router.push(`/activities/${id}`)} />;
-                        return null;
-                    })}
-                </div>
-            )}
-
-            {hasMeals && macros && (
-                <div className="mt-5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Macro Split</p>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                        {TIMELINE_MACROS.map(({ key, label, unit, Icon, color }) => (
-                            <div key={key} className="flex items-center gap-2 rounded-xl border border-borderColor p-3">
-                                <Icon size={16} color={color} className="shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="text-[10px] font-medium uppercase tracking-wide text-secondary">{label}</p>
-                                    <p className="text-[15px] font-semibold leading-none text-blue">{Math.round(macros[key] || 0)}{unit}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
             )}
         </div>
     );

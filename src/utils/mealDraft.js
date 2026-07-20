@@ -4,17 +4,33 @@
 // sessionStorage access is what previously let MealDetailsSheet clobber
 // selections made elsewhere.
 //
-// v2 draft shape (flat):
+// v3 draft shape (flat):
 //   {
-//     v: 2,
+//     v: 3,
 //     items: [ { name, portion:{quantity,unit,grams}, calories, proteinG,
-//                carbsG, fatG, fiberG, sugarG } ],
+//                carbsG, fatG, fiberG, sugarG,
+//                per100g?, servings?, servingIdx? } ],
 //     imageKeys: [], imagePreviews: [],
 //     title: null, inputText: null, confidence: null, notes: null,
 //     mealType: null,        // null → review auto-suggests from time of day
 //     consumedAt: null,      // null → review defaults to now
+//     timePinned: false,     // true → the USER picked consumedAt (see below)
 //     pickedAt: ISO string,
 //   }
+//
+// `timePinned` separates "the user deliberately chose this timestamp" from
+// "something stamped a time while building the draft". Only the latter is
+// stale-reset on read: a draft abandoned overnight must not silently log at
+// yesterday's clock time, but a meal the user explicitly back-dated has to
+// survive navigating away to the search view and back.
+//
+// v3 adds the optional per-item portion-editing extras carried over from food
+// search (per100g nutrition, servings[] of {label,unit,grams}, servingIdx).
+// They let the serving-size editor re-base macros from per-100g truth instead
+// of factor-scaling rounded numbers. AI-estimated and legacy items simply
+// don't have them (v2 drafts normalize by leaving them undefined). The backend
+// Meal schema doesn't know these fields — strip them with toCommitItems()
+// when POSTing, never in the draft itself.
 //
 // Legacy v1 shape ({ estimate, imageKeys, imagePreviews, pickedAt }) is
 // normalized on read so a deploy mid-flow doesn't strand anyone.
@@ -55,7 +71,7 @@ export function computeTotals(items) {
 
 function emptyDraft() {
   return {
-    v: 2,
+    v: 3,
     items: [],
     imageKeys: [],
     imagePreviews: [],
@@ -65,14 +81,24 @@ function emptyDraft() {
     notes: null,
     mealType: null,
     consumedAt: null,
+    timePinned: false,
     pickedAt: new Date().toISOString(),
   };
 }
 
 function normalize(raw) {
   if (!raw || typeof raw !== "object") return null;
-  if (raw.v === 2) {
-    return { ...emptyDraft(), ...raw, items: Array.isArray(raw.items) ? raw.items : [] };
+  // v2 → v3 is additive (items may carry per100g/servings/servingIdx); v2
+  // items just leave those fields undefined, so both shapes pass through.
+  if (raw.v === 2 || raw.v === 3) {
+    return {
+      ...emptyDraft(),
+      ...raw,
+      items: Array.isArray(raw.items) ? raw.items : [],
+      // A pin without a time is meaningless; v2 drafts predate the flag and
+      // only ever stored a user-picked consumedAt, so they promote cleanly.
+      timePinned: Boolean(raw.consumedAt) && raw.timePinned !== false,
+    };
   }
   // v1: { estimate: { title, totals, items, confidence, notes, tokensUsed }, imageKeys, imagePreviews }
   if (raw.estimate && typeof raw.estimate === "object") {
@@ -96,8 +122,11 @@ export function readDraft() {
     if (!raw) return null;
     const draft = normalize(JSON.parse(raw));
     // A resumed old draft shouldn't silently log the meal under a stale
-    // pinned time — drop consumedAt so the review re-suggests "now".
-    if (draft?.consumedAt) {
+    // AUTO-STAMPED time — drop consumedAt so the review re-suggests "now".
+    // A time the user picked themselves (timePinned) is never dropped, or a
+    // deliberately back-dated meal would snap back to now the moment the user
+    // stepped into the search view and returned.
+    if (draft?.consumedAt && !draft.timePinned) {
       const pinnedAge = Date.now() - new Date(draft.pickedAt || 0).getTime();
       const pinnedDay = String(draft.consumedAt).slice(0, 10);
       const today = new Date().toISOString().slice(0, 10);
@@ -113,7 +142,7 @@ export function readDraft() {
 }
 
 export function writeDraft(draft) {
-  const next = { ...emptyDraft(), ...draft, v: 2 };
+  const next = { ...emptyDraft(), ...draft, v: 3 };
   try {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify(next));
   } catch (e) {
@@ -134,6 +163,22 @@ export function clearDraft() {
   } catch (_) {
     /* noop */
   }
+}
+
+/**
+ * Items as the backend Meal schema expects them. The v3 portion-editing
+ * extras (per100g/servings/servingIdx) stay on the draft so serving edits
+ * remain re-basable, but must not reach mealAPI.commit — call this in the
+ * commit payload builder.
+ */
+export function toCommitItems(items) {
+  return (items || []).map((it) => {
+    const rest = { ...it };
+    delete rest.per100g;
+    delete rest.servings;
+    delete rest.servingIdx;
+    return rest;
+  });
 }
 
 function lowerConfidence(a, b) {
