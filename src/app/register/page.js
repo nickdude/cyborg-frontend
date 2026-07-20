@@ -484,7 +484,7 @@ function Register() {
   // Main Registration Step
   return (
     <AuthShell>
-      <div className="w-full max-w-md bg-white p-4 pt-20">
+      <div className="w-full max-w-md bg-white p-4 pt-20 lg:p-8">
         <div className="mb-8 w-32">
           <CyborgLogo />
         </div>

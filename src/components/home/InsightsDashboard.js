@@ -12,7 +12,7 @@ const CARD = "rounded-2xl border border-borderColor bg-white shadow-[0_1px_3px_r
 export default function InsightsDashboard({ userName, data, scores, reportDate, actionPlanHref, userId }) {
   return (
     <div className="min-h-screen bg-pageBackground pb-32 font-inter lg:pb-36">
-      <div className="mx-auto w-full max-w-[1400px] px-4 pt-8 lg:px-8 lg:pt-10 xl:px-10">
+      <div className="mx-auto w-full max-w-[1200px] px-4 pt-8 lg:px-8 lg:pt-10 xl:px-10">
         {/* Header */}
         <div className="flex items-end justify-between gap-6">
           <div>
@@ -36,7 +36,7 @@ export default function InsightsDashboard({ userName, data, scores, reportDate, 
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start xl:gap-8">
           {/* Left: digital twin */}
-          <aside className="hidden xl:block xl:sticky xl:top-6">
+          <aside className="hidden xl:block xl:sticky xl:top-20">
             <div className={`${CARD} p-4`}>
               <div className="relative h-[460px] overflow-hidden rounded-xl bg-gradient-to-b from-white to-gray-100">
                 <Image src="/assets/man.webp" alt="Digital twin" fill className="object-contain object-center" priority />

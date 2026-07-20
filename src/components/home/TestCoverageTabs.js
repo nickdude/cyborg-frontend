@@ -148,14 +148,14 @@ export default function TestCoverageTabs() {
 
         <div className="mt-6">
           <div className="rounded-lg bg-white p-4 shadow-sm">
-            <ul key={TAB_DATA[active].key} className="space-y-3">
+            <ul key={TAB_DATA[active].key} className="space-y-3 lg:columns-2 xl:columns-3">
               {TAB_DATA[active].items.map((it, idx) => (
                 <motion.li
                   key={idx}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay: Math.min(idx * 0.02, 0.35), ease: [0.22, 1, 0.36, 1] }}
-                  className="text-sm text-gray-800"
+                  className="text-sm text-gray-800 lg:[break-inside:avoid]"
                 >
                   <span>{typeof it === "string" ? it : it.label}</span>
                   {typeof it === "object" && it.advanced && (

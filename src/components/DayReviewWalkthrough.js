@@ -117,7 +117,7 @@ export default function DayReviewWalkthrough({ reviewData, onComplete }) {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md bg-white pb-28 font-inter">
+    <div className="mx-auto min-h-screen w-full max-w-md lg:max-w-[560px] bg-white pb-28 font-inter">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pb-2 pt-[max(env(safe-area-inset-top,0px),12px)]">
         <button
@@ -142,7 +142,7 @@ export default function DayReviewWalkthrough({ reviewData, onComplete }) {
 
       {/* Next button - fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 flex justify-center bg-white pb-6 pt-3 px-4">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md lg:max-w-[560px]">
           <button
             type="button"
             onClick={handleNext}
@@ -318,7 +318,7 @@ function CauseStep({ data }) {
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#717178]">
             How other ingredients typically score
           </p>
-          <div className="space-y-2">
+          <div className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0">
             {data.otherItems.map((item, idx) => (
               <div
                 key={idx}

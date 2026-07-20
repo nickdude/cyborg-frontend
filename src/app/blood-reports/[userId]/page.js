@@ -158,7 +158,7 @@ export default function BloodReports() {
         </div>
       )}
 
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <main className="max-w-4xl lg:max-w-[1100px] mx-auto px-4 py-8 space-y-8">
         {/* Title */}
         <div className="flex flex-col items-center text-center gap-3">
           <h1 className="text-3xl font-bold">Blood Reports</h1>
@@ -262,7 +262,7 @@ export default function BloodReports() {
               No blood reports uploaded yet.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {reports.map((report) => {
                 const uploadedDate = report.uploadedAt
                   ? new Date(report.uploadedAt).toLocaleDateString()
@@ -299,7 +299,7 @@ export default function BloodReports() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex flex-col sm:flex-row lg:flex-col gap-2">
                       <Button
                         fullWidth
                         size="md"

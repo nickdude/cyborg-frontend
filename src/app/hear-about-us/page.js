@@ -162,13 +162,13 @@ export default function HearAboutUsPage() {
           className={`transition-transform ${expanded ? "rotate-180" : ""}`}
         />
       </button>
-      {expanded && <div className="px-4 pb-4 pt-2">{children}</div>}
+      {expanded && <div className="px-4 pb-4 pt-2 lg:grid lg:grid-cols-2 lg:gap-x-4">{children}</div>}
     </div>
   );
 
   return (
     <div className="min-h-screen bg-pageBackground py-8 px-4 font-inter">
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto lg:max-w-2xl">
         {/* Logo */}
         <div className="mb-8">
           <CyborgLogo width={120} height={48} />
@@ -279,7 +279,7 @@ export default function HearAboutUsPage() {
           onToggle={() => toggleExpand("podcast")}
         >
           <textarea
-            className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent lg:col-span-2"
             placeholder="Please tell us more..."
             rows={3}
             value={form.podcast.note}
@@ -294,7 +294,7 @@ export default function HearAboutUsPage() {
           onToggle={() => toggleExpand("creator")}
         >
           <textarea
-            className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent lg:col-span-2"
             placeholder="Please tell us more..."
             rows={3}
             value={form.creator.note}

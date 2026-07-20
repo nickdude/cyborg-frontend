@@ -621,7 +621,7 @@ export default function GoalsProtocolPage() {
   return (
     <div className="min-h-screen bg-[#F2F2F2] font-inter">
       {/* Header */}
-      <div className="max-w-2xl mx-auto px-4 pt-4">
+      <div className="max-w-2xl lg:max-w-[1200px] mx-auto px-4 lg:px-8 pt-4">
         <button
           onClick={() => router.back()}
           className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -632,7 +632,9 @@ export default function GoalsProtocolPage() {
         </button>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pb-32">
+      <div className="max-w-2xl lg:max-w-[1200px] mx-auto px-4 lg:px-8 pb-32 lg:grid lg:grid-cols-[1fr_340px] lg:gap-6 lg:items-start">
+        {/* ── Desktop right rail: clinical context (thesis, checkpoints, watch-outs, report) ── */}
+        <div className="contents lg:block lg:col-start-2 lg:row-start-1">
         {/* Status banner */}
         {planStatus === "pending_review" && (
           <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">
@@ -690,7 +692,10 @@ export default function GoalsProtocolPage() {
             </div>
           </div>
         )}
+        </div>
 
+        {/* ── Desktop left column: main goals/protocol editor ── */}
+        <div className="contents lg:block lg:col-start-1 lg:row-start-1">
         {/* Tabs */}
         <div className="flex items-baseline gap-5 mb-5">
           {["goals", "protocol"].map((tab) => (
@@ -1108,12 +1113,13 @@ export default function GoalsProtocolPage() {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Sticky bottom action bar */}
       {isEditable && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E7EB] px-4 py-3 z-40">
-          <div className="max-w-2xl mx-auto flex gap-3">
+          <div className="max-w-2xl lg:max-w-[1200px] mx-auto flex gap-3 lg:px-8">
             <button
               onClick={handleSaveDraft}
               disabled={saving}

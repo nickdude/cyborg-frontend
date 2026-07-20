@@ -237,7 +237,7 @@ export default function DigitalTwinHome(props) {
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1fr)] lg:items-start lg:gap-6">
                     {/* Desktop-only sticky twin rail */}
-                    <aside className="hidden lg:block lg:sticky lg:top-6 lg:self-start">
+                    <aside className="hidden lg:block lg:sticky lg:top-20 lg:self-start">
                         {isDesktop && hero}
                     </aside>
 

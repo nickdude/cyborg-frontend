@@ -245,7 +245,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-pageBackground pb-10 text-gray-900 font-inter">
       <main className="mx-auto w-full max-w-[1240px] px-4 pt-8 lg:px-8 lg:pt-10">
-        <div className="mb-6 flex items-center justify-between lg:mb-8">
+        <div className="mb-6 flex items-center justify-between lg:mb-8 lg:mx-auto lg:max-w-3xl">
           <Link
             href="/settings"
             className="text-secondary text-sm font-semibold hover:text-black flex items-center gap-1"

@@ -36,7 +36,7 @@ export default function MembershipPlanSection() {
 
   return (
     <section className="bg-[#ECECEC] px-5 pb-14 pt-10 text-black md:px-8 md:pb-20 md:pt-14 lg:flex lg:h-screen lg:items-center lg:py-10">
-      <div className="mx-auto w-full max-w-[430px] md:max-w-[820px] lg:grid lg:max-w-[1180px] lg:grid-cols-2 lg:items-start lg:gap-x-16">
+      <div className="mx-auto w-full max-w-[430px] md:max-w-[820px] lg:grid lg:max-w-[1200px] lg:grid-cols-2 lg:items-start lg:gap-x-16">
         {/* Copy — top of the left column on desktop */}
         <div className="lg:col-start-1 lg:row-start-1">
           <p className="text-[clamp(1.2rem,3.9vw,1.75rem)] leading-[1.3] text-[#666973] lg:text-[15px] lg:font-semibold lg:uppercase lg:tracking-[0.14em] lg:text-[#7a7d87]">

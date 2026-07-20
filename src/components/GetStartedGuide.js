@@ -12,7 +12,7 @@ export default function GetStartedGuide({ data }) {
       </h2>
 
       {/* Steps Section */}
-      <div className="grid grid-cols-1 gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
         {data.steps.map((step, index) => (
           <div key={index} className="space-y-3">
             <div className="relative w-full h-64 rounded-2xl overflow-hidden">

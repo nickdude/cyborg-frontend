@@ -64,8 +64,8 @@ export default function AddressesPage() {
   const field = "w-full rounded-xl border border-borderColor px-3 py-2.5 text-sm focus:border-primary focus:outline-none";
 
   return (
-    <div className="min-h-screen bg-pageBackground pb-24">
-      <div className="mx-auto w-full max-w-[760px] px-4 py-6 lg:px-8">
+    <div className="min-h-screen bg-pageBackground pb-24 lg:pb-8">
+      <div className="mx-auto w-full max-w-[760px] px-4 py-6 lg:max-w-[1000px] lg:px-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Delivery Addresses</h1>
           {editing === null && (
@@ -103,7 +103,7 @@ export default function AddressesPage() {
             <p className="mt-1 text-sm text-gray-500">Add a delivery address to speed up checkout.</p>
           </div>
         ) : (
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
             {addresses.map((a) => (
               <div key={a.id} className="rounded-2xl border border-borderColor bg-white p-4">
                 <div className="flex items-start justify-between gap-3">

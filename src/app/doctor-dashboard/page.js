@@ -519,7 +519,7 @@ export default function DoctorDashboard() {
 
             {/* Patient Cards Grid */}
             {loading ? (
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
@@ -551,7 +551,7 @@ export default function DoctorDashboard() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
                 {filteredPatients.map((patient) => (
                   <PatientCard
                     key={patient._id}

@@ -214,7 +214,7 @@ export default function FoodLogHub({ userId, from }) {
       {view === "search" ? (
         <div className="fixed inset-0 z-50 flex flex-col bg-pageBackground">
           {/* Header */}
-          <div className="mx-auto flex w-full max-w-md items-center gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),12px)]">
+          <div className="mx-auto flex w-full max-w-md lg:max-w-[900px] items-center gap-3 px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),12px)]">
             <button
               type="button"
               onClick={backToReview}
@@ -243,7 +243,7 @@ export default function FoodLogHub({ userId, from }) {
           </div>
 
           {/* Search bar */}
-          <div className="mx-auto w-full max-w-md px-4 pb-3">
+          <div className="mx-auto w-full max-w-md lg:max-w-[900px] px-4 pb-3">
             <div className="flex items-center gap-2 rounded-xl border border-borderColor bg-pageBackground px-3 py-2.5">
               <Search size={18} className="flex-shrink-0 text-secondary" />
               <input
@@ -267,16 +267,18 @@ export default function FoodLogHub({ userId, from }) {
           </div>
 
           {/* Body */}
-          <div className="mx-auto w-full max-w-md flex-1 overflow-y-auto px-4 pb-8">
+          <div className="mx-auto w-full max-w-md lg:max-w-[900px] flex-1 overflow-y-auto px-4 pb-8">
             {query.trim() ? (
-              <FoodSearchResults
-                userId={userId}
-                query={query}
-                onAdd={handleAddItem}
-                onDescribe={openDescribe}
-              />
+              <div className="lg:mx-auto lg:max-w-[680px]">
+                <FoodSearchResults
+                  userId={userId}
+                  query={query}
+                  onAdd={handleAddItem}
+                  onDescribe={openDescribe}
+                />
+              </div>
             ) : (
-              <>
+              <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
                 {/* Quick actions */}
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -322,13 +324,13 @@ export default function FoodLogHub({ userId, from }) {
                 </div>
 
                 {/* Recent logs */}
-                <div className="mt-7">
+                <div className="mt-7 lg:mt-0">
                   <h2 className="mb-3 text-base font-semibold tracking-tight text-black">
                     From your past logs
                   </h2>
                   <RecentLogsList userId={userId} onAdd={handleAddItem} />
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

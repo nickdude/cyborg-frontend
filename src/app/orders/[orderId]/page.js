@@ -110,8 +110,8 @@ export default function OrderDetailPage() {
   const canRetry = payment && payment.gateway !== "cod" && order.paymentStatus !== "success" && order.orderStatus !== "Cancelled";
 
   return (
-    <div className="min-h-screen bg-pageBackground pb-24">
-      <div className="mx-auto w-full max-w-[800px] px-4 py-6 lg:px-8">
+    <div className="min-h-screen bg-pageBackground pb-24 lg:pb-8">
+      <div className="mx-auto w-full max-w-[800px] px-4 py-6 lg:px-8 lg:max-w-[1100px]">
         <Link href="/orders" className="text-sm font-semibold text-primary hover:underline">← Back to my purchases</Link>
 
         {placed && order.paymentStatus !== "failed" && (
@@ -126,7 +126,9 @@ export default function OrderDetailPage() {
         )}
         {error && <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
-        <div className="mt-4 flex items-center justify-between">
+        <div className="lg:grid lg:gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+        {/* Order summary — sticky rail on desktop */}
+        <div className="mt-4 flex items-center justify-between lg:col-start-2 lg:row-start-1 lg:sticky lg:top-20 lg:rounded-2xl lg:border lg:border-borderColor lg:bg-white lg:p-5">
           <div>
             <h1 className="text-xl font-bold text-gray-900">{order.orderNumber}</h1>
             <p className="text-sm text-gray-500">Payment: {order.paymentStatus} · {payment?.gateway === "cod" ? "Cash on Delivery" : "Online"}</p>
@@ -134,6 +136,8 @@ export default function OrderDetailPage() {
           <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-primary">{order.orderStatus}</span>
         </div>
 
+        {/* Main content — left column on desktop */}
+        <div className="lg:col-start-1 lg:row-start-1">
         {/* Tracking timeline */}
         <section className="mt-6 rounded-2xl border border-borderColor bg-white p-5">
           <h2 className="text-lg font-semibold text-gray-900">Order Tracking</h2>
@@ -195,6 +199,8 @@ export default function OrderDetailPage() {
             )}
           </div>
         )}
+        </div>
+        </div>
       </div>
     </div>
   );

@@ -23,7 +23,7 @@ function Mark({ filled }) {
 export default function VsDifferenceSection() {
   return (
     <section className="bg-white px-5 py-12 text-black md:px-8 md:py-16 lg:py-40">
-      <div className="mx-auto w-full max-w-[430px] md:max-w-[820px] lg:max-w-[1040px]">
+      <div className="mx-auto w-full max-w-[430px] md:max-w-[820px] lg:max-w-[1200px]">
         <h2 className="max-w-[12ch] text-[clamp(1.7rem,7vw,2.6rem)] font-bold leading-[1.1] tracking-[-0.02em] lg:text-[44px]">
           The CYBORG Difference
         </h2>

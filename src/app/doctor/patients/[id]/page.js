@@ -564,7 +564,7 @@ export default function PatientDetail() {
         </main>
 
         {/* Right Chatbot Sidebar -- Desktop */}
-        <aside className="hidden lg:block fixed right-0 top-14 bottom-0 w-[400px] xl:w-[440px] bg-white z-30 border-l border-borderColor/80 shadow-[-8px_0_24px_rgba(0,0,0,0.03)]">
+        <aside className="hidden lg:block fixed right-0 lg:right-[max(0px,calc((100vw_-_1400px)/2))] top-14 bottom-0 w-[400px] xl:w-[440px] bg-white z-30 border-l border-borderColor/80 shadow-[-8px_0_24px_rgba(0,0,0,0.03)]">
           <Chatbot
             patientId={patientId}
             patientName={patientName}

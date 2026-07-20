@@ -373,7 +373,7 @@ export default function MembershipPage() {
             {/* Plans Grid */}
             <div className="mb-8 lg:mb-14">
               <h2 className="text-2xl font-bold text-gray-900 mb-6 lg:mb-8 lg:text-center lg:text-[32px] lg:leading-tight">Select a Membership Plan</h2>
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:mx-auto lg:max-w-[1040px] lg:gap-8 xl:max-w-[1100px] xl:gap-10">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:mx-auto lg:max-w-[1040px] lg:grid-cols-3 lg:gap-8 xl:max-w-[1100px] xl:gap-10">
                 {plans.map((p) => {
                   const selected = selectedPlan?.id === p.id;
                   return (
