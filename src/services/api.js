@@ -1,5 +1,6 @@
 import axios from "axios";
 import Cookie from "js-cookie";
+import { cachedQuery } from "./queryCache";
 
 if (
   typeof process !== "undefined" &&
@@ -11,6 +12,9 @@ if (
 
 const API = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001",
+  // Without a timeout a stalled backend request hangs the UI forever. 30s is
+  // generous for the slower AI/report endpoints while still bounding failures.
+  timeout: 30000,
 });
 
 // Add token to requests
@@ -49,8 +53,17 @@ API.interceptors.response.use(
         }
       }
     }
+    // Preserve the HTTP status + original response on the thrown error. Pages
+    // branch on `err.statusCode === 404` / `err.response?.data?.message`; without
+    // this those branches were dead (the flattened Error dropped them), so real
+    // failures fell through to misleading "no data" empty states.
     const msg = error.response?.data?.message || error.message || "Request failed";
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.status = error.response?.status;
+    err.statusCode = error.response?.status;
+    err.response = error.response;
+    err.code = error.code; // e.g. "ECONNABORTED" on timeout
+    throw err;
   }
 );
 
@@ -164,9 +177,14 @@ export const goalsAPI = {
 // Biomarker endpoints (individual biomarker data)
 export const biomarkerAPI = {
   timeline: (canonicalName) => API.get(`/api/users/blood-reports/timeline/${encodeURIComponent(canonicalName)}`),
-  panel: () => API.get("/api/users/blood-reports/biomarker-panel"),
+  // Cached + deduped: the panel is the heaviest read and 3 screens (dashboard,
+  // data, biological-age) fetch it independently. 20s stale-window is safe for a
+  // computed aggregate and makes back-navigation instant.
+  panel: () =>
+    cachedQuery("biomarker-panel", () => API.get("/api/users/blood-reports/biomarker-panel")),
   list: () => API.get("/api/users/blood-reports/biomarkers"),
-  trends: () => API.get("/api/users/blood-reports/trends"),
+  trends: () =>
+    cachedQuery("biomarker-trends", () => API.get("/api/users/blood-reports/trends")),
   // Fast one-shot AI summary for a category card (no tools/thinking).
   categorySummary: (data) => API.post("/api/users/blood-reports/category-summary", data),
 };
@@ -213,7 +231,10 @@ export const paymentAPI = {
   createOrder: (data) => API.post("/api/payments/create-order", data),
   verifyPayment: (data) => API.post("/api/payments/verify-payment", data),
   activateFreePlan: (data) => API.post("/api/payments/activate-free", data),
-  getUserSubscription: (userId) => API.get(`/api/payments/${userId}/subscription`),
+  // Cached 60s + deduped: LayoutWrapper fetches this on every hard page load to
+  // gate free members; the plan rarely changes mid-session.
+  getUserSubscription: (userId) =>
+    cachedQuery(`subscription:${userId}`, () => API.get(`/api/payments/${userId}/subscription`), 60000),
 };
 
 // Questionnaire endpoints

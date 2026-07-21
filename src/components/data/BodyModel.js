@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { Canvas, useThree, useFrame } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { DEFAULT_STATUS } from "./organStatus";
@@ -34,7 +34,7 @@ function configureTexture(t) {
 
 function BodyTwin({ highlight, status = DEFAULT_STATUS, sex = "male", spin = true, frame, zoom = 1 }) {
   const { scene } = useGLTF(modelUrlForSex(sex));
-  const { camera, gl } = useThree();
+  const { camera, gl, invalidate } = useThree();
 
   const meshesRef = useRef([]);
   const cacheRef = useRef(new Map()); // filename -> THREE.Texture (per-instance, sex-scoped)
@@ -96,7 +96,10 @@ function BodyTwin({ highlight, status = DEFAULT_STATUS, sex = "male", spin = tru
       m.material.map = t;
       m.material.needsUpdate = true;
     });
-  }, []);
+    // Under frameloop="demand" the canvas only repaints when asked — request a
+    // frame so the newly-loaded organ texture actually shows.
+    invalidate();
+  }, [invalidate]);
 
   // Swap the body texture whenever the selected organ/status (or model) changes.
   // The body stays visible the whole time — only the map updates once it's loaded.
@@ -127,16 +130,12 @@ function BodyTwin({ highlight, status = DEFAULT_STATUS, sex = "male", spin = tru
     else camera.position.set(0, targetY, dist);
     camera.lookAt(0, targetY, 0);
     camera.updateProjectionMatrix();
-  }, [data, camera, frame]);
+    invalidate();
+  }, [data, camera, frame, invalidate]);
 
-  useFrame(({ clock }) => {
-    if (!spin) return; // static front-facing view (no orbit)
-    const az = Math.sin(clock.elapsedTime * 0.45) * 0.3;
-    const dist = (data.size.y * 2.5) / zoom;
-    if (data.lookAlongX) camera.position.set(dist * Math.cos(az), 0, dist * Math.sin(az));
-    else camera.position.set(dist * Math.sin(az), 0, dist * Math.cos(az));
-    camera.lookAt(0, 0, 0);
-  });
+  // Static front-facing view. The camera no longer orbits every frame — that
+  // perpetual spin forced frameloop="always" (continuous GPU/battery even when
+  // idle). Framing is set once above; the canvas repaints on demand only.
 
   return (
     <group>
@@ -150,10 +149,10 @@ export function BodyModel({ className, highlight, status, sex = "male", spin = t
     <div className={className}>
       <Canvas
         flat
-        frameloop="always"
+        frameloop="demand"
         camera={{ position: [0, 0, 4], fov: 28 }}
         gl={{ antialias: true, alpha: true }}
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
         style={{ background: "transparent" }}
         onCreated={({ gl, invalidate }) => {
           gl.domElement.addEventListener("webglcontextrestored", () => invalidate());
@@ -175,6 +174,7 @@ export function BodyModel({ className, highlight, status, sex = "male", spin = t
   );
 }
 
-useGLTF.preload("/maleOptimisedV8.glb");
-useGLTF.preload("/femaleOptimisedV8.glb");
+// No eager preload of both models: the twin is no longer the default home, and
+// BodyTwin's useGLTF loads only the model matching the user's biological sex on
+// mount — so we no longer fetch both GLBs (~4.9 MB) up front.
 export default BodyModel;

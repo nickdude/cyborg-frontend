@@ -85,7 +85,10 @@ export default function Dashboard() {
     // ── Latest action plan → scores for the home header cards ─────────────────
     const [plan, setPlan] = useState(null);
     const [planLoading, setPlanLoading] = useState(true);
-    const initialTab = searchParams.get("tab") === "timeline" ? "timeline" : "twin";
+    // Timeline is the default post-login home; the heavy WebGL digital-twin
+    // (three.js + GLB models) mounts only when explicitly selected (?tab=twin
+    // or the in-page switcher), so it no longer loads on first paint.
+    const initialTab = searchParams.get("tab") === "twin" ? "twin" : "timeline";
     const [homeTab, setHomeTab] = useState(initialTab); // twin | timeline
     const [goals, setGoals] = useState([]);
 
