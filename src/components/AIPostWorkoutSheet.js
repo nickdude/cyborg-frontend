@@ -222,7 +222,7 @@ export default function AIPostWorkoutSheet({ activity, userId, onClose }) {
 
       {/* Sheet */}
       <div className="absolute bottom-0 left-0 right-0 flex justify-center">
-        <div className="flex max-h-[92vh] w-full max-w-md flex-col rounded-t-3xl bg-pageBackground px-5 pb-8 pt-6 shadow-2xl">
+        <div className="flex max-h-[92vh] w-full sm:max-w-md flex-col rounded-t-3xl bg-pageBackground px-5 pb-8 pt-6 shadow-2xl">
           {/* Close */}
           <button
             type="button"

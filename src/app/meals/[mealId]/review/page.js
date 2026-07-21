@@ -281,7 +281,7 @@ function MealReviewContent() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-white px-5 font-sans">
+    <div className="mx-auto flex min-h-screen w-full sm:max-w-md flex-col bg-white px-5 font-sans">
       <header className="sticky top-0 z-10 -mx-5 bg-white px-5 pb-3 pt-5">
         <div className="relative flex items-center justify-center">
           <button

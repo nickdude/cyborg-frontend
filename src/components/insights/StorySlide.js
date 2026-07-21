@@ -13,7 +13,7 @@ const SCRIM =
  */
 export default function StorySlide({ image, dayLabel, headline, paragraphs = [], onBack, onNext }) {
   return (
-    <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-black font-sans">
+    <div className="relative mx-auto flex min-h-screen w-full sm:max-w-md flex-col overflow-hidden bg-black font-sans">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={image} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <div className="absolute inset-0" style={{ background: SCRIM }} />

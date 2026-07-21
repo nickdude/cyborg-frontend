@@ -159,7 +159,7 @@ export default function ZoneScoreOverlay({ entry, userId, onClose, onDetails, va
       onClick={onClose}
     >
       <div
-        className="relative flex w-full max-w-md flex-col items-center overflow-hidden"
+        className="relative flex w-full sm:max-w-md flex-col items-center overflow-hidden"
         style={{ background: band.background }}
         onClick={(e) => e.stopPropagation()}
       >

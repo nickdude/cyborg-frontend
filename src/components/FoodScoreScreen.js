@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { mealAPI, foodScoreAPI } from "@/services/api";
@@ -11,11 +10,20 @@ import ZoneScoreOverlay from "@/components/insights/ZoneScoreOverlay";
 
 const TABS = ["Food Score", "Predicted Glucose Peak"];
 
-// Figma hero art per tab: red bokeh for Food Score, teal water for Predicted
-// Glucose Peak (assets exported from the reference frames).
-const HERO_IMAGES = [
-  "/assets/insights/hero-food-score.webp",
-  "/assets/insights/hero-glucose.webp",
+// Hardcoded hero gradients per tab — the design's red treatment for Food Score
+// and teal for Predicted Glucose Peak. Same gradients as ZoneScoreOverlay's
+// red/glucose bands, so each hero card matches the overlay it opens.
+const HERO_GRADIENTS = [
+  "linear-gradient(201.93deg, #EF5D68 1.67%, #ED5776 23.32%, #AE4976 49.02%, #843561 95.82%)",
+  "linear-gradient(201.93deg, #047A8D 1.67%, #079696 23.32%, #80C49F 95.82%)",
+];
+
+// Soft white bokeh accents floated over the gradient, echoing the Figma hero
+// frames. Positions are relative to the 268px-wide card.
+const HERO_BOKEH = [
+  { left: -18, top: -24, size: 96, alpha: 0.22, blur: 8 },
+  { left: 44, top: 6, size: 70, alpha: 0.16, blur: 8 },
+  { left: 210, top: 72, size: 120, alpha: 0.18, blur: 10 },
 ];
 
 // Figma macro icons keyed by MACRO_META keys (colored circular glyphs).
@@ -156,7 +164,7 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
     );
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md lg:max-w-[900px] bg-pageBackground pb-20 font-sans">
+    <div className="mx-auto min-h-screen w-full sm:max-w-md lg:max-w-[900px] bg-pageBackground pb-20 font-sans">
       {/* Back arrow */}
       <div className="px-5 pt-7">
         <button type="button" onClick={onBack} aria-label="Go back">
@@ -185,15 +193,23 @@ export default function FoodScoreScreen({ meal: initialMeal, score: initialScore
           onClick={() => setOverlayOpen(true)}
           aria-label={tab === 1 ? "View predicted glucose peak" : "View zone score"}
           className="relative block h-40 w-[268px] lg:h-52 lg:w-[400px] cursor-pointer overflow-hidden rounded-lg"
+          style={{ background: HERO_GRADIENTS[tab] }}
         >
-          <Image
-            src={HERO_IMAGES[tab]}
-            alt=""
-            fill
-            sizes="268px"
-            className="object-cover"
-            priority
-          />
+          {HERO_BOKEH.map((b, i) => (
+            <span
+              key={i}
+              aria-hidden="true"
+              className="pointer-events-none absolute rounded-full"
+              style={{
+                left: b.left,
+                top: b.top,
+                width: b.size,
+                height: b.size,
+                background: `rgba(255,255,255,${b.alpha})`,
+                filter: `blur(${b.blur}px)`,
+              }}
+            />
+          ))}
           <span className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-[55px] font-bold leading-none text-white">
               {heroScore ?? "--"}

@@ -78,7 +78,7 @@ export default function BiologicalAgeModal({ bioAge, chronoAge, biomarkers = [],
       onClick={onClose}
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-[560px] flex-col overflow-hidden rounded-t-3xl bg-white sm:rounded-3xl"
+        className="flex max-h-[92vh] w-full sm:max-w-[560px] flex-col overflow-hidden rounded-t-3xl bg-white sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

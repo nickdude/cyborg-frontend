@@ -286,7 +286,7 @@ export default function MealReviewScreen({
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground px-5 pb-24 pt-[max(env(safe-area-inset-top,0px),20px)] lg:max-w-[1040px] lg:px-8 lg:pb-10">
+    <div className="mx-auto min-h-screen w-full sm:max-w-md bg-pageBackground px-5 pb-24 pt-[max(env(safe-area-inset-top,0px),20px)] lg:max-w-[1040px] lg:px-8 lg:pb-10">
       {/* Top bar: back arrow + Save pill */}
       <div className="flex items-center justify-between">
         <button

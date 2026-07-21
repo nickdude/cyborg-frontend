@@ -165,7 +165,7 @@ export default function ActivityDeepScreen({ activity, userId, onBack }) {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-md bg-pageBackground pb-24 font-sans lg:relative lg:grid lg:min-h-0 lg:max-w-[1000px] lg:grid-cols-2 lg:items-start lg:gap-x-10">
+    <div className="mx-auto min-h-screen w-full sm:max-w-md bg-pageBackground pb-24 font-sans lg:relative lg:grid lg:min-h-0 lg:max-w-[1000px] lg:grid-cols-2 lg:items-start lg:gap-x-10">
       {/* Header: back + centered date */}
       <div className="flex items-center justify-between px-3 pb-1 pt-[max(env(safe-area-inset-top,0px),12px)] lg:col-span-2 lg:row-start-1">
         <button
