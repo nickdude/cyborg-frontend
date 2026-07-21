@@ -12,7 +12,8 @@ export function BackgroundVideo() {
         loop
         muted
         playsInline
-        preload="auto"
+        preload="metadata"
+        poster="/videos/landing-hero-poster.webp"
         aria-hidden="true"
       >
         <source src="/videos/landing-hero.mp4" type="video/mp4" />

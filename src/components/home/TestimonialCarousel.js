@@ -4,12 +4,12 @@ import { useState } from "react";
 
 export default function TestimonialCarousel({ items: propItems, onChange }) {
   const defaultItems = [
-    { src: "/assets/testinomial/test1.png", title: "Upload past lab data", description: "Visualize past Quest or Labcorp results." },
-    { src: "/assets/testinomial/test2.png", title: "All your data in one place", description: "100+ labs, your biological age & health report." },
-    { src: "/assets/testinomial/test3.png", title: "Personalized insights", description: "Deep insights tailored to your biomarkers." },
-    { src: "/assets/testinomial/test4.png", title: "Concierge support", description: "Talk to specialists and get curated plans." },
-    { src: "/assets/testinomial/test5.png", title: "Flexible testing", description: "Add-on testing anytime for deeper analysis." },
-    { src: "/assets/testinomial/test6.png", title: "Actionable plan", description: "A plan that evolves with your data." },
+    { src: "/assets/testinomial/test1.webp", title: "Upload past lab data", description: "Visualize past Quest or Labcorp results." },
+    { src: "/assets/testinomial/test2.webp", title: "All your data in one place", description: "100+ labs, your biological age & health report." },
+    { src: "/assets/testinomial/test3.webp", title: "Personalized insights", description: "Deep insights tailored to your biomarkers." },
+    { src: "/assets/testinomial/test4.webp", title: "Concierge support", description: "Talk to specialists and get curated plans." },
+    { src: "/assets/testinomial/test5.webp", title: "Flexible testing", description: "Add-on testing anytime for deeper analysis." },
+    { src: "/assets/testinomial/test6.webp", title: "Actionable plan", description: "A plan that evolves with your data." },
   ];
 
   const items = propItems && propItems.length ? propItems : defaultItems;
