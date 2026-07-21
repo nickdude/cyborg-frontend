@@ -4,7 +4,17 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { glucoseAPI } from "@/services/api";
-import DayReviewWalkthrough from "@/components/DayReviewWalkthrough";
+import dynamic from "next/dynamic";
+
+// Lazy-load the walkthrough so recharts stays out of this route's initial bundle.
+const DayReviewWalkthrough = dynamic(() => import("@/components/DayReviewWalkthrough"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-screen items-center justify-center bg-[#f4f5f9] text-sm text-[#6d6f7b]">
+      Loading day review...
+    </div>
+  ),
+});
 
 export default function GlucoseDayReviewPage() {
   const { date } = useParams();

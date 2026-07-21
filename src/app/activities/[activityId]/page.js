@@ -4,7 +4,17 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { activityAPI } from "@/services/api";
-import ActivityDeepScreen from "@/components/ActivityDeepScreen";
+import dynamic from "next/dynamic";
+
+// Lazy-load the deep screen so recharts stays out of this route's initial bundle.
+const ActivityDeepScreen = dynamic(() => import("@/components/ActivityDeepScreen"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-screen items-center justify-center bg-[#f4f5f9] text-sm text-[#6d6f7b]">
+      Loading activity...
+    </div>
+  ),
+});
 
 export default function ActivityDetailPage() {
   const { activityId } = useParams();

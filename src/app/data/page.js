@@ -11,12 +11,20 @@ import { transformPanel, computeSummary, extractScores } from "@/utils/biomarker
 import { userAPI, biomarkerAPI, conciergeAPI, streamMessage } from "@/services/api";
 import { BodyModelClient } from "@/components/data/BodyModelClient";
 import { organKeyForCategory, categoryStatus, STATUS_COLORS } from "@/components/data/organStatus";
-import BiomarkerDetailModal from "@/components/data/BiomarkerDetailModal";
+import dynamic from "next/dynamic";
 import ScoreDetailModal from "@/components/data/ScoreDetailModal";
 import LabUploadedCard from "@/components/data/LabUploadedCard";
 import RecordsTable from "@/components/data/RecordsTable";
 import AskCyborgAI from "@/components/data/AskCyborgAI";
 import CategoryFilter from "@/components/data/CategoryFilter";
+
+// Lazy-load the biomarker detail modal (drags in recharts + react-markdown) so
+// those heavy libs stay out of the /data route's initial bundle until a marker
+// is actually tapped.
+const BiomarkerDetailModal = dynamic(
+  () => import("@/components/data/BiomarkerDetailModal"),
+  { ssr: false }
+);
 
 // Normalize any stored value ("Male"/"Female"/"female"/…) to the model key.
 const normalizeSex = (v) => (String(v || "").toLowerCase().startsWith("f") ? "female" : "male");

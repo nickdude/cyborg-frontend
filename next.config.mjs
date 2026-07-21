@@ -16,7 +16,17 @@ const nextConfig = {
     missingSuspenseWithCSRBailout: false,
     // Rewrite barrel imports to direct file imports for heavy libraries the
     // default list doesn't cover — cuts hundreds of modules per dev compile.
-    optimizePackageImports: ["recharts", "motion", "framer-motion", "three"],
+    // ("framer-motion" dropped — the dep is `motion`, so it was a no-op.)
+    optimizePackageImports: ["recharts", "motion", "three"],
+  },
+  images: {
+    // Serve AVIF (then WebP) — smaller than the webp-only default.
+    formats: ["image/avif", "image/webp"],
+    // The on-server optimizer was re-encoding each image every 60s
+    // (Cache-Control max-age=60, must-revalidate). Cache optimized output hard.
+    minimumCacheTTL: 31536000,
+    // Let next/image optimize meal/product photos served by the API.
+    remotePatterns: [{ protocol: "https", hostname: "api.cyborgmen.com" }],
   },
   async headers() {
     return [
